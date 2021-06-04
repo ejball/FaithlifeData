@@ -1,0 +1,249 @@
+#nullable enable
+abstract Faithlife.Data.DbCommandCache.AddCommand(string! text, System.Data.IDbCommand! command) -> void
+abstract Faithlife.Data.DbCommandCache.GetCommands() -> System.Collections.Generic.IReadOnlyCollection<System.Data.IDbCommand!>!
+abstract Faithlife.Data.DbCommandCache.TryGetCommand(string! text, out System.Data.IDbCommand! command) -> bool
+abstract Faithlife.Data.DbConnectionCloser.Dispose() -> void
+abstract Faithlife.Data.DbConnectionCloser.DisposeAsync() -> System.Threading.Tasks.ValueTask
+abstract Faithlife.Data.DbConnector.BeginTransaction() -> Faithlife.Data.DbTransactionDisposer!
+abstract Faithlife.Data.DbConnector.BeginTransaction(System.Data.IsolationLevel isolationLevel) -> Faithlife.Data.DbTransactionDisposer!
+abstract Faithlife.Data.DbConnector.BeginTransactionAsync(System.Data.IsolationLevel isolationLevel, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Faithlife.Data.DbTransactionDisposer!>
+abstract Faithlife.Data.DbConnector.BeginTransactionAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Faithlife.Data.DbTransactionDisposer!>
+abstract Faithlife.Data.DbConnector.CommitTransaction() -> void
+abstract Faithlife.Data.DbConnector.CommitTransactionAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+abstract Faithlife.Data.DbConnector.Connection.get -> System.Data.IDbConnection!
+abstract Faithlife.Data.DbConnector.Dispose() -> void
+abstract Faithlife.Data.DbConnector.DisposeAsync() -> System.Threading.Tasks.ValueTask
+abstract Faithlife.Data.DbConnector.GetConnectionAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Data.IDbConnection!>
+abstract Faithlife.Data.DbConnector.OpenConnection() -> Faithlife.Data.DbConnectionCloser!
+abstract Faithlife.Data.DbConnector.OpenConnectionAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Faithlife.Data.DbConnectionCloser!>
+abstract Faithlife.Data.DbConnector.ProviderMethods.get -> Faithlife.Data.DbProviderMethods!
+abstract Faithlife.Data.DbConnector.RollbackTransaction() -> void
+abstract Faithlife.Data.DbConnector.RollbackTransactionAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+abstract Faithlife.Data.DbConnector.Transaction.get -> System.Data.IDbTransaction?
+abstract Faithlife.Data.DbTransactionDisposer.Dispose() -> void
+abstract Faithlife.Data.DbTransactionDisposer.DisposeAsync() -> System.Threading.Tasks.ValueTask
+Faithlife.Data.BulkInsert.BulkInsertSettings
+Faithlife.Data.BulkInsert.BulkInsertSettings.BulkInsertSettings() -> void
+Faithlife.Data.BulkInsert.BulkInsertSettings.MaxParametersPerBatch.get -> int?
+Faithlife.Data.BulkInsert.BulkInsertSettings.MaxParametersPerBatch.set -> void
+Faithlife.Data.BulkInsert.BulkInsertSettings.MaxRowsPerBatch.get -> int?
+Faithlife.Data.BulkInsert.BulkInsertSettings.MaxRowsPerBatch.set -> void
+Faithlife.Data.BulkInsert.BulkInsertUtility
+Faithlife.Data.DataRecordExtensions
+Faithlife.Data.DbCommandCache
+Faithlife.Data.DbCommandCache.DbCommandCache() -> void
+Faithlife.Data.DbConnectionCloser
+Faithlife.Data.DbConnectionCloser.DbConnectionCloser() -> void
+Faithlife.Data.DbConnector
+Faithlife.Data.DbConnector.Command(Faithlife.Data.SqlFormatting.Sql! sql) -> Faithlife.Data.DbConnectorCommand
+Faithlife.Data.DbConnector.Command(Faithlife.Data.SqlFormatting.Sql! sql, Faithlife.Data.DbParameters parameters) -> Faithlife.Data.DbConnectorCommand
+Faithlife.Data.DbConnector.Command(Faithlife.Data.SqlFormatting.Sql! sql, params (string! Name, object? Value)[]! parameters) -> Faithlife.Data.DbConnectorCommand
+Faithlife.Data.DbConnector.Command(string! text) -> Faithlife.Data.DbConnectorCommand
+Faithlife.Data.DbConnector.Command(string! text, Faithlife.Data.DbParameters parameters) -> Faithlife.Data.DbConnectorCommand
+Faithlife.Data.DbConnector.Command(string! text, params (string! Name, object? Value)[]! parameters) -> Faithlife.Data.DbConnectorCommand
+Faithlife.Data.DbConnector.CommandFormat(System.FormattableString! sql) -> Faithlife.Data.DbConnectorCommand
+Faithlife.Data.DbConnector.CommandFormat(System.FormattableString! sql, Faithlife.Data.DbParameters parameters) -> Faithlife.Data.DbConnectorCommand
+Faithlife.Data.DbConnector.CommandFormat(System.FormattableString! sql, params (string! Name, object? Value)[]! parameters) -> Faithlife.Data.DbConnectorCommand
+Faithlife.Data.DbConnector.DbConnector() -> void
+Faithlife.Data.DbConnector.StoredProcedure(string! name) -> Faithlife.Data.DbConnectorCommand
+Faithlife.Data.DbConnector.StoredProcedure(string! name, Faithlife.Data.DbParameters parameters) -> Faithlife.Data.DbConnectorCommand
+Faithlife.Data.DbConnector.StoredProcedure(string! name, params (string! Name, object? Value)[]! parameters) -> Faithlife.Data.DbConnectorCommand
+Faithlife.Data.DbConnectorCommand
+Faithlife.Data.DbConnectorCommand.Cache() -> Faithlife.Data.DbConnectorCommand
+Faithlife.Data.DbConnectorCommand.CommandType.get -> System.Data.CommandType
+Faithlife.Data.DbConnectorCommand.Connector.get -> Faithlife.Data.DbConnector!
+Faithlife.Data.DbConnectorCommand.Create() -> System.Data.IDbCommand!
+Faithlife.Data.DbConnectorCommand.CreateAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Data.IDbCommand!>
+Faithlife.Data.DbConnectorCommand.DbConnectorCommand() -> void
+Faithlife.Data.DbConnectorCommand.Enumerate<T>() -> System.Collections.Generic.IEnumerable<T>!
+Faithlife.Data.DbConnectorCommand.Enumerate<T>(System.Func<System.Data.IDataRecord!, T>! map) -> System.Collections.Generic.IEnumerable<T>!
+Faithlife.Data.DbConnectorCommand.EnumerateAsync<T>(System.Func<System.Data.IDataRecord!, T>! map, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+Faithlife.Data.DbConnectorCommand.EnumerateAsync<T>(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+Faithlife.Data.DbConnectorCommand.Execute() -> int
+Faithlife.Data.DbConnectorCommand.ExecuteAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<int>
+Faithlife.Data.DbConnectorCommand.IsCached.get -> bool
+Faithlife.Data.DbConnectorCommand.IsPrepared.get -> bool
+Faithlife.Data.DbConnectorCommand.Parameters.get -> Faithlife.Data.DbParameters
+Faithlife.Data.DbConnectorCommand.Prepare() -> Faithlife.Data.DbConnectorCommand
+Faithlife.Data.DbConnectorCommand.Query<T>() -> System.Collections.Generic.IReadOnlyList<T>!
+Faithlife.Data.DbConnectorCommand.Query<T>(System.Func<System.Data.IDataRecord!, T>! map) -> System.Collections.Generic.IReadOnlyList<T>!
+Faithlife.Data.DbConnectorCommand.QueryAsync<T>(System.Func<System.Data.IDataRecord!, T>! map, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<T>!>
+Faithlife.Data.DbConnectorCommand.QueryAsync<T>(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<T>!>
+Faithlife.Data.DbConnectorCommand.QueryFirst<T>() -> T
+Faithlife.Data.DbConnectorCommand.QueryFirst<T>(System.Func<System.Data.IDataRecord!, T>! map) -> T
+Faithlife.Data.DbConnectorCommand.QueryFirstAsync<T>(System.Func<System.Data.IDataRecord!, T>! map, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
+Faithlife.Data.DbConnectorCommand.QueryFirstAsync<T>(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
+Faithlife.Data.DbConnectorCommand.QueryFirstOrDefault<T>() -> T
+Faithlife.Data.DbConnectorCommand.QueryFirstOrDefault<T>(System.Func<System.Data.IDataRecord!, T>! map) -> T
+Faithlife.Data.DbConnectorCommand.QueryFirstOrDefaultAsync<T>(System.Func<System.Data.IDataRecord!, T>! map, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
+Faithlife.Data.DbConnectorCommand.QueryFirstOrDefaultAsync<T>(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
+Faithlife.Data.DbConnectorCommand.QueryMultiple() -> Faithlife.Data.DbConnectorResultSets!
+Faithlife.Data.DbConnectorCommand.QueryMultipleAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Faithlife.Data.DbConnectorResultSets!>
+Faithlife.Data.DbConnectorCommand.QuerySingle<T>() -> T
+Faithlife.Data.DbConnectorCommand.QuerySingle<T>(System.Func<System.Data.IDataRecord!, T>! map) -> T
+Faithlife.Data.DbConnectorCommand.QuerySingleAsync<T>(System.Func<System.Data.IDataRecord!, T>! map, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
+Faithlife.Data.DbConnectorCommand.QuerySingleAsync<T>(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
+Faithlife.Data.DbConnectorCommand.QuerySingleOrDefault<T>() -> T
+Faithlife.Data.DbConnectorCommand.QuerySingleOrDefault<T>(System.Func<System.Data.IDataRecord!, T>! map) -> T
+Faithlife.Data.DbConnectorCommand.QuerySingleOrDefaultAsync<T>(System.Func<System.Data.IDataRecord!, T>! map, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
+Faithlife.Data.DbConnectorCommand.QuerySingleOrDefaultAsync<T>(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
+Faithlife.Data.DbConnectorCommand.Text.get -> string!
+Faithlife.Data.DbConnectorCommand.Timeout.get -> System.TimeSpan?
+Faithlife.Data.DbConnectorCommand.WithTimeout(System.TimeSpan timeSpan) -> Faithlife.Data.DbConnectorCommand
+Faithlife.Data.DbConnectorResultSets
+Faithlife.Data.DbConnectorResultSets.Dispose() -> void
+Faithlife.Data.DbConnectorResultSets.DisposeAsync() -> System.Threading.Tasks.ValueTask
+Faithlife.Data.DbConnectorResultSets.Enumerate<T>() -> System.Collections.Generic.IEnumerable<T>!
+Faithlife.Data.DbConnectorResultSets.Enumerate<T>(System.Func<System.Data.IDataRecord!, T>! map) -> System.Collections.Generic.IEnumerable<T>!
+Faithlife.Data.DbConnectorResultSets.EnumerateAsync<T>(System.Func<System.Data.IDataRecord!, T>! map, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+Faithlife.Data.DbConnectorResultSets.EnumerateAsync<T>(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+Faithlife.Data.DbConnectorResultSets.Read<T>() -> System.Collections.Generic.IReadOnlyList<T>!
+Faithlife.Data.DbConnectorResultSets.Read<T>(System.Func<System.Data.IDataRecord!, T>! map) -> System.Collections.Generic.IReadOnlyList<T>!
+Faithlife.Data.DbConnectorResultSets.ReadAsync<T>(System.Func<System.Data.IDataRecord!, T>! map, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<T>!>
+Faithlife.Data.DbConnectorResultSets.ReadAsync<T>(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<T>!>
+Faithlife.Data.DbConnectorSettings
+Faithlife.Data.DbConnectorSettings.AutoOpen.get -> bool
+Faithlife.Data.DbConnectorSettings.AutoOpen.set -> void
+Faithlife.Data.DbConnectorSettings.CurrentTransaction.get -> System.Data.IDbTransaction?
+Faithlife.Data.DbConnectorSettings.CurrentTransaction.set -> void
+Faithlife.Data.DbConnectorSettings.DbConnectorSettings() -> void
+Faithlife.Data.DbConnectorSettings.LazyOpen.get -> bool
+Faithlife.Data.DbConnectorSettings.LazyOpen.set -> void
+Faithlife.Data.DbConnectorSettings.NoDispose.get -> bool
+Faithlife.Data.DbConnectorSettings.NoDispose.set -> void
+Faithlife.Data.DbConnectorSettings.ProviderMethods.get -> Faithlife.Data.DbProviderMethods?
+Faithlife.Data.DbConnectorSettings.ProviderMethods.set -> void
+Faithlife.Data.DbConnectorSettings.SqlSyntax.get -> Faithlife.Data.SqlFormatting.SqlSyntax?
+Faithlife.Data.DbConnectorSettings.SqlSyntax.set -> void
+Faithlife.Data.DbConnectorSettings.WhenDisposed.get -> System.Action?
+Faithlife.Data.DbConnectorSettings.WhenDisposed.set -> void
+Faithlife.Data.DbParameters
+Faithlife.Data.DbParameters.Add(Faithlife.Data.DbParameters parameters) -> Faithlife.Data.DbParameters
+Faithlife.Data.DbParameters.Add(params (string! Name, object? Value)[]! parameters) -> Faithlife.Data.DbParameters
+Faithlife.Data.DbParameters.Add(string! name, object? value) -> Faithlife.Data.DbParameters
+Faithlife.Data.DbParameters.Add(System.Collections.Generic.IEnumerable<(string! Name, object? Value)>! parameters) -> Faithlife.Data.DbParameters
+Faithlife.Data.DbParameters.Add<T>(System.Collections.Generic.IEnumerable<(string! Name, T Value)>! parameters) -> Faithlife.Data.DbParameters
+Faithlife.Data.DbParameters.Add<T>(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string!, T>>! parameters) -> Faithlife.Data.DbParameters
+Faithlife.Data.DbParameters.AddDto(object! dto) -> Faithlife.Data.DbParameters
+Faithlife.Data.DbParameters.AddDto(string! name, object! dto) -> Faithlife.Data.DbParameters
+Faithlife.Data.DbParameters.AddDto(System.Func<string!, string!>! name, object! dto) -> Faithlife.Data.DbParameters
+Faithlife.Data.DbParameters.AddDtos(string! name, System.Collections.IEnumerable! dtos) -> Faithlife.Data.DbParameters
+Faithlife.Data.DbParameters.AddDtos(System.Collections.IEnumerable! dtos) -> Faithlife.Data.DbParameters
+Faithlife.Data.DbParameters.AddDtos(System.Func<string!, int, string!>! name, System.Collections.IEnumerable! dtos) -> Faithlife.Data.DbParameters
+Faithlife.Data.DbParameters.AddMany(string! name, System.Collections.IEnumerable! values) -> Faithlife.Data.DbParameters
+Faithlife.Data.DbParameters.AddMany(System.Func<int, string!>! name, System.Collections.IEnumerable! values) -> Faithlife.Data.DbParameters
+Faithlife.Data.DbParameters.Count.get -> int
+Faithlife.Data.DbParameters.DbParameters() -> void
+Faithlife.Data.DbParameters.GetEnumerator() -> System.Collections.Generic.IEnumerator<(string! Name, object? Value)>!
+Faithlife.Data.DbParameters.this[int index].get -> (string! Name, object? Value)
+Faithlife.Data.DbParameters.ToDictionary() -> System.Collections.Generic.Dictionary<string!, object?>!
+Faithlife.Data.DbProviderMethods
+Faithlife.Data.DbProviderMethods.DbProviderMethods() -> void
+Faithlife.Data.DbTransactionDisposer
+Faithlife.Data.DbTransactionDisposer.DbTransactionDisposer() -> void
+Faithlife.Data.DelegatingDbConnector
+Faithlife.Data.DelegatingDbConnector.DelegatingDbConnector(Faithlife.Data.DbConnector! inner) -> void
+Faithlife.Data.DelegatingDbConnector.Inner.get -> Faithlife.Data.DbConnector!
+Faithlife.Data.SqlFormatting.DelegatingSqlSyntax
+Faithlife.Data.SqlFormatting.DelegatingSqlSyntax.DelegatingSqlSyntax(Faithlife.Data.SqlFormatting.SqlSyntax! inner) -> void
+Faithlife.Data.SqlFormatting.DelegatingSqlSyntax.Inner.get -> Faithlife.Data.SqlFormatting.SqlSyntax!
+Faithlife.Data.SqlFormatting.Sql
+Faithlife.Data.SqlFormatting.Sql.Sql() -> void
+Faithlife.Data.SqlFormatting.SqlSyntax
+Faithlife.Data.SqlFormatting.SqlSyntax.Render(Faithlife.Data.SqlFormatting.Sql! sql) -> (string! Text, Faithlife.Data.DbParameters Parameters)
+Faithlife.Data.SqlFormatting.SqlSyntax.SqlSyntax() -> void
+override Faithlife.Data.DelegatingDbConnector.AttachTransaction(System.Data.IDbTransaction! transaction) -> Faithlife.Data.DbTransactionDisposer!
+override Faithlife.Data.DelegatingDbConnector.BeginTransaction() -> Faithlife.Data.DbTransactionDisposer!
+override Faithlife.Data.DelegatingDbConnector.BeginTransaction(System.Data.IsolationLevel isolationLevel) -> Faithlife.Data.DbTransactionDisposer!
+override Faithlife.Data.DelegatingDbConnector.BeginTransactionAsync(System.Data.IsolationLevel isolationLevel, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Faithlife.Data.DbTransactionDisposer!>
+override Faithlife.Data.DelegatingDbConnector.BeginTransactionAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Faithlife.Data.DbTransactionDisposer!>
+override Faithlife.Data.DelegatingDbConnector.CommandCache.get -> Faithlife.Data.DbCommandCache?
+override Faithlife.Data.DelegatingDbConnector.CommitTransaction() -> void
+override Faithlife.Data.DelegatingDbConnector.CommitTransactionAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+override Faithlife.Data.DelegatingDbConnector.Connection.get -> System.Data.IDbConnection!
+override Faithlife.Data.DelegatingDbConnector.Dispose() -> void
+override Faithlife.Data.DelegatingDbConnector.DisposeAsync() -> System.Threading.Tasks.ValueTask
+override Faithlife.Data.DelegatingDbConnector.GetConnectionAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Data.IDbConnection!>
+override Faithlife.Data.DelegatingDbConnector.OpenConnection() -> Faithlife.Data.DbConnectionCloser!
+override Faithlife.Data.DelegatingDbConnector.OpenConnectionAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Faithlife.Data.DbConnectionCloser!>
+override Faithlife.Data.DelegatingDbConnector.ProviderMethods.get -> Faithlife.Data.DbProviderMethods!
+override Faithlife.Data.DelegatingDbConnector.RollbackTransaction() -> void
+override Faithlife.Data.DelegatingDbConnector.RollbackTransactionAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+override Faithlife.Data.DelegatingDbConnector.SqlSyntax.get -> Faithlife.Data.SqlFormatting.SqlSyntax!
+override Faithlife.Data.DelegatingDbConnector.Transaction.get -> System.Data.IDbTransaction?
+override Faithlife.Data.SqlFormatting.DelegatingSqlSyntax.EscapeLikeFragment(string! fragment) -> string!
+override Faithlife.Data.SqlFormatting.DelegatingSqlSyntax.ParameterPrefix.get -> char
+override Faithlife.Data.SqlFormatting.DelegatingSqlSyntax.QuoteName(string! name) -> string!
+static Faithlife.Data.BulkInsert.BulkInsertUtility.BulkInsert(this Faithlife.Data.DbConnectorCommand command, System.Collections.Generic.IEnumerable<Faithlife.Data.DbParameters>! rows, Faithlife.Data.BulkInsert.BulkInsertSettings? settings = null) -> int
+static Faithlife.Data.BulkInsert.BulkInsertUtility.BulkInsertAsync(this Faithlife.Data.DbConnectorCommand command, System.Collections.Generic.IEnumerable<Faithlife.Data.DbParameters>! rows, Faithlife.Data.BulkInsert.BulkInsertSettings? settings = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
+static Faithlife.Data.BulkInsert.BulkInsertUtility.BulkInsertAsync(this Faithlife.Data.DbConnectorCommand command, System.Collections.Generic.IEnumerable<Faithlife.Data.DbParameters>! rows, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
+static Faithlife.Data.DataRecordExtensions.Get<T>(this System.Data.IDataRecord! record) -> T
+static Faithlife.Data.DataRecordExtensions.Get<T>(this System.Data.IDataRecord! record, int index) -> T
+static Faithlife.Data.DataRecordExtensions.Get<T>(this System.Data.IDataRecord! record, int index, int count) -> T
+static Faithlife.Data.DataRecordExtensions.Get<T>(this System.Data.IDataRecord! record, string! fromName, string! toName) -> T
+static Faithlife.Data.DataRecordExtensions.Get<T>(this System.Data.IDataRecord! record, string! name) -> T
+static Faithlife.Data.DataRecordExtensions.Get<T>(this System.Data.IDataRecord! record, string! name, int count) -> T
+static Faithlife.Data.DataRecordExtensions.Get<T>(this System.Data.IDataRecord! record, System.Index index) -> T
+static Faithlife.Data.DataRecordExtensions.Get<T>(this System.Data.IDataRecord! record, System.Range range) -> T
+static Faithlife.Data.DbCommandCache.Create() -> Faithlife.Data.DbCommandCache!
+static Faithlife.Data.DbCommandCache.FromConnector(Faithlife.Data.DbConnector! connector) -> Faithlife.Data.DbCommandCache?
+static Faithlife.Data.DbConnector.Create(System.Data.IDbConnection! connection, Faithlife.Data.DbConnectorSettings? settings = null) -> Faithlife.Data.DbConnector!
+static Faithlife.Data.DbParameters.Create(params (string! Name, object? Value)[]! parameters) -> Faithlife.Data.DbParameters
+static Faithlife.Data.DbParameters.Create(string! name, object? value) -> Faithlife.Data.DbParameters
+static Faithlife.Data.DbParameters.Create(System.Collections.Generic.IEnumerable<(string! Name, object? Value)>! parameters) -> Faithlife.Data.DbParameters
+static Faithlife.Data.DbParameters.Create<T>(System.Collections.Generic.IEnumerable<(string! Name, T Value)>! parameters) -> Faithlife.Data.DbParameters
+static Faithlife.Data.DbParameters.Create<T>(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string!, T>>! parameters) -> Faithlife.Data.DbParameters
+static Faithlife.Data.DbParameters.FromDto(object! dto) -> Faithlife.Data.DbParameters
+static Faithlife.Data.DbParameters.FromDto(string! name, object! dto) -> Faithlife.Data.DbParameters
+static Faithlife.Data.DbParameters.FromDto(System.Func<string!, string!>! name, object! dto) -> Faithlife.Data.DbParameters
+static Faithlife.Data.DbParameters.FromDtos(string! name, System.Collections.IEnumerable! dtos) -> Faithlife.Data.DbParameters
+static Faithlife.Data.DbParameters.FromDtos(System.Collections.IEnumerable! dtos) -> Faithlife.Data.DbParameters
+static Faithlife.Data.DbParameters.FromDtos(System.Func<string!, int, string!>! name, System.Collections.IEnumerable! dtos) -> Faithlife.Data.DbParameters
+static Faithlife.Data.DbParameters.FromMany(string! name, System.Collections.IEnumerable! values) -> Faithlife.Data.DbParameters
+static Faithlife.Data.DbParameters.FromMany(System.Func<int, string!>! name, System.Collections.IEnumerable! values) -> Faithlife.Data.DbParameters
+static Faithlife.Data.DbProviderMethods.FromConnector(Faithlife.Data.DbConnector! connector) -> Faithlife.Data.DbProviderMethods!
+static Faithlife.Data.SqlFormatting.Sql.ColumnNames(System.Type! type) -> Faithlife.Data.SqlFormatting.Sql!
+static Faithlife.Data.SqlFormatting.Sql.ColumnNames(System.Type! type, string! tableName) -> Faithlife.Data.SqlFormatting.Sql!
+static Faithlife.Data.SqlFormatting.Sql.ColumnNames<T>() -> Faithlife.Data.SqlFormatting.Sql!
+static Faithlife.Data.SqlFormatting.Sql.ColumnNames<T>(string! tableName) -> Faithlife.Data.SqlFormatting.Sql!
+static Faithlife.Data.SqlFormatting.Sql.ColumnParams(object! dto) -> Faithlife.Data.SqlFormatting.Sql!
+static Faithlife.Data.SqlFormatting.Sql.Concat(params Faithlife.Data.SqlFormatting.Sql![]! sqls) -> Faithlife.Data.SqlFormatting.Sql!
+static Faithlife.Data.SqlFormatting.Sql.Concat(System.Collections.Generic.IEnumerable<Faithlife.Data.SqlFormatting.Sql!>! sqls) -> Faithlife.Data.SqlFormatting.Sql!
+static Faithlife.Data.SqlFormatting.Sql.Format(System.FormattableString! formattableString) -> Faithlife.Data.SqlFormatting.Sql!
+static Faithlife.Data.SqlFormatting.Sql.Join(string! separator, params Faithlife.Data.SqlFormatting.Sql![]! sqls) -> Faithlife.Data.SqlFormatting.Sql!
+static Faithlife.Data.SqlFormatting.Sql.Join(string! separator, System.Collections.Generic.IEnumerable<Faithlife.Data.SqlFormatting.Sql!>! sqls) -> Faithlife.Data.SqlFormatting.Sql!
+static Faithlife.Data.SqlFormatting.Sql.LikePrefixParam(string! prefix) -> Faithlife.Data.SqlFormatting.Sql!
+static Faithlife.Data.SqlFormatting.Sql.Name(string! identifier) -> Faithlife.Data.SqlFormatting.Sql!
+static Faithlife.Data.SqlFormatting.Sql.operator +(Faithlife.Data.SqlFormatting.Sql! a, Faithlife.Data.SqlFormatting.Sql! b) -> Faithlife.Data.SqlFormatting.Sql!
+static Faithlife.Data.SqlFormatting.Sql.Param(object? value) -> Faithlife.Data.SqlFormatting.Sql!
+static Faithlife.Data.SqlFormatting.Sql.Raw(string! text) -> Faithlife.Data.SqlFormatting.Sql!
+static Faithlife.Data.SqlFormatting.SqlSyntax.Default.get -> Faithlife.Data.SqlFormatting.SqlSyntax!
+static Faithlife.Data.SqlFormatting.SqlSyntax.MySql.get -> Faithlife.Data.SqlFormatting.SqlSyntax!
+static Faithlife.Data.SqlFormatting.SqlSyntax.Postgres.get -> Faithlife.Data.SqlFormatting.SqlSyntax!
+static Faithlife.Data.SqlFormatting.SqlSyntax.Sqlite.get -> Faithlife.Data.SqlFormatting.SqlSyntax!
+static Faithlife.Data.SqlFormatting.SqlSyntax.SqlServer.get -> Faithlife.Data.SqlFormatting.SqlSyntax!
+static readonly Faithlife.Data.DbParameters.Empty -> Faithlife.Data.DbParameters
+static readonly Faithlife.Data.DbProviderMethods.Default -> Faithlife.Data.DbProviderMethods!
+static readonly Faithlife.Data.SqlFormatting.Sql.Empty -> Faithlife.Data.SqlFormatting.Sql!
+virtual Faithlife.Data.DbConnector.AttachTransaction(System.Data.IDbTransaction! transaction) -> Faithlife.Data.DbTransactionDisposer!
+virtual Faithlife.Data.DbConnector.CommandCache.get -> Faithlife.Data.DbCommandCache?
+virtual Faithlife.Data.DbConnector.SqlSyntax.get -> Faithlife.Data.SqlFormatting.SqlSyntax!
+virtual Faithlife.Data.DbProviderMethods.BeginTransactionAsync(System.Data.IDbConnection! connection, System.Data.IsolationLevel isolationLevel, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.Data.IDbTransaction!>
+virtual Faithlife.Data.DbProviderMethods.BeginTransactionAsync(System.Data.IDbConnection! connection, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.Data.IDbTransaction!>
+virtual Faithlife.Data.DbProviderMethods.CloseConnectionAsync(System.Data.IDbConnection! connection) -> System.Threading.Tasks.ValueTask
+virtual Faithlife.Data.DbProviderMethods.CommitTransactionAsync(System.Data.IDbTransaction! transaction, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+virtual Faithlife.Data.DbProviderMethods.DisposeCommandAsync(System.Data.IDbCommand! command) -> System.Threading.Tasks.ValueTask
+virtual Faithlife.Data.DbProviderMethods.DisposeConnectionAsync(System.Data.IDbConnection! connection) -> System.Threading.Tasks.ValueTask
+virtual Faithlife.Data.DbProviderMethods.DisposeReaderAsync(System.Data.IDataReader! reader) -> System.Threading.Tasks.ValueTask
+virtual Faithlife.Data.DbProviderMethods.DisposeTransactionAsync(System.Data.IDbTransaction! transaction) -> System.Threading.Tasks.ValueTask
+virtual Faithlife.Data.DbProviderMethods.ExecuteNonQueryAsync(System.Data.IDbCommand! command, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<int>
+virtual Faithlife.Data.DbProviderMethods.ExecuteReaderAsync(System.Data.IDbCommand! command, System.Data.CommandBehavior commandBehavior, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.Data.IDataReader!>
+virtual Faithlife.Data.DbProviderMethods.ExecuteReaderAsync(System.Data.IDbCommand! command, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.Data.IDataReader!>
+virtual Faithlife.Data.DbProviderMethods.NextResultAsync(System.Data.IDataReader! reader, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<bool>
+virtual Faithlife.Data.DbProviderMethods.OpenConnectionAsync(System.Data.IDbConnection! connection, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+virtual Faithlife.Data.DbProviderMethods.PrepareCommandAsync(System.Data.IDbCommand! command, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+virtual Faithlife.Data.DbProviderMethods.ReadAsync(System.Data.IDataReader! reader, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<bool>
+virtual Faithlife.Data.DbProviderMethods.RollbackTransactionAsync(System.Data.IDbTransaction! transaction, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+virtual Faithlife.Data.SqlFormatting.SqlSyntax.EscapeLikeFragment(string! fragment) -> string!
+virtual Faithlife.Data.SqlFormatting.SqlSyntax.ParameterPrefix.get -> char
+virtual Faithlife.Data.SqlFormatting.SqlSyntax.QuoteName(string! name) -> string!
