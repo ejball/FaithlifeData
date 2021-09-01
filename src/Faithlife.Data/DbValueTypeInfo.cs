@@ -293,7 +293,7 @@ namespace Faithlife.Data
 					// use Name of ColumnAttribute if specified (any namespace)
 					var columnName = property.MemberInfo
 						.GetCustomAttributes()
-						.Where(x => x.GetType().Name == "ColumnAttribute")
+						.Where(x => IsInstanceOf(x, "ColumnAttribute"))
 						.Select(x => DtoInfo.GetInfo(x.GetType()).TryGetProperty("Name")?.GetValue(x) as string)
 						.FirstOrDefault(x => x != null) ?? property.Name;
 
@@ -301,6 +301,18 @@ namespace Faithlife.Data
 						(columnNamesByPropertyName ??= new Dictionary<string, string>()).Add(property.Name, columnName);
 
 					propertiesByNormalizedFieldName.Add(NormalizeFieldName(columnName), (property, DbValueTypeInfo.GetInfo(property.ValueType)));
+
+					static bool IsInstanceOf(object obj, string name)
+					{
+						var type = obj.GetType();
+						while (type is not null)
+						{
+							if (type.Name == name)
+								return true;
+							type = type.BaseType;
+						}
+						return false;
+					}
 				}
 
 				m_propertiesByNormalizedFieldName = propertiesByNormalizedFieldName;
