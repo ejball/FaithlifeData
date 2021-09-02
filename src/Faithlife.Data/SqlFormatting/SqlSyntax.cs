@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using Faithlife.Reflection;
 
 namespace Faithlife.Data.SqlFormatting
 {
@@ -63,6 +64,11 @@ namespace Faithlife.Data.SqlFormatting
 		/// </summary>
 		public virtual string QuoteName(string name) =>
 			throw new InvalidOperationException("The default SqlSyntax does not support quoted identifiers. Use a SqlSyntax that matches your database.");
+
+		/// <summary>
+		/// Gets the column name for the specified property.
+		/// </summary>
+		public string GetColumnName(IDtoProperty property) => property.Name;
 
 		/// <summary>
 		/// Renders SQL as text and parameters.

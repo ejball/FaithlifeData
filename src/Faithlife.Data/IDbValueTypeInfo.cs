@@ -10,7 +10,5 @@ namespace Faithlife.Data
 		int? FieldCount { get; }
 
 		object? GetValue(IDataRecord record, int index, int count);
-
-		string GetColumnName(string propertyName);
 	}
 }

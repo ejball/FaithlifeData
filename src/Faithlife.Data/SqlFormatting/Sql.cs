@@ -124,10 +124,9 @@ namespace Faithlife.Data.SqlFormatting
 				var properties = DtoInfo.GetInfo(m_type).Properties;
 				if (properties.Count == 0)
 					throw new InvalidOperationException($"The specified type has no columns: {m_type.FullName}");
-				var dbInfo = DbValueTypeInfo.GetInfo(m_type);
 				if (m_tableName is null)
-					return string.Join(", ", properties.Select(x => context.Syntax.QuoteName(dbInfo.GetColumnName(x.Name))));
-				return string.Join(", ", properties.Select(x => context.Syntax.QuoteName(m_tableName) + "." + context.Syntax.QuoteName(dbInfo.GetColumnName(x.Name))));
+					return string.Join(", ", properties.Select(x => context.Syntax.QuoteName(context.Syntax.GetColumnName(x))));
+				return string.Join(", ", properties.Select(x => context.Syntax.QuoteName(m_tableName) + "." + context.Syntax.QuoteName(context.Syntax.GetColumnName(x))));
 			}
 
 			private readonly Type m_type;
