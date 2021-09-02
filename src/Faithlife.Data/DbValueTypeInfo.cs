@@ -281,6 +281,8 @@ namespace Faithlife.Data
 				m_nullableType = type;
 			}
 
+			var typeColumnNamer = m_coreType.GetCustomAttributes(inherit: true).OfType<IDbColumnNamer>().FirstOrDefault();
+
 			m_strategy = DbValueTypeInfo.GetStrategy(m_coreType);
 			if (m_strategy == DbValueTypeStrategy.DtoProperties)
 			{
@@ -290,17 +292,28 @@ namespace Faithlife.Data
 
 				foreach (var property in properties)
 				{
-					// use Name of ColumnAttribute if specified (any namespace)
-					var columnName = property.MemberInfo
-						.GetCustomAttributes()
-						.Where(x => x.GetType().Name == "ColumnAttribute")
-						.Select(x => DtoInfo.GetInfo(x.GetType()).TryGetProperty("Name")?.GetValue(x) as string)
-						.FirstOrDefault(x => x != null) ?? property.Name;
+					var propertyAttributes = property.MemberInfo.GetCustomAttributes(inherit: true);
+
+					var columnName = GetColumnAttributeName() ?? GetColumnNamerName() ?? property.Name;
 
 					if (columnName != property.Name)
 						(columnNamesByPropertyName ??= new Dictionary<string, string>()).Add(property.Name, columnName);
 
 					propertiesByNormalizedFieldName.Add(NormalizeFieldName(columnName), (property, DbValueTypeInfo.GetInfo(property.ValueType)));
+
+					// use Name of ColumnAttribute if specified (any namespace)
+					string? GetColumnAttributeName() =>
+						propertyAttributes
+							.Where(x => x.GetType().Name == "ColumnAttribute")
+							.Select(x => DtoInfo.GetInfo(x.GetType()).TryGetProperty("Name")?.GetValue(x) as string)
+							.FirstOrDefault(x => x != null);
+
+					// use IDbColumnNamer attribute on property or type
+					string? GetColumnNamerName()
+					{
+						var columnNamer = propertyAttributes.OfType<IDbColumnNamer>().FirstOrDefault() ?? typeColumnNamer;
+						return columnNamer?.GetColumnName(property.Name);
+					}
 				}
 
 				m_propertiesByNormalizedFieldName = propertiesByNormalizedFieldName;
