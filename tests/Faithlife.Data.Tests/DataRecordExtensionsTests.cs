@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using NUnit.Framework;
@@ -498,6 +499,13 @@ namespace Faithlife.Data.Tests
 		public void CustomDtoTests()
 		{
 			using var connection = GetOpenConnection();
+
+			using (var command = connection.CreateCommand())
+			{
+				command.CommandText = "create table SnakeCase (TheText text null, TheInteger integer null, TheReal real null, TheBlob blob null);";
+				command.ExecuteNonQuery();
+			}
+
 			using var command = connection.CreateCommand();
 			command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
 			using var reader = command.ExecuteReader();
@@ -574,6 +582,33 @@ namespace Faithlife.Data.Tests
 		private enum Answer
 		{
 			FortyTwo = 42,
+		}
+
+		private sealed class SnakeCaseTableAttribute : TableAttribute
+		{
+			public SnakeCaseTableAttribute()
+				: base("")
+			{
+			}
+
+			public string GetColumnName(string propertyName)
+			{
+				return string.Join("_", s_word
+					.Matches(propertyName ?? throw new ArgumentNullException(nameof(propertyName)))
+					.Cast<Match>()
+					.Select(x => x.ToString().ToLowerInvariant()));
+			}
+
+			private static readonly Regex s_word = new Regex("[A-Z]([A-Z]*(?![a-z])|[a-z]*)|[a-z]+|[0-9]+", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture);
+		}
+
+		[SnakeCaseTable]
+		private class SnakeCaseDto
+		{
+			public string? TheText { get; set; }
+			public long TheInteger { get; set; }
+			public double TheReal { get; set; }
+			public byte[]? TheBlob { get; set; }
 		}
 
 		private static readonly ItemDto s_dto = new ItemDto

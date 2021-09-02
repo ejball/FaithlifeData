@@ -288,6 +288,14 @@ namespace Faithlife.Data
 				var propertiesByNormalizedFieldName = new Dictionary<string, (IDtoProperty<T> Dto, IDbValueTypeInfo Db)>(capacity: properties.Count, StringComparer.OrdinalIgnoreCase);
 				Dictionary<string, string>? columnNamesByPropertyName = null;
 
+				var getColumnName = m_coreType
+					.GetCustomAttributes()
+					.Where(x => IsInstanceOf(x, "TableAttribute"))
+					.Select(x => (Attribute: x, Method: x.GetType().GetMethod("GetColumnName", new[] { typeof(string) })))
+					.Where(x => x.Method != null)
+					.Select(x => (Func<string, string>) (name => (string) x.Method!.Invoke(x.Attribute, new object[] { name })))
+					.FirstOrDefault();
+
 				foreach (var property in properties)
 				{
 					// use Name of ColumnAttribute if specified (any namespace)
@@ -295,28 +303,28 @@ namespace Faithlife.Data
 						.GetCustomAttributes()
 						.Where(x => IsInstanceOf(x, "ColumnAttribute"))
 						.Select(x => DtoInfo.GetInfo(x.GetType()).TryGetProperty("Name")?.GetValue(x) as string)
-						.FirstOrDefault(x => x != null) ?? property.Name;
+						.FirstOrDefault(x => x != null) ?? getColumnName?.Invoke(property.Name) ?? property.Name;
 
 					if (columnName != property.Name)
 						(columnNamesByPropertyName ??= new Dictionary<string, string>()).Add(property.Name, columnName);
 
 					propertiesByNormalizedFieldName.Add(NormalizeFieldName(columnName), (property, DbValueTypeInfo.GetInfo(property.ValueType)));
-
-					static bool IsInstanceOf(object obj, string name)
-					{
-						var type = obj.GetType();
-						while (type is not null)
-						{
-							if (type.Name == name)
-								return true;
-							type = type.BaseType;
-						}
-						return false;
-					}
 				}
 
 				m_propertiesByNormalizedFieldName = propertiesByNormalizedFieldName;
 				m_columnNamesByPropertyName = columnNamesByPropertyName;
+
+				static bool IsInstanceOf(object obj, string name)
+				{
+					var type = obj.GetType();
+					while (type is not null)
+					{
+						if (type.Name == name)
+							return true;
+						type = type.BaseType;
+					}
+					return false;
+				}
 			}
 			else if (m_strategy == DbValueTypeStrategy.Tuple)
 			{
