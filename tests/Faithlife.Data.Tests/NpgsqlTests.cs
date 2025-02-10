@@ -1,3 +1,4 @@
+#if NPGSQL
 using Faithlife.Data.SqlFormatting;
 using FluentAssertions;
 using Npgsql;
@@ -5,7 +6,7 @@ using NUnit.Framework;
 
 namespace Faithlife.Data.Tests;
 
-[TestFixture, Explicit("Requires 'docker-compose up' from '/docker'.")]
+[TestFixture]
 internal sealed class NpgsqlTests
 {
 	[Test]
@@ -31,3 +32,4 @@ internal sealed class NpgsqlTests
 		new NpgsqlConnection("host=localhost;user id=root;password=test;database=test"),
 		new DbConnectorSettings { AutoOpen = true, LazyOpen = true, SqlSyntax = SqlSyntax.Postgres });
 }
+#endif

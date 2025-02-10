@@ -1,3 +1,4 @@
+#if MYSQL
 using System.Data;
 using Faithlife.Data.SqlFormatting;
 using FluentAssertions;
@@ -6,7 +7,7 @@ using NUnit.Framework;
 
 namespace Faithlife.Data.Tests;
 
-[TestFixture, Explicit("Requires 'docker-compose up' from '/docker'.")]
+[TestFixture]
 internal sealed class MySqlTests
 {
 	[Test]
@@ -56,3 +57,4 @@ internal sealed class MySqlTests
 		new MySqlConnection("Server=localhost;User Id=root;Password=test;SSL Mode=none;Database=test;Ignore Prepare=false;AllowPublicKeyRetrieval=true"),
 		new DbConnectorSettings { AutoOpen = true, LazyOpen = true, SqlSyntax = SqlSyntax.MySql });
 }
+#endif

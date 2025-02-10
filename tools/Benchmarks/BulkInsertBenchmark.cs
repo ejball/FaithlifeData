@@ -3,10 +3,16 @@ using BenchmarkDotNet.Attributes;
 using Faithlife.Data;
 using Faithlife.Data.BulkInsert;
 using Faithlife.Data.SqlFormatting;
+#if SQLSERVER
 using Microsoft.Data.SqlClient;
+#endif
 using Microsoft.Data.Sqlite;
+#if MYSQL
 using MySqlConnector;
+#endif
+#if NPGSQL
 using Npgsql;
+#endif
 
 namespace Benchmarks;
 
@@ -22,6 +28,7 @@ public abstract class BulkInsertBenchmark : IDisposable
 		}
 	}
 
+#if MYSQL
 	public class MySqlBulkInsertBenchmark : BulkInsertBenchmark
 	{
 		public MySqlBulkInsertBenchmark()
@@ -31,7 +38,9 @@ public abstract class BulkInsertBenchmark : IDisposable
 		{
 		}
 	}
+#endif
 
+#if SQLSERVER
 	public class SqlServerBulkInsertBenchmark : BulkInsertBenchmark
 	{
 		public SqlServerBulkInsertBenchmark()
@@ -42,7 +51,9 @@ public abstract class BulkInsertBenchmark : IDisposable
 		{
 		}
 	}
+#endif
 
+#if NPGSQL
 	public class NpgsqlBulkInsertBenchmark : BulkInsertBenchmark
 	{
 		public NpgsqlBulkInsertBenchmark()
@@ -52,6 +63,7 @@ public abstract class BulkInsertBenchmark : IDisposable
 		{
 		}
 	}
+#endif
 
 	protected BulkInsertBenchmark(IDbConnection connection, string columnsSql, int recordCount, Func<int, object>? createParameter = null)
 	{

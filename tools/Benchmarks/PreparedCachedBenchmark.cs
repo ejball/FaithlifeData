@@ -2,10 +2,16 @@ using System.Data;
 using BenchmarkDotNet.Attributes;
 using Faithlife.Data;
 using Faithlife.Data.SqlFormatting;
+#if SQLSERVER
 using Microsoft.Data.SqlClient;
+#endif
 using Microsoft.Data.Sqlite;
+#if MYSQL
 using MySqlConnector;
+#endif
+#if NGPSQL
 using Npgsql;
+#endif
 
 namespace Benchmarks;
 
@@ -21,6 +27,7 @@ public abstract class PreparedCachedBenchmark : IDisposable
 		}
 	}
 
+#if MYSQL
 	public class MySqlPreparedCachedBenchmark : PreparedCachedBenchmark
 	{
 		public MySqlPreparedCachedBenchmark()
@@ -30,7 +37,9 @@ public abstract class PreparedCachedBenchmark : IDisposable
 		{
 		}
 	}
+#endif
 
+#if SQLSERVER
 	public class SqlServerPreparedCachedBenchmark : PreparedCachedBenchmark
 	{
 		public SqlServerPreparedCachedBenchmark()
@@ -41,7 +50,9 @@ public abstract class PreparedCachedBenchmark : IDisposable
 		{
 		}
 	}
+#endif
 
+#if NGPSQL
 	public class NpgsqlPreparedCachedBenchmark : PreparedCachedBenchmark
 	{
 		public NpgsqlPreparedCachedBenchmark()
@@ -51,6 +62,7 @@ public abstract class PreparedCachedBenchmark : IDisposable
 		{
 		}
 	}
+#endif
 
 	protected PreparedCachedBenchmark(IDbConnection connection, string columnsSql, int recordCount, Func<int, object>? createParameter = null)
 	{

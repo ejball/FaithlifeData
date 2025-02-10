@@ -1,3 +1,4 @@
+#if SQLSERVER
 using System.Data;
 using Faithlife.Data.SqlFormatting;
 using FluentAssertions;
@@ -6,7 +7,7 @@ using NUnit.Framework;
 
 namespace Faithlife.Data.Tests;
 
-[TestFixture, Explicit("Requires 'docker-compose up' from '/docker'.")]
+[TestFixture]
 internal sealed class SqlServerTests
 {
 	[Test]
@@ -35,3 +36,4 @@ internal sealed class SqlServerTests
 		new SqlConnection("data source=localhost;user id=sa;password=P@ssw0rd;initial catalog=test;TrustServerCertificate=True"),
 		new DbConnectorSettings { AutoOpen = true, LazyOpen = true, SqlSyntax = SqlSyntax.SqlServer });
 }
+#endif
