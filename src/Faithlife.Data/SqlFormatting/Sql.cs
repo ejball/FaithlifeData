@@ -390,7 +390,7 @@ public abstract class Sql
 			if (properties.Count == 0)
 				throw new InvalidOperationException($"The specified type has no columns: {type.FullName}");
 
-			var dbInfo = DbValueTypeInfo.GetInfo(type);
+			var dbInfo = DbDtoInfo.GetInfo(type);
 			var syntax = context.Syntax;
 			var tableName = GetTableName(index);
 			var tablePrefix = tableName.Length == 0 ? "" : syntax.QuoteName(tableName) + ".";

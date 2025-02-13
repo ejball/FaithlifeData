@@ -13,6 +13,11 @@ public interface IDbTypeMapper
 	Type Type { get; }
 
 	/// <summary>
+	/// The number of fields used by the mapper, or null if the mapper can handle any number of fields.
+	/// </summary>
+	int? FieldCount { get; }
+
+	/// <summary>
 	/// Maps the data record values to an instance of the specified type.
 	/// </summary>
 	object? Map(IDataRecord record, int index, int count);

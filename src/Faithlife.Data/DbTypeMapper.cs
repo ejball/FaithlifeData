@@ -10,6 +10,9 @@ public abstract class DbTypeMapper<T> : IDbTypeMapper
 	/// <inheritdoc />
 	public Type Type => typeof(T);
 
+	/// <inheritdoc />
+	public abstract int? FieldCount { get; }
+
 	/// <summary>
 	/// Maps the data record values to an instance of the specified type.
 	/// </summary>
