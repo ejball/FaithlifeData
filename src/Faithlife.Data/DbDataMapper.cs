@@ -124,25 +124,12 @@ public abstract class DbDataMapper
 		public DtoMapper(DbDataMapper mapper)
 		{
 			var properties = DtoInfo.GetInfo<T>().Properties;
+			var dbDtoInfo = DbDtoInfo.GetInfo<T>();
+
 			var propertiesByNormalizedFieldName = new Dictionary<string, (IDtoProperty<T> Dto, IDbTypeMapper Db)>(capacity: properties.Count, StringComparer.OrdinalIgnoreCase);
-			Dictionary<string, string>? columnAttributeNames = null;
-
 			foreach (var property in properties)
-			{
-				// use Name of ColumnAttribute if specified (any namespace)
-				var columnName = property.MemberInfo
-					.GetCustomAttributes()
-					.Where(x => x.GetType().Name == "ColumnAttribute")
-					.Select(x => DtoInfo.GetInfo(x.GetType()).TryGetProperty("Name")?.GetValue(x) as string)
-					.FirstOrDefault(x => x is not null);
-				if (columnName is not null)
-					(columnAttributeNames ??= new Dictionary<string, string>()).Add(property.Name, columnName);
-
-				propertiesByNormalizedFieldName.Add(NormalizeFieldName(columnName ?? property.Name), (property, mapper.GetTypeMapper(property.ValueType)));
-			}
-
+				propertiesByNormalizedFieldName.Add(NormalizeFieldName(dbDtoInfo.GetColumnAttributeName(property.Name) ?? property.Name), (property, mapper.GetTypeMapper(property.ValueType)));
 			m_propertiesByNormalizedFieldName = propertiesByNormalizedFieldName;
-			////m_columnAttributeNames = columnAttributeNames;
 		}
 
 		public override int? FieldCount => null;
