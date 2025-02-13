@@ -13,7 +13,7 @@ public class DataMapperBenchmark : IDisposable
 	{
 		m_connector = DbConnector.Create(new SqliteConnection("Data Source=:memory:"), new DbConnectorSettings { AutoOpen = true, LazyOpen = true });
 		m_connector.Command("drop table if exists DataMapperBenchmark;").Execute();
-		m_connector.Command("create table DataMapperBenchmark (ItemId integer primary key, Number integer not null);").Execute();
+		m_connector.Command("create table DataMapperBenchmark (ItemId integer primary key, AnInteger integer, AReal real, AString text, ABlob blob);").Execute();
 
 		const int recordCount = 50000;
 		m_connector
@@ -27,10 +27,25 @@ public class DataMapperBenchmark : IDisposable
 	}
 
 	[Benchmark]
-	public long Int64() => m_connector.Command("select AnInteger from DataMapperBenchmark;").Enumerate<long>().Last();
+	public long Int64() => m_connector.Command("select AnInteger from DataMapperBenchmark where AnInteger is not null;").Enumerate<long>().Last();
 
 	[Benchmark]
 	public long? NullableInt64() => m_connector.Command("select AnInteger from DataMapperBenchmark;").Enumerate<long?>().Last();
+
+	[Benchmark]
+	public double Double() => m_connector.Command("select AReal from DataMapperBenchmark where AReal is not null;").Enumerate<double>().Last();
+
+	[Benchmark]
+	public double? NullableDouble() => m_connector.Command("select AReal from DataMapperBenchmark;").Enumerate<double?>().Last();
+
+	[Benchmark]
+	public string? String() => m_connector.Command("select AString from DataMapperBenchmark;").Enumerate<string?>().Last();
+
+	[Benchmark]
+	public byte[]? Blob() => m_connector.Command("select ABlob from DataMapperBenchmark;").Enumerate<byte[]?>().Last();
+
+	[Benchmark]
+	public (long? AnInteger, double AReal) NullableInt64AndDouble() => m_connector.Command("select AnInteger, ifnull(AReal, 0.0) from DataMapperBenchmark;").Enumerate<(long?, double)>().Last();
 
 	public void Dispose() => m_connector.Dispose();
 
