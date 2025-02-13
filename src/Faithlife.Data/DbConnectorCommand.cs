@@ -262,7 +262,7 @@ public readonly struct DbConnectorCommand
 	public DbConnectorResultSets QueryMultiple()
 	{
 		var command = Create();
-		return new DbConnectorResultSets(command, command.ExecuteReader(), Connector.ProviderMethods);
+		return new DbConnectorResultSets(command, command.ExecuteReader(), Connector.ProviderMethods, Connector.DataMapper);
 	}
 
 	/// <summary>
@@ -272,8 +272,9 @@ public readonly struct DbConnectorCommand
 	public async ValueTask<DbConnectorResultSets> QueryMultipleAsync(CancellationToken cancellationToken = default)
 	{
 		var methods = Connector.ProviderMethods;
+		var mapper = Connector.DataMapper;
 		var command = await CreateAsync(cancellationToken).ConfigureAwait(false);
-		return new DbConnectorResultSets(command, await methods.ExecuteReaderAsync(CachedCommand.Unwrap(command), cancellationToken).ConfigureAwait(false), methods);
+		return new DbConnectorResultSets(command, await methods.ExecuteReaderAsync(CachedCommand.Unwrap(command), cancellationToken).ConfigureAwait(false), methods, mapper);
 	}
 
 	/// <summary>
@@ -494,13 +495,14 @@ public readonly struct DbConnectorCommand
 	{
 		using var command = Create();
 		using var reader = command.ExecuteReader();
+		var mapper = Connector.DataMapper;
 
 		var list = new List<T>();
 
 		do
 		{
 			while (reader.Read())
-				list.Add(map is not null ? map(reader) : reader.Get<T>());
+				list.Add(map is not null ? map(reader) : mapper.Map<T>(reader));
 		}
 		while (reader.NextResult());
 
@@ -510,6 +512,7 @@ public readonly struct DbConnectorCommand
 	private async ValueTask<IReadOnlyList<T>> DoQueryAsync<T>(Func<IDataRecord, T>? map, CancellationToken cancellationToken)
 	{
 		var methods = Connector.ProviderMethods;
+		var mapper = Connector.DataMapper;
 
 		var command = await CreateAsync(cancellationToken).ConfigureAwait(false);
 		await using var commandScope = new AsyncScope(command).ConfigureAwait(false);
@@ -521,7 +524,7 @@ public readonly struct DbConnectorCommand
 		do
 		{
 			while (await methods.ReadAsync(reader, cancellationToken).ConfigureAwait(false))
-				list.Add(map is not null ? map(reader) : reader.Get<T>());
+				list.Add(map is not null ? map(reader) : mapper.Map<T>(reader));
 		}
 		while (await methods.NextResultAsync(reader, cancellationToken).ConfigureAwait(false));
 
@@ -530,6 +533,8 @@ public readonly struct DbConnectorCommand
 
 	private T DoQueryFirst<T>(Func<IDataRecord, T>? map, bool single, bool orDefault)
 	{
+		var mapper = Connector.DataMapper;
+
 		using var command = Create();
 		using var reader = single ? command.ExecuteReader() : command.ExecuteReader(CommandBehavior.SingleRow);
 
@@ -539,7 +544,7 @@ public readonly struct DbConnectorCommand
 				return orDefault ? default(T)! : throw new InvalidOperationException("No records were found; use 'OrDefault' to permit this.");
 		}
 
-		var value = map is not null ? map(reader) : reader.Get<T>();
+		var value = map is not null ? map(reader) : mapper.Map<T>(reader);
 
 		if (single && reader.Read())
 			throw CreateTooManyRecordsException();
@@ -553,6 +558,7 @@ public readonly struct DbConnectorCommand
 	private async ValueTask<T> DoQueryFirstAsync<T>(Func<IDataRecord, T>? map, bool single, bool orDefault, CancellationToken cancellationToken)
 	{
 		var methods = Connector.ProviderMethods;
+		var mapper = Connector.DataMapper;
 
 		var command = await CreateAsync(cancellationToken).ConfigureAwait(false);
 		await using var commandScope = new AsyncScope(command).ConfigureAwait(false);
@@ -565,7 +571,7 @@ public readonly struct DbConnectorCommand
 				return orDefault ? default(T)! : throw CreateNoRecordsException();
 		}
 
-		var value = map is not null ? map(reader) : reader.Get<T>();
+		var value = map is not null ? map(reader) : mapper.Map<T>(reader);
 
 		if (single && await methods.ReadAsync(reader, cancellationToken).ConfigureAwait(false))
 			throw CreateTooManyRecordsException();
@@ -584,13 +590,15 @@ public readonly struct DbConnectorCommand
 
 	private IEnumerable<T> DoEnumerate<T>(Func<IDataRecord, T>? map)
 	{
+		var mapper = Connector.DataMapper;
+
 		using var command = Create();
 		using var reader = command.ExecuteReader();
 
 		do
 		{
 			while (reader.Read())
-				yield return map is not null ? map(reader) : reader.Get<T>();
+				yield return map is not null ? map(reader) : mapper.Map<T>(reader);
 		}
 		while (reader.NextResult());
 	}
@@ -598,6 +606,7 @@ public readonly struct DbConnectorCommand
 	private async IAsyncEnumerable<T> DoEnumerateAsync<T>(Func<IDataRecord, T>? map, [EnumeratorCancellation] CancellationToken cancellationToken)
 	{
 		var methods = Connector.ProviderMethods;
+		var mapper = Connector.DataMapper;
 
 		var command = await CreateAsync(cancellationToken).ConfigureAwait(false);
 		await using var commandScope = new AsyncScope(command).ConfigureAwait(false);
@@ -607,7 +616,7 @@ public readonly struct DbConnectorCommand
 		do
 		{
 			while (await methods.ReadAsync(reader, cancellationToken).ConfigureAwait(false))
-				yield return map is not null ? map(reader) : reader.Get<T>();
+				yield return map is not null ? map(reader) : mapper.Map<T>(reader);
 		}
 		while (await methods.NextResultAsync(reader, cancellationToken).ConfigureAwait(false));
 	}

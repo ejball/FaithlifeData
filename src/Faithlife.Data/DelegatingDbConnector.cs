@@ -26,6 +26,9 @@ public class DelegatingDbConnector : DbConnector
 	public override SqlSyntax SqlSyntax => Inner.SqlSyntax;
 
 	/// <inheritdoc />
+	public override DbDataMapper DataMapper => Inner.DataMapper;
+
+	/// <inheritdoc />
 	public override ValueTask<IDbConnection> GetConnectionAsync(CancellationToken cancellationToken = default) => Inner.GetConnectionAsync(cancellationToken);
 
 	/// <inheritdoc />

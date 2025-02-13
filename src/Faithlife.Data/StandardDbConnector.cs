@@ -19,6 +19,7 @@ internal sealed class StandardDbConnector : DbConnector
 		m_providerMethods = settings.ProviderMethods ?? DbProviderMethods.Default;
 		m_defaultIsolationLevel = settings.DefaultIsolationLevel;
 		SqlSyntax = settings.SqlSyntax ?? SqlSyntax.Default;
+		DataMapper = settings.DataMapper ?? DbDataMapper.Default;
 
 		if (settings.AutoOpen && !m_isConnectionOpen)
 			OpenConnection();
@@ -36,6 +37,8 @@ internal sealed class StandardDbConnector : DbConnector
 	public override IDbTransaction? Transaction => m_transaction;
 
 	public override SqlSyntax SqlSyntax { get; }
+
+	public override DbDataMapper DataMapper { get; }
 
 	public override ValueTask<IDbConnection> GetConnectionAsync(CancellationToken cancellationToken = default)
 	{

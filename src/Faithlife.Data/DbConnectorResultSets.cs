@@ -84,11 +84,12 @@ public sealed class DbConnectorResultSets : IDisposable, IAsyncDisposable
 		await m_methods.DisposeCommandAsync(m_command).ConfigureAwait(false);
 	}
 
-	internal DbConnectorResultSets(IDbCommand command, IDataReader reader, DbProviderMethods methods)
+	internal DbConnectorResultSets(IDbCommand command, IDataReader reader, DbProviderMethods methods, DbDataMapper mapper)
 	{
 		m_command = command;
 		m_reader = reader;
 		m_methods = methods;
+		m_mapper = mapper;
 	}
 
 	private IReadOnlyList<T> DoRead<T>(Func<IDataRecord, T>? map)
@@ -99,7 +100,7 @@ public sealed class DbConnectorResultSets : IDisposable, IAsyncDisposable
 
 		var list = new List<T>();
 		while (m_reader.Read())
-			list.Add(map is not null ? map(m_reader) : m_reader.Get<T>());
+			list.Add(map is not null ? map(m_reader) : m_mapper.Map<T>(m_reader));
 		return list;
 	}
 
@@ -111,7 +112,7 @@ public sealed class DbConnectorResultSets : IDisposable, IAsyncDisposable
 
 		var list = new List<T>();
 		while (await m_methods.ReadAsync(m_reader, cancellationToken).ConfigureAwait(false))
-			list.Add(map is not null ? map(m_reader) : m_reader.Get<T>());
+			list.Add(map is not null ? map(m_reader) : m_mapper.Map<T>(m_reader));
 		return list;
 	}
 
@@ -122,7 +123,7 @@ public sealed class DbConnectorResultSets : IDisposable, IAsyncDisposable
 		m_next = true;
 
 		while (m_reader.Read())
-			yield return map is not null ? map(m_reader) : m_reader.Get<T>();
+			yield return map is not null ? map(m_reader) : m_mapper.Map<T>(m_reader);
 	}
 
 	private async IAsyncEnumerable<T> DoEnumerateAsync<T>(Func<IDataRecord, T>? map, [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -132,7 +133,7 @@ public sealed class DbConnectorResultSets : IDisposable, IAsyncDisposable
 		m_next = true;
 
 		while (await m_methods.ReadAsync(m_reader, cancellationToken).ConfigureAwait(false))
-			yield return map is not null ? map(m_reader) : m_reader.Get<T>();
+			yield return map is not null ? map(m_reader) : m_mapper.Map<T>(m_reader);
 	}
 
 	private static InvalidOperationException CreateNoMoreResultsException() =>
@@ -141,5 +142,6 @@ public sealed class DbConnectorResultSets : IDisposable, IAsyncDisposable
 	private readonly IDbCommand m_command;
 	private readonly IDataReader m_reader;
 	private readonly DbProviderMethods m_methods;
+	private readonly DbDataMapper m_mapper;
 	private bool m_next;
 }
