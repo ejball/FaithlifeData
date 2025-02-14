@@ -480,13 +480,20 @@ public abstract class DbDataMapper
 		protected override T MapField(IDataRecord record, int index)
 		{
 			var value = record.GetValue(index);
-			return value switch
+			try
 			{
-				_ when value == DBNull.Value => throw new InvalidOperationException($"Failed to cast null to {Type.FullName}."),
-				T enumValue => enumValue,
-				string stringValue => (T) Enum.Parse(typeof(T), stringValue, ignoreCase: true),
-				_ => (T) Enum.ToObject(typeof(T), value),
-			};
+				return value switch
+				{
+					_ when value == DBNull.Value => throw new InvalidOperationException($"Failed to cast null to {Type.FullName}."),
+					T enumValue => enumValue,
+					string stringValue => (T) Enum.Parse(typeof(T), stringValue, ignoreCase: true),
+					_ => (T) Enum.ToObject(typeof(T), value),
+				};
+			}
+			catch (Exception exception) when (exception is ArgumentException or InvalidCastException)
+			{
+				throw BadCast(value.GetType(), exception);
+			}
 		}
 	}
 
@@ -507,7 +514,7 @@ public abstract class DbDataMapper
 			}
 			catch (Exception exception) when (exception is ArgumentException or InvalidCastException)
 			{
-				throw BadCast(value?.GetType(), exception);
+				throw BadCast(value.GetType(), exception);
 			}
 		}
 	}

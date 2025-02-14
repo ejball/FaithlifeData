@@ -39,6 +39,12 @@ public class DataMapperBenchmark : IDisposable
 	public double? NullableDouble() => m_connector.Command("select AReal from DataMapperBenchmark;").Enumerate<double?>().Last();
 
 	[Benchmark]
+	public StringSplitOptions Enum() => m_connector.Command("select AnInteger from DataMapperBenchmark where AnInteger is not null;").Enumerate<StringSplitOptions>().Last();
+
+	[Benchmark]
+	public StringSplitOptions? NullableEnum() => m_connector.Command("select AnInteger from DataMapperBenchmark;").Enumerate<StringSplitOptions?>().Last();
+
+	[Benchmark]
 	public string? String() => m_connector.Command("select AString from DataMapperBenchmark;").Enumerate<string?>().Last();
 
 	[Benchmark]
