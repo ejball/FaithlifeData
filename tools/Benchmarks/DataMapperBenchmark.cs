@@ -15,15 +15,15 @@ public class DataMapperBenchmark : IDisposable
 		m_connector.Command("drop table if exists DataMapperBenchmark;").Execute();
 		m_connector.Command("create table DataMapperBenchmark (ItemId integer primary key, AnInteger integer, AReal real, AString text, ABlob blob);").Execute();
 
-		const int recordCount = 50000;
+		const int recordCount = 10000;
 		m_connector
 			.Command("insert into DataMapperBenchmark (AnInteger, AReal, AString, ABlob) values (@AnInteger, @AReal, @AString, @ABlob)...;")
-			.BulkInsert(Enumerable.Range(1, recordCount)
+			.BulkInsert(Enumerable.Range(0, recordCount)
 				.Select(x => DbParameters.Create(
 					("AnInteger", x < recordCount ? x : null),
-					("AReal", x < recordCount ? 1.0 / x : null),
-					("AString", x < recordCount ? $"string{x}" : null),
-					("ABlob", x < recordCount ? Encoding.UTF8.GetBytes($"blob{x}") : null))));
+					("AReal", x < recordCount ? 1.0 / (x + 1.0) : null),
+					("AString", x < recordCount ? $"{x:0000}" : null),
+					("ABlob", x < recordCount ? Encoding.UTF8.GetBytes($"{x:0000}") : null))));
 	}
 
 	[Benchmark]
