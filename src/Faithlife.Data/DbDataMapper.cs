@@ -65,18 +65,12 @@ public abstract class DbDataMapper
 
 			if (typeof(T) == typeof(long))
 				return (DbTypeMapper<T>) (object) new Int64Mapper();
-			if (typeof(T) == typeof(long?))
-				return (DbTypeMapper<T>) (object) new NullableInt64Mapper();
 
 			if (typeof(T) == typeof(int))
 				return (DbTypeMapper<T>) (object) new Int32Mapper();
-			if (typeof(T) == typeof(int?))
-				return (DbTypeMapper<T>) (object) new NullableInt32Mapper();
 
 			if (typeof(T) == typeof(double))
 				return (DbTypeMapper<T>) (object) new DoubleMapper();
-			if (typeof(T) == typeof(double?))
-				return (DbTypeMapper<T>) (object) new NullableDoubleMapper();
 
 			if (typeof(T) == typeof(byte[]))
 				return (DbTypeMapper<T>) (object) new ByteArrayMapper();
@@ -97,11 +91,7 @@ public abstract class DbDataMapper
 			}
 
 			if (typeof(T).IsEnum)
-				return new EnumMapper<T>();
-
-			var nullableUnderlyingType = Nullable.GetUnderlyingType(typeof(T));
-			if (nullableUnderlyingType is not null && nullableUnderlyingType.IsEnum)
-				return new NullableEnumMapper<T>(nullableUnderlyingType);
+				return (DbTypeMapper<T>) (Activator.CreateInstance(typeof(EnumMapper<>).MakeGenericType(typeof(T)), [])!);
 
 			if (typeof(T) == typeof(Dictionary<string, object?>))
 				return (DbTypeMapper<T>) (object) new DictionaryMapper<Dictionary<string, object?>>();
@@ -114,6 +104,11 @@ public abstract class DbDataMapper
 
 			if (typeof(T) == typeof(Stream))
 				return (DbTypeMapper<T>) (object) new StreamMapper();
+
+			if (Nullable.GetUnderlyingType(typeof(T)) is { } nonNullType)
+			{
+				return (DbTypeMapper<T>) (Activator.CreateInstance(typeof(NullableValueMapper<>).MakeGenericType(nonNullType), [GetTypeMapper(nonNullType)])!);
+			}
 
 			return new DtoMapper<T>(this);
 		}
@@ -168,7 +163,6 @@ public abstract class DbDataMapper
 #endif
 
 		private readonly IReadOnlyDictionary<string, (IDtoProperty<T> Dto, IDbTypeMapper Db)>? m_propertiesByNormalizedFieldName;
-		////private readonly IReadOnlyDictionary<string, string>? m_columnAttributeNames;
 	}
 
 	private sealed class ObjectMapper : TypeMapper<object>
@@ -419,16 +413,14 @@ public abstract class DbDataMapper
 		protected sealed override T MapField(IDataRecord record, int index) =>
 			!record.IsDBNull(index) ? MapNotNullField(record, index) : throw NotNullable();
 
-		protected abstract T MapNotNullField(IDataRecord record, int index);
+		public abstract T MapNotNullField(IDataRecord record, int index);
 	}
 
-	private abstract class NullableValueMapper<T> : SingleFieldMapper<T?>
+	private sealed class NullableValueMapper<T>(NonNullableValueMapper<T> mapper) : SingleFieldMapper<T?>
 		where T : struct
 	{
-		protected sealed override T? MapField(IDataRecord record, int index) =>
-			!record.IsDBNull(index) ? MapNotNullField(record, index) : null;
-
-		protected abstract T MapNotNullField(IDataRecord record, int index);
+		protected override T? MapField(IDataRecord record, int index) =>
+			!record.IsDBNull(index) ? mapper.MapNotNullField(record, index) : null;
 	}
 
 	private abstract class ReferenceValueMapper<T> : SingleFieldMapper<T?>
@@ -437,79 +429,46 @@ public abstract class DbDataMapper
 		protected sealed override T? MapField(IDataRecord record, int index) =>
 			!record.IsDBNull(index) ? MapNotNullField(record, index) : null;
 
-		protected abstract T MapNotNullField(IDataRecord record, int index);
+		public abstract T MapNotNullField(IDataRecord record, int index);
 	}
 
 	private sealed class StringMapper : ReferenceValueMapper<string>
 	{
-		protected override string MapNotNullField(IDataRecord record, int index) => record.GetString(index);
+		public override string MapNotNullField(IDataRecord record, int index) => record.GetString(index);
 	}
 
 	private sealed class Int64Mapper : NonNullableValueMapper<long>
 	{
-		protected override long MapNotNullField(IDataRecord record, int index) => record.GetInt64(index);
-	}
-
-	private sealed class NullableInt64Mapper : NullableValueMapper<long>
-	{
-		protected override long MapNotNullField(IDataRecord record, int index) => record.GetInt64(index);
+		public override long MapNotNullField(IDataRecord record, int index) => record.GetInt64(index);
 	}
 
 	private sealed class Int32Mapper : NonNullableValueMapper<int>
 	{
-		protected override int MapNotNullField(IDataRecord record, int index) => record.GetInt32(index);
-	}
-
-	private sealed class NullableInt32Mapper : NullableValueMapper<int>
-	{
-		protected override int MapNotNullField(IDataRecord record, int index) => record.GetInt32(index);
+		public override int MapNotNullField(IDataRecord record, int index) => record.GetInt32(index);
 	}
 
 	private sealed class DoubleMapper : NonNullableValueMapper<double>
 	{
-		protected override double MapNotNullField(IDataRecord record, int index) => record.GetDouble(index);
+		public override double MapNotNullField(IDataRecord record, int index) => record.GetDouble(index);
 	}
 
-	private sealed class NullableDoubleMapper : NullableValueMapper<double>
+	private sealed class EnumMapper<T> : NonNullableValueMapper<T>
+		where T : struct
 	{
-		protected override double MapNotNullField(IDataRecord record, int index) => record.GetDouble(index);
-	}
-
-	private sealed class EnumMapper<T> : SingleFieldMapper<T>
-	{
-		protected override T MapField(IDataRecord record, int index)
+		public override T MapNotNullField(IDataRecord record, int index)
 		{
 			var value = record.GetValue(index);
 			try
 			{
 				return value switch
 				{
-					_ when value == DBNull.Value => throw new InvalidOperationException($"Failed to cast null to {Type.FullName}."),
 					T enumValue => enumValue,
+#if !NETSTANDARD2_0
+					string stringValue => Enum.Parse<T>(stringValue, ignoreCase: true),
+#else
 					string stringValue => (T) Enum.Parse(typeof(T), stringValue, ignoreCase: true),
+#endif
 					_ => (T) Enum.ToObject(typeof(T), value),
-				};
-			}
-			catch (Exception exception) when (exception is ArgumentException or InvalidCastException)
-			{
-				throw BadCast(value.GetType(), exception);
-			}
-		}
-	}
-
-	private sealed class NullableEnumMapper<T>(Type underlyingType) : SingleFieldMapper<T>
-	{
-		protected override T MapField(IDataRecord record, int index)
-		{
-			var value = record.GetValue(index);
-			try
-			{
-				return value switch
-				{
-					_ when value == DBNull.Value => default!,
-					T enumValue => enumValue,
-					string stringValue => (T) Enum.Parse(underlyingType, stringValue, ignoreCase: true),
-					_ => (T) Enum.ToObject(underlyingType, value),
 				};
 			}
 			catch (Exception exception) when (exception is ArgumentException or InvalidCastException)
@@ -521,7 +480,7 @@ public abstract class DbDataMapper
 
 	private sealed class ByteArrayMapper : ReferenceValueMapper<byte[]>
 	{
-		protected override byte[] MapNotNullField(IDataRecord record, int index)
+		public override byte[] MapNotNullField(IDataRecord record, int index)
 		{
 			if (record.GetValue(index) is byte[] blob)
 				return blob;
@@ -535,7 +494,7 @@ public abstract class DbDataMapper
 
 	private sealed class StreamMapper : ReferenceValueMapper<Stream>
 	{
-		protected override Stream MapNotNullField(IDataRecord record, int index)
+		public override Stream MapNotNullField(IDataRecord record, int index)
 		{
 			if (record is DbDataReader dbReader)
 				return dbReader.GetStream(index);
