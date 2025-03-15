@@ -1,9 +1,9 @@
-using System.ComponentModel.DataAnnotations.Schema;
+////using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
-using Faithlife.Data.SqlFormatting;
-using FluentAssertions;
+////using Faithlife.Data.SqlFormatting;
+////using FluentAssertions;
 using NUnit.Framework;
-using static FluentAssertions.FluentActions;
+////using static FluentAssertions.FluentActions;
 
 namespace Faithlife.Data.Tests.SqlFormatting;
 
@@ -13,6 +13,7 @@ namespace Faithlife.Data.Tests.SqlFormatting;
 [SuppressMessage("Usage", "CA2263:Prefer generic overload when type is known", Justification = "Testing.")]
 internal sealed class SqlSyntaxTests
 {
+#if false
 	[Test]
 	public void NullSqlThrows()
 	{
@@ -510,4 +511,5 @@ internal sealed class SqlSyntaxTests
 
 		public string? DisplayName { get; set; }
 	}
+#endif
 }

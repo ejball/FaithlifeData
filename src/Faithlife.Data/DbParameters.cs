@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Data;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Faithlife.Data;
@@ -6,8 +7,24 @@ namespace Faithlife.Data;
 /// <summary>
 /// An immutable list of parameters.
 /// </summary>
-public readonly struct DbParameters : IReadOnlyList<(string Name, object? Value)>
+public readonly struct DbParameters
 {
+	public void AddTo(IDbCommand command)
+	{
+		foreach (var (name, value) in Parameters)
+		{
+			if (!(value is IDbDataParameter dbParameter))
+			{
+				dbParameter = command.CreateParameter();
+				dbParameter.Value = value ?? DBNull.Value;
+			}
+
+			dbParameter.ParameterName = name;
+
+			command.Parameters.Add(dbParameter);
+		}
+	}
+
 	/// <summary>
 	/// An empty list of parameters.
 	/// </summary>
@@ -216,7 +233,7 @@ public readonly struct DbParameters : IReadOnlyList<(string Name, object? Value)
 	/// <summary>
 	/// Adds parameters from another instance.
 	/// </summary>
-	public DbParameters Add(DbParameters parameters) => new DbParameters(Parameters.Concat(parameters));
+	public DbParameters Add(DbParameters parameters) => new DbParameters(Parameters.Concat(parameters.Parameters));
 
 	/// <summary>
 	/// Adds parameters from tuples.
@@ -320,16 +337,6 @@ public readonly struct DbParameters : IReadOnlyList<(string Name, object? Value)
 			dictionary[parameter.Name] = parameter.Value;
 		return dictionary;
 	}
-
-	/// <summary>
-	/// Used to enumerate the parameters.
-	/// </summary>
-	public IEnumerator<(string Name, object? Value)> GetEnumerator() => Parameters.GetEnumerator();
-
-	/// <summary>
-	/// Used to enumerate the parameters.
-	/// </summary>
-	IEnumerator IEnumerable.GetEnumerator() => Parameters.GetEnumerator();
 
 	private DbParameters(IEnumerable<(string Name, object? Value)> parameters) => m_parameters = parameters.ToList();
 

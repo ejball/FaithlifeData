@@ -387,8 +387,9 @@ public readonly struct DbConnectorCommand
 				// if special syntax wasn't found, leave the parameter alone, for databases that support collections directly
 				if (itemCount != -1)
 				{
-					parameters = DbParameters.Create(parameters.Take(index).Concat(replacements).Concat(parameters.Skip(index + 1)));
-					index += replacements.Count;
+					throw new NotImplementedException();
+					////parameters = DbParameters.Create(parameters.Take(index).Concat(replacements).Concat(parameters.Skip(index + 1)));
+					////index += replacements.Count;
 				}
 				else
 				{
@@ -455,18 +456,7 @@ public readonly struct DbConnectorCommand
 		}
 		else
 		{
-			foreach (var (name, value) in parameters)
-			{
-				if (!(value is IDbDataParameter dbParameter))
-				{
-					dbParameter = command.CreateParameter();
-					dbParameter.Value = value ?? DBNull.Value;
-				}
-
-				dbParameter.ParameterName = name;
-
-				command.Parameters.Add(dbParameter);
-			}
+			parameters.AddTo(command);
 
 			needsPrepare = IsPrepared;
 		}

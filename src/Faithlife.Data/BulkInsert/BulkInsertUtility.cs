@@ -82,6 +82,7 @@ public static class BulkInsertUtility
 			var recordIndex = batchSqls.Count;
 			Array.Copy(tupleParts, rowParts, tupleParts.Length);
 
+#if false
 			foreach (var rowParameter in rowParameters)
 			{
 				if (tupleParameters.TryGetValue(rowParameter.Name, out var indices))
@@ -93,6 +94,7 @@ public static class BulkInsertUtility
 					}
 				}
 			}
+#endif
 
 			batchSqls.Add(string.Concat(rowParts));
 

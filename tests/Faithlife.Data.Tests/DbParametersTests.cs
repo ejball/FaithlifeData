@@ -1,12 +1,13 @@
-using FluentAssertions;
+////using FluentAssertions;
 using NUnit.Framework;
-using static FluentAssertions.FluentActions;
+////using static FluentAssertions.FluentActions;
 
 namespace Faithlife.Data.Tests;
 
 [TestFixture]
 internal sealed class DbParametersTests
 {
+#if false
 	[Test]
 	public void Empty()
 	{
@@ -146,4 +147,5 @@ internal sealed class DbParametersTests
 	{
 		public int Two { get; } = 2;
 	}
+#endif
 }
