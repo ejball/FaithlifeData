@@ -50,11 +50,11 @@ public class DbConnectorSettings
 	/// <summary>
 	/// The isolation level used when <c>BeginTransaction(Async)</c> is called without one.
 	/// </summary>
-	/// <remarks>If not specified, the behavior is driver-specific.</remarks>
+	/// <remarks>If not specified, the behavior is provider-specific.</remarks>
 	public IsolationLevel? DefaultIsolationLevel { get; set; }
 
 	/// <summary>
-	/// Maps from data record values to objects.
+	/// Maps data record values to objects.
 	/// </summary>
 	public DbDataMapper? DataMapper { get; set; }
 }

@@ -33,7 +33,7 @@ public abstract class DbConnector : IDisposable, IAsyncDisposable
 	public virtual SqlSyntax SqlSyntax => SqlSyntax.Default;
 
 	/// <summary>
-	/// Maps from data record values to objects.
+	/// Maps data record values to objects.
 	/// </summary>
 	public virtual DbDataMapper DataMapper => DbDataMapper.Default;
 

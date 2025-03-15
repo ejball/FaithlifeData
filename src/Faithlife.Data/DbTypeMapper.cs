@@ -3,7 +3,7 @@ using System.Data;
 namespace Faithlife.Data;
 
 /// <summary>
-/// Maps from data record values to an instance of the specified type.
+/// Maps data record values to an instance of the specified type.
 /// </summary>
 public abstract class DbTypeMapper<T> : IDbTypeMapper
 {
