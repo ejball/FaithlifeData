@@ -433,7 +433,7 @@ public readonly struct DbConnectorCommand
 			if (command.Parameters.Count != parameterCount)
 				throw new InvalidOperationException($"Cached commands must always be executed with the same number of parameters (was {command.Parameters.Count}, now {parameters.Count}).");
 
-			parameters.ReapplyTo(command);
+			parameters.ReapplyTo(command, startIndex: 0);
 
 			needsPrepare = false;
 		}

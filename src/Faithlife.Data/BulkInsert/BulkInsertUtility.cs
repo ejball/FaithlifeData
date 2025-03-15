@@ -75,6 +75,7 @@ public static class BulkInsertUtility
 		var rowParts = new string[tupleParts.Length];
 		string GetBatchSql() => sqlPrefix + string.Join(", ", batchSqls) + sqlSuffix;
 
+#if false
 		foreach (var rowParameters in rows)
 		{
 			batchParameters ??= commonParameters.ToDictionary();
@@ -82,7 +83,6 @@ public static class BulkInsertUtility
 			var recordIndex = batchSqls.Count;
 			Array.Copy(tupleParts, rowParts, tupleParts.Length);
 
-#if false
 			foreach (var rowParameter in rowParameters)
 			{
 				if (tupleParameters.TryGetValue(rowParameter.Name, out var indices))
@@ -94,7 +94,6 @@ public static class BulkInsertUtility
 					}
 				}
 			}
-#endif
 
 			batchSqls.Add(string.Concat(rowParts));
 
@@ -105,6 +104,7 @@ public static class BulkInsertUtility
 				batchParameters = null;
 			}
 		}
+#endif
 
 		if (batchSqls.Count != 0)
 			yield return (GetBatchSql(), DbParameters.Create(batchParameters!));

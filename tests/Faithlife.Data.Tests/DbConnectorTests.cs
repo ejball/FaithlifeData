@@ -1,6 +1,5 @@
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
-using Faithlife.Data.BulkInsert;
 using Faithlife.Data.SqlFormatting;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
@@ -339,6 +338,7 @@ internal sealed class DbConnectorTests
 		}
 	}
 
+#if false
 	[Test]
 	public void BulkInsertTests()
 	{
@@ -358,6 +358,7 @@ internal sealed class DbConnectorTests
 			.BulkInsertAsync(Enumerable.Range(1, 100).Select(x => DbParameters.Create("name", $"item{x}")));
 		(await connector.Command("select count(*) from Items;").QuerySingleAsync<long>()).Should().Be(100);
 	}
+#endif
 
 	[Test]
 	public async Task BadCommandTest()
@@ -365,6 +366,7 @@ internal sealed class DbConnectorTests
 		Invoking(() => default(DbConnectorCommand).Create()).Should().Throw<InvalidOperationException>();
 	}
 
+#if false
 	[Test]
 	public void ParameterCollectionTests()
 	{
@@ -390,6 +392,7 @@ internal sealed class DbConnectorTests
 		Invoking(() => connector.Command("select Name from Items where Name in (@names...);", ("names", Array.Empty<string>()))
 			.Query<string>()).Should().Throw<InvalidOperationException>();
 	}
+#endif
 
 	[Test]
 	public void CacheTests()

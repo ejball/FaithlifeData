@@ -7,83 +7,47 @@ namespace Faithlife.Data;
 /// <summary>
 /// An immutable list of parameters.
 /// </summary>
-public readonly struct DbParameters
+public abstract class DbParameters
 {
-	public void AddTo(IDbCommand command)
-	{
-		foreach (var (name, value) in Parameters)
-		{
-			if (!(value is IDbDataParameter dbParameter))
-			{
-				dbParameter = command.CreateParameter();
-				dbParameter.Value = value ?? DBNull.Value;
-			}
+	public abstract void AddTo(IDbCommand command);
 
-			dbParameter.ParameterName = name;
-
-			command.Parameters.Add(dbParameter);
-		}
-	}
-
-	public void ReapplyTo(IDbCommand command)
-	{
-		var parameterCount = Parameters.Count;
-		for (var parameterIndex = 0; parameterIndex < parameterCount; parameterIndex++)
-		{
-			var (name, value) = Parameters[parameterIndex];
-			var dbParameter = command.Parameters[parameterIndex] as IDataParameter;
-			if (dbParameter is null || dbParameter.ParameterName != name)
-			{
-				try
-				{
-					dbParameter = command.Parameters[name] as IDataParameter;
-				}
-				catch (Exception exception)
-				{
-					throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{name}').", exception);
-				}
-				if (dbParameter is null)
-					throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{name}').");
-			}
-			dbParameter.Value = value is IDataParameter ddp ? ddp.Value : value;
-		}
-	}
+	public abstract void ReapplyTo(IDbCommand command, int startIndex);
 
 	/// <summary>
 	/// An empty list of parameters.
 	/// </summary>
 	[SuppressMessage("Performance", "CA1805:Do not initialize unnecessarily", Justification = "Intentional API.")]
-	public static readonly DbParameters Empty = default;
+	public static readonly DbParameters Empty = new StandardDbParameters([]);
 
 	/// <summary>
 	/// Creates a list of parameters with one parameter.
 	/// </summary>
 	public static DbParameters Create(string name, object? value) =>
-		new DbParameters(new[] { (name, value) });
+		new StandardDbParameters([(name, value)]);
 
 	/// <summary>
 	/// Creates a list of parameters from tuples.
 	/// </summary>
 	public static DbParameters Create(params (string Name, object? Value)[] parameters) =>
-		new DbParameters(parameters ?? throw new ArgumentNullException(nameof(parameters)));
+		new StandardDbParameters(parameters ?? throw new ArgumentNullException(nameof(parameters)));
 
 	/// <summary>
 	/// Creates a list of parameters from a sequence of tuples.
 	/// </summary>
 	public static DbParameters Create(IEnumerable<(string Name, object? Value)> parameters) =>
-		new DbParameters(parameters ?? throw new ArgumentNullException(nameof(parameters)));
+		new StandardDbParameters(parameters ?? throw new ArgumentNullException(nameof(parameters)));
 
 	/// <summary>
 	/// Creates a list of parameters from a sequence of tuples.
 	/// </summary>
 	public static DbParameters Create<T>(IEnumerable<(string Name, T Value)> parameters) =>
-		new DbParameters((parameters ?? throw new ArgumentNullException(nameof(parameters))).Select(x => (x.Name, (object?) x.Value)));
+		new StandardDbParameters((parameters ?? throw new ArgumentNullException(nameof(parameters))).Select(x => (x.Name, (object?) x.Value)));
 
 	/// <summary>
 	/// Creates a list of parameters from a dictionary.
 	/// </summary>
 	public static DbParameters Create<T>(IEnumerable<KeyValuePair<string, T>> parameters) =>
-		new DbParameters((parameters ?? throw new ArgumentNullException(nameof(parameters))).Select(x => (x.Key, (object?) x.Value)));
+		new StandardDbParameters((parameters ?? throw new ArgumentNullException(nameof(parameters))).Select(x => (x.Key, (object?) x.Value)));
 
 	/// <summary>
 	/// Creates a list of parameters from a single name and a collection of values.
@@ -99,7 +63,7 @@ public readonly struct DbParameters
 		var parameters = new List<(string, object?)>();
 		foreach (var value in values ?? throw new ArgumentNullException(nameof(values)))
 			parameters.Add(($"{name}_{index++}", value));
-		return new DbParameters(parameters);
+		return new StandardDbParameters(parameters);
 	}
 
 	/// <summary>
@@ -115,7 +79,7 @@ public readonly struct DbParameters
 		var parameters = new List<(string, object?)>();
 		foreach (var value in values ?? throw new ArgumentNullException(nameof(values)))
 			parameters.Add((name(index++), value));
-		return new DbParameters(parameters);
+		return new StandardDbParameters(parameters);
 	}
 
 	/// <summary>
@@ -123,7 +87,7 @@ public readonly struct DbParameters
 	/// </summary>
 	/// <remarks>The name of each parameter is the name of the corresponding DTO property.</remarks>
 	public static DbParameters FromDto(object dto) =>
-		new DbParameters(DtoInfo.GetInfo((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Properties.Select(x => (x.Name, x.GetValue(dto))));
+		new StandardDbParameters(DtoInfo.GetInfo((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Properties.Select(x => (x.Name, x.GetValue(dto))));
 
 	/// <summary>
 	/// Creates a list of parameters from the properties of a DTO.
@@ -135,7 +99,7 @@ public readonly struct DbParameters
 		if (name is null)
 			throw new ArgumentNullException(nameof(name));
 
-		return new DbParameters(DtoInfo.GetInfo((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Properties.Select(x => ($"{name}_{x.Name}", x.GetValue(dto))));
+		return new StandardDbParameters(DtoInfo.GetInfo((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Properties.Select(x => ($"{name}_{x.Name}", x.GetValue(dto))));
 	}
 
 	/// <summary>
@@ -147,7 +111,7 @@ public readonly struct DbParameters
 		if (name is null)
 			throw new ArgumentNullException(nameof(name));
 
-		return new DbParameters(DtoInfo.GetInfo((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Properties.Select(x => (name(x.Name), x.GetValue(dto))));
+		return new StandardDbParameters(DtoInfo.GetInfo((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Properties.Select(x => (name(x.Name), x.GetValue(dto))));
 	}
 
 	/// <summary>
@@ -155,7 +119,7 @@ public readonly struct DbParameters
 	/// </summary>
 	/// <remarks>The name of each parameter is the name of the corresponding DTO property.</remarks>
 	public static DbParameters FromDtoWhere(object dto, Func<string, bool> filter) =>
-		new DbParameters(DtoInfo.GetInfo((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Properties.Where(x => filter(x.Name)).Select(x => (x.Name, x.GetValue(dto))));
+		new StandardDbParameters(DtoInfo.GetInfo((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Properties.Where(x => filter(x.Name)).Select(x => (x.Name, x.GetValue(dto))));
 
 	/// <summary>
 	/// Creates a list of parameters from the properties of a DTO whose names match the specified filter.
@@ -167,7 +131,7 @@ public readonly struct DbParameters
 		if (name is null)
 			throw new ArgumentNullException(nameof(name));
 
-		return new DbParameters(DtoInfo.GetInfo((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Properties.Where(x => filter(x.Name)).Select(x => ($"{name}_{x.Name}", x.GetValue(dto))));
+		return new StandardDbParameters(DtoInfo.GetInfo((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Properties.Where(x => filter(x.Name)).Select(x => ($"{name}_{x.Name}", x.GetValue(dto))));
 	}
 
 	/// <summary>
@@ -179,7 +143,7 @@ public readonly struct DbParameters
 		if (name is null)
 			throw new ArgumentNullException(nameof(name));
 
-		return new DbParameters(DtoInfo.GetInfo((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Properties.Where(x => filter(x.Name)).Select(x => (name(x.Name), x.GetValue(dto))));
+		return new StandardDbParameters(DtoInfo.GetInfo((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Properties.Where(x => filter(x.Name)).Select(x => (name(x.Name), x.GetValue(dto))));
 	}
 
 	/// <summary>
@@ -196,7 +160,7 @@ public readonly struct DbParameters
 			parameters.AddRange(DtoInfo.GetInfo((dto ?? throw new ArgumentException("DTO is null.", nameof(dtos))).GetType()).Properties.Select(x => ($"{x.Name}_{index}", x.GetValue(dto))));
 			index++;
 		}
-		return new DbParameters(parameters);
+		return new StandardDbParameters(parameters);
 	}
 
 	/// <summary>
@@ -216,7 +180,7 @@ public readonly struct DbParameters
 			parameters.AddRange(DtoInfo.GetInfo((dto ?? throw new ArgumentException("DTO is null.", nameof(dtos))).GetType()).Properties.Select(x => ($"{name}_{x.Name}_{index}", x.GetValue(dto))));
 			index++;
 		}
-		return new DbParameters(parameters);
+		return new StandardDbParameters(parameters);
 	}
 
 	/// <summary>
@@ -236,13 +200,13 @@ public readonly struct DbParameters
 			parameters.AddRange(DtoInfo.GetInfo((dto ?? throw new ArgumentException("DTO is null.", nameof(dtos))).GetType()).Properties.Select(x => (name(x.Name, index), x.GetValue(dto))));
 			index++;
 		}
-		return new DbParameters(parameters);
+		return new StandardDbParameters(parameters);
 	}
 
 	/// <summary>
 	/// The number of parameters.
 	/// </summary>
-	public int Count => Parameters.Count;
+	public abstract int Count { get; }
 
 #if false
 	/// <summary>
@@ -254,12 +218,12 @@ public readonly struct DbParameters
 	/// <summary>
 	/// Adds a parameter.
 	/// </summary>
-	public DbParameters Add(string name, object? value) => new DbParameters(Parameters.Append((name, value)));
+	public DbParameters Add(string name, object? value) => new MergedDbParameters([this, Create((name, value))]);
 
 	/// <summary>
 	/// Adds parameters from another instance.
 	/// </summary>
-	public DbParameters Add(DbParameters parameters) => new DbParameters(Parameters.Concat(parameters.Parameters));
+	public DbParameters Add(DbParameters parameters) => new MergedDbParameters([this, parameters]);
 
 	/// <summary>
 	/// Adds parameters from tuples.
@@ -352,21 +316,4 @@ public readonly struct DbParameters
 	/// <remarks>The name of each parameter is determined by calling the specified function with the name of the corresponding DTO property
 	/// and the zero-based index of the DTO.</remarks>
 	public DbParameters AddDtos(Func<string, int, string> name, IEnumerable dtos) => Add(FromDtos(name, dtos));
-
-	/// <summary>
-	/// Creates a dictionary of parameters.
-	/// </summary>
-	public Dictionary<string, object?> ToDictionary()
-	{
-		var dictionary = new Dictionary<string, object?>();
-		foreach (var parameter in Parameters)
-			dictionary[parameter.Name] = parameter.Value;
-		return dictionary;
-	}
-
-	private DbParameters(IEnumerable<(string Name, object? Value)> parameters) => m_parameters = parameters.ToList();
-
-	private IReadOnlyList<(string Name, object? Value)> Parameters => m_parameters ?? [];
-
-	private readonly IReadOnlyList<(string Name, object? Value)>? m_parameters;
 }

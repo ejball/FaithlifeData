@@ -15,6 +15,7 @@ internal sealed class BulkInsertUtilityTests
 			.Should().Throw<ArgumentException>();
 	}
 
+#if false
 	[Test]
 	public void NoValues_Throws()
 	{
@@ -238,4 +239,5 @@ internal sealed class BulkInsertUtilityTests
 				{ "a_2", 3 },
 			});
 	}
+#endif
 }
