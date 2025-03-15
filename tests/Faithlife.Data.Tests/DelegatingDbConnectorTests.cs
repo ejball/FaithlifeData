@@ -74,8 +74,8 @@ internal sealed class DelegatingDbConnectorTests
 
 		public override ValueTask DisposeAsync() => throw new DelegatedException();
 
-		protected internal override DbProviderMethods ProviderMethods => throw new DelegatedException();
+		public override DbProviderMethods ProviderMethods => throw new DelegatedException();
 
-		protected internal override DbCommandCache? CommandCache => throw new DelegatedException();
+		public override DbCommandCache? CommandCache => throw new DelegatedException();
 	}
 }

@@ -199,9 +199,9 @@ internal sealed class StandardDbConnector : DbConnector
 		}
 	}
 
-	protected internal override DbProviderMethods ProviderMethods => m_providerMethods;
+	public override DbProviderMethods ProviderMethods => m_providerMethods;
 
-	protected internal override DbCommandCache CommandCache => m_commandCache ??= DbCommandCache.Create();
+	public override DbCommandCache CommandCache => m_commandCache ??= DbCommandCache.Create();
 
 	private IDbConnection LazyOpenConnection()
 	{

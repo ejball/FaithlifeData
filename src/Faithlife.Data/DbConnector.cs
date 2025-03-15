@@ -97,7 +97,7 @@ public abstract class DbConnector : IDisposable, IAsyncDisposable
 	/// Attaches a transaction.
 	/// </summary>
 	/// <returns>An <see cref="IDisposable" /> that should be disposed when the transaction has been committed or should be rolled back.</returns>
-	public virtual DbTransactionDisposer AttachTransaction(IDbTransaction transaction) => throw new NotImplementedException();
+	public abstract DbTransactionDisposer AttachTransaction(IDbTransaction transaction);
 
 	/// <summary>
 	/// Commits the current transaction.
@@ -245,12 +245,12 @@ public abstract class DbConnector : IDisposable, IAsyncDisposable
 	/// <summary>
 	/// Special methods provided by the database provider.
 	/// </summary>
-	protected internal abstract DbProviderMethods ProviderMethods { get; }
+	public abstract DbProviderMethods ProviderMethods { get; }
 
 	/// <summary>
 	/// Gets the command cache, if supported.
 	/// </summary>
-	protected internal virtual DbCommandCache? CommandCache => null;
+	public abstract DbCommandCache? CommandCache { get; }
 
 	private static readonly DbConnectorSettings s_defaultSettings = new();
 }

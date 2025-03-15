@@ -77,10 +77,10 @@ public class DelegatingDbConnector : DbConnector
 	public override ValueTask DisposeAsync() => Inner.DisposeAsync();
 
 	/// <inheritdoc />
-	protected internal override DbProviderMethods ProviderMethods => Inner.ProviderMethods;
+	public override DbProviderMethods ProviderMethods => Inner.ProviderMethods;
 
 	/// <inheritdoc />
-	protected internal override DbCommandCache? CommandCache => Inner.CommandCache;
+	public override DbCommandCache? CommandCache => Inner.CommandCache;
 
 	/// <summary>
 	/// The inner connector.
