@@ -14,32 +14,27 @@ public abstract class DbCommandCache
 	public static DbCommandCache Create() => new DictionaryCache();
 
 	/// <summary>
-	/// Provides access via connector. Used when creating wrapping connectors.
-	/// </summary>
-	public static DbCommandCache? FromConnector(DbConnector connector) => connector.CommandCache;
-
-	/// <summary>
 	/// Gets the specified cached command, if any.
 	/// </summary>
-	protected internal abstract bool TryGetCommand(string text, [MaybeNullWhen(false)] out IDbCommand command);
+	public abstract bool TryGetCommand(string text, [MaybeNullWhen(false)] out IDbCommand command);
 
 	/// <summary>
 	/// Adds the specified command to the cache.
 	/// </summary>
-	protected internal abstract void AddCommand(string text, IDbCommand command);
+	public abstract void AddCommand(string text, IDbCommand command);
 
 	/// <summary>
-	/// Gets all of the cached commands.
+	/// Gets the cached commands.
 	/// </summary>
-	protected internal abstract IReadOnlyCollection<IDbCommand> GetCommands();
+	public abstract IReadOnlyCollection<IDbCommand> GetCommands();
 
 	private sealed class DictionaryCache : DbCommandCache
 	{
-		protected internal override bool TryGetCommand(string text, [MaybeNullWhen(false)] out IDbCommand command) => m_dictionary.TryGetValue(text, out command);
+		public override bool TryGetCommand(string text, [MaybeNullWhen(false)] out IDbCommand command) => m_dictionary.TryGetValue(text, out command);
 
-		protected internal override void AddCommand(string text, IDbCommand command) => m_dictionary.Add(text, command);
+		public override void AddCommand(string text, IDbCommand command) => m_dictionary.Add(text, command);
 
-		protected internal override IReadOnlyCollection<IDbCommand> GetCommands() => m_dictionary.Values;
+		public override IReadOnlyCollection<IDbCommand> GetCommands() => m_dictionary.Values;
 
 		private readonly Dictionary<string, IDbCommand> m_dictionary = new();
 	}
