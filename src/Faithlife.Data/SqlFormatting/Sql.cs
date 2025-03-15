@@ -224,7 +224,7 @@ public abstract class Sql
 	/// <summary>
 	/// Creates SQL from a formatted string.
 	/// </summary>
-	public static Sql Format(FormattableString formattableString) => new FormatSql(formattableString ?? throw new ArgumentNullException(nameof(formattableString)));
+	public static Sql Format(SqlFormatStringHandler stringHandler) => stringHandler.ToSql();
 
 	/// <summary>
 	/// Creates SQL for a GROUP BY clause. If the SQLs are empty, the GROUP BY clause is omitted.
@@ -471,11 +471,6 @@ public abstract class Sql
 		private readonly Func<string, string>? m_getName;
 	}
 
-	private sealed class FormatSql(FormattableString formattableString) : Sql
-	{
-		internal override string Render(SqlContext context) => formattableString.ToString(new SqlFormatProvider(context));
-	}
-
 	private sealed class ConcatSql(IReadOnlyList<Sql> sqls) : Sql
 	{
 		internal override string Render(SqlContext context) => string.Concat(sqls.Select(x => x.Render(context)));
@@ -519,17 +514,5 @@ public abstract class Sql
 	private sealed class RawSql(string text) : Sql
 	{
 		internal override string Render(SqlContext context) => text;
-	}
-
-	private sealed class SqlFormatProvider(SqlContext context) : IFormatProvider, ICustomFormatter
-	{
-		public object GetFormat(Type? formatType) => this;
-
-		public string Format(string? format, object? arg, IFormatProvider? formatProvider)
-		{
-			if (format is not null)
-				throw new FormatException($"Format specifier '{format}' is not supported.");
-			return arg is Sql sql ? sql.Render(context) : context.RenderParam(key: null, value: arg);
-		}
 	}
 }

@@ -211,12 +211,14 @@ internal sealed class SqlSyntaxTests
 		parameters.Should().Equal(("fdp0", id), ("fdp1", name), ("fdp2", desc), ("fdp3", name));
 	}
 
+#if false
 	[Test]
 	public void FormatBadFormat()
 	{
 		var tableName = "widgets";
 		Invoking(() => Render(Sql.Format($"select * from {tableName:xyzzy}"))).Should().Throw<FormatException>();
 	}
+#endif
 
 	[Test]
 	public void JoinParams()

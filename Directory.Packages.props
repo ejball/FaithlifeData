@@ -24,7 +24,6 @@
     <PackageVersion Include="XmlDocMarkdown.Core" Version="2.9.0" />
   </ItemGroup>
   <ItemGroup>
-    <GlobalPackageReference Include="Faithlife.Analyzers" Version="1.5.0" />
     <GlobalPackageReference Include="NUnit.Analyzers" Version="4.4.0" />
     <GlobalPackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556" />
   </ItemGroup>

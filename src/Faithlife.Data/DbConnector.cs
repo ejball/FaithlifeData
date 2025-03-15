@@ -179,7 +179,7 @@ public abstract class DbConnector : IDisposable, IAsyncDisposable
 	/// </summary>
 	/// <param name="sql">The formatted SQL string.</param>
 	/// <remarks>Shorthand for <c>Command(Sql.Format($"..."))</c>.</remarks>
-	public DbConnectorCommand CommandFormat(FormattableString sql) => Command(Sql.Format(sql));
+	public DbConnectorCommand CommandFormat(SqlFormatStringHandler sql) => Command(Sql.Format(sql));
 
 	/// <summary>
 	/// Creates a new command from a formatted SQL string.
@@ -187,7 +187,7 @@ public abstract class DbConnector : IDisposable, IAsyncDisposable
 	/// <param name="sql">The formatted SQL string.</param>
 	/// <param name="parameters">Additional command parameters.</param>
 	/// <remarks>Shorthand for <c>Command(Sql.Format($"..."), parameters)</c>.</remarks>
-	public DbConnectorCommand CommandFormat(FormattableString sql, DbParameters parameters) => Command(Sql.Format(sql), parameters);
+	public DbConnectorCommand CommandFormat(SqlFormatStringHandler sql, DbParameters parameters) => Command(Sql.Format(sql), parameters);
 
 	/// <summary>
 	/// Creates a new command from a formatted SQL string.
@@ -195,7 +195,7 @@ public abstract class DbConnector : IDisposable, IAsyncDisposable
 	/// <param name="sql">The formatted SQL string.</param>
 	/// <param name="parameters">Additional command parameters.</param>
 	/// <remarks>Shorthand for <c>Command(Sql.Format($"..."), parameters)</c>.</remarks>
-	public DbConnectorCommand CommandFormat(FormattableString sql, params (string Name, object? Value)[] parameters) => Command(Sql.Format(sql), parameters);
+	public DbConnectorCommand CommandFormat(SqlFormatStringHandler sql, params (string Name, object? Value)[] parameters) => Command(Sql.Format(sql), parameters);
 
 	/// <summary>
 	/// Creates a new command to access a stored procedure.
