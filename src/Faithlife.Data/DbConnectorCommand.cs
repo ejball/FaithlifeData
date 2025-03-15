@@ -1,7 +1,5 @@
-using System.Collections;
 using System.Data;
 using System.Runtime.CompilerServices;
-using System.Text.RegularExpressions;
 
 namespace Faithlife.Data;
 
@@ -352,6 +350,8 @@ public readonly struct DbConnectorCommand
 		var timeout = Timeout;
 
 		var parameters = Parameters;
+
+#if false
 		var index = 0;
 		while (index < parameters.Count)
 		{
@@ -401,6 +401,7 @@ public readonly struct DbConnectorCommand
 				index += 1;
 			}
 		}
+#endif
 
 		IDbCommand? command;
 		var transaction = Connector.Transaction;
@@ -432,25 +433,7 @@ public readonly struct DbConnectorCommand
 			if (command.Parameters.Count != parameterCount)
 				throw new InvalidOperationException($"Cached commands must always be executed with the same number of parameters (was {command.Parameters.Count}, now {parameters.Count}).");
 
-			for (var parameterIndex = 0; parameterIndex < parameterCount; parameterIndex++)
-			{
-				var (name, value) = parameters[parameterIndex];
-				var dbParameter = command.Parameters[parameterIndex] as IDataParameter;
-				if (dbParameter is null || dbParameter.ParameterName != name)
-				{
-					try
-					{
-						dbParameter = command.Parameters[name] as IDataParameter;
-					}
-					catch (Exception exception)
-					{
-						throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{name}').", exception);
-					}
-					if (dbParameter is null)
-						throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{name}').");
-				}
-				dbParameter.Value = value is IDataParameter ddp ? ddp.Value : value;
-			}
+			parameters.ReapplyTo(command);
 
 			needsPrepare = false;
 		}

@@ -25,6 +25,30 @@ public readonly struct DbParameters
 		}
 	}
 
+	public void ReapplyTo(IDbCommand command)
+	{
+		var parameterCount = Parameters.Count;
+		for (var parameterIndex = 0; parameterIndex < parameterCount; parameterIndex++)
+		{
+			var (name, value) = Parameters[parameterIndex];
+			var dbParameter = command.Parameters[parameterIndex] as IDataParameter;
+			if (dbParameter is null || dbParameter.ParameterName != name)
+			{
+				try
+				{
+					dbParameter = command.Parameters[name] as IDataParameter;
+				}
+				catch (Exception exception)
+				{
+					throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{name}').", exception);
+				}
+				if (dbParameter is null)
+					throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{name}').");
+			}
+			dbParameter.Value = value is IDataParameter ddp ? ddp.Value : value;
+		}
+	}
+
 	/// <summary>
 	/// An empty list of parameters.
 	/// </summary>
@@ -220,10 +244,12 @@ public readonly struct DbParameters
 	/// </summary>
 	public int Count => Parameters.Count;
 
+#if false
 	/// <summary>
 	/// The parameter at the specified index.
 	/// </summary>
 	public (string Name, object? Value) this[int index] => Parameters[index];
+#endif
 
 	/// <summary>
 	/// Adds a parameter.
