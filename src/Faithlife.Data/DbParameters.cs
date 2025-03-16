@@ -87,7 +87,7 @@ public abstract class DbParameters
 	/// </summary>
 	/// <remarks>The name of each parameter is the name of the corresponding DTO property.</remarks>
 	public static DbParameters FromDto(object dto) =>
-		new StandardDbParameters(DtoInfo.GetInfo((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Properties.Select(x => (x.Name, x.GetValue(dto))));
+		new StandardDbParameters(DbConnectorReflection.Default.GetProperties((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Select(x => (x.Name, x.GetValue(dto))));
 
 	/// <summary>
 	/// Creates a list of parameters from the properties of a DTO.
@@ -99,7 +99,7 @@ public abstract class DbParameters
 		if (name is null)
 			throw new ArgumentNullException(nameof(name));
 
-		return new StandardDbParameters(DtoInfo.GetInfo((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Properties.Select(x => ($"{name}_{x.Name}", x.GetValue(dto))));
+		return new StandardDbParameters(DbConnectorReflection.Default.GetProperties((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Select(x => ($"{name}_{x.Name}", x.GetValue(dto))));
 	}
 
 	/// <summary>
@@ -111,7 +111,7 @@ public abstract class DbParameters
 		if (name is null)
 			throw new ArgumentNullException(nameof(name));
 
-		return new StandardDbParameters(DtoInfo.GetInfo((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Properties.Select(x => (name(x.Name), x.GetValue(dto))));
+		return new StandardDbParameters(DbConnectorReflection.Default.GetProperties((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Select(x => (name(x.Name), x.GetValue(dto))));
 	}
 
 	/// <summary>
@@ -119,7 +119,7 @@ public abstract class DbParameters
 	/// </summary>
 	/// <remarks>The name of each parameter is the name of the corresponding DTO property.</remarks>
 	public static DbParameters FromDtoWhere(object dto, Func<string, bool> filter) =>
-		new StandardDbParameters(DtoInfo.GetInfo((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Properties.Where(x => filter(x.Name)).Select(x => (x.Name, x.GetValue(dto))));
+		new StandardDbParameters(DbConnectorReflection.Default.GetProperties((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Where(x => filter(x.Name)).Select(x => (x.Name, x.GetValue(dto))));
 
 	/// <summary>
 	/// Creates a list of parameters from the properties of a DTO whose names match the specified filter.
@@ -131,7 +131,7 @@ public abstract class DbParameters
 		if (name is null)
 			throw new ArgumentNullException(nameof(name));
 
-		return new StandardDbParameters(DtoInfo.GetInfo((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Properties.Where(x => filter(x.Name)).Select(x => ($"{name}_{x.Name}", x.GetValue(dto))));
+		return new StandardDbParameters(DbConnectorReflection.Default.GetProperties((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Where(x => filter(x.Name)).Select(x => ($"{name}_{x.Name}", x.GetValue(dto))));
 	}
 
 	/// <summary>
@@ -143,7 +143,7 @@ public abstract class DbParameters
 		if (name is null)
 			throw new ArgumentNullException(nameof(name));
 
-		return new StandardDbParameters(DtoInfo.GetInfo((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Properties.Where(x => filter(x.Name)).Select(x => (name(x.Name), x.GetValue(dto))));
+		return new StandardDbParameters(DbConnectorReflection.Default.GetProperties((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Where(x => filter(x.Name)).Select(x => (name(x.Name), x.GetValue(dto))));
 	}
 
 	/// <summary>
@@ -157,7 +157,7 @@ public abstract class DbParameters
 		var parameters = new List<(string, object?)>();
 		foreach (var dto in dtos ?? throw new ArgumentNullException(nameof(dtos)))
 		{
-			parameters.AddRange(DtoInfo.GetInfo((dto ?? throw new ArgumentException("DTO is null.", nameof(dtos))).GetType()).Properties.Select(x => ($"{x.Name}_{index}", x.GetValue(dto))));
+			parameters.AddRange(DbConnectorReflection.Default.GetProperties((dto ?? throw new ArgumentException("DTO is null.", nameof(dtos))).GetType()).Select(x => ($"{x.Name}_{index}", x.GetValue(dto))));
 			index++;
 		}
 		return new StandardDbParameters(parameters);
@@ -177,7 +177,7 @@ public abstract class DbParameters
 		var parameters = new List<(string, object?)>();
 		foreach (var dto in dtos ?? throw new ArgumentNullException(nameof(dtos)))
 		{
-			parameters.AddRange(DtoInfo.GetInfo((dto ?? throw new ArgumentException("DTO is null.", nameof(dtos))).GetType()).Properties.Select(x => ($"{name}_{x.Name}_{index}", x.GetValue(dto))));
+			parameters.AddRange(DbConnectorReflection.Default.GetProperties((dto ?? throw new ArgumentException("DTO is null.", nameof(dtos))).GetType()).Select(x => ($"{name}_{x.Name}_{index}", x.GetValue(dto))));
 			index++;
 		}
 		return new StandardDbParameters(parameters);
@@ -197,7 +197,7 @@ public abstract class DbParameters
 		var parameters = new List<(string, object?)>();
 		foreach (var dto in dtos ?? throw new ArgumentNullException(nameof(dtos)))
 		{
-			parameters.AddRange(DtoInfo.GetInfo((dto ?? throw new ArgumentException("DTO is null.", nameof(dtos))).GetType()).Properties.Select(x => (name(x.Name, index), x.GetValue(dto))));
+			parameters.AddRange(DbConnectorReflection.Default.GetProperties((dto ?? throw new ArgumentException("DTO is null.", nameof(dtos))).GetType()).Select(x => (name(x.Name, index), x.GetValue(dto))));
 			index++;
 		}
 		return new StandardDbParameters(parameters);

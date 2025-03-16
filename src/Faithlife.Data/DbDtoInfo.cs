@@ -32,7 +32,7 @@ internal sealed class DbDtoInfo<T> : IDbDtoInfo
 
 	private DbDtoInfo()
 	{
-		var properties = DtoInfo.GetInfo<T>().Properties;
+		var properties = DbConnectorReflection.Default.GetProperties<T>();
 		Dictionary<string, string>? columnAttributeNames = null;
 
 		foreach (var property in properties)
@@ -41,7 +41,7 @@ internal sealed class DbDtoInfo<T> : IDbDtoInfo
 			var columnName = property.MemberInfo
 				.GetCustomAttributes()
 				.Where(x => x.GetType().Name == "ColumnAttribute")
-				.Select(x => DtoInfo.GetInfo(x.GetType()).TryGetProperty("Name")?.GetValue(x) as string)
+				.Select(x => DbConnectorReflection.Default.TryGetProperty(x.GetType(), "Name")?.GetValue(x) as string)
 				.FirstOrDefault(x => x is not null);
 			if (columnName is not null)
 				(columnAttributeNames ??= new Dictionary<string, string>()).Add(property.Name, columnName);

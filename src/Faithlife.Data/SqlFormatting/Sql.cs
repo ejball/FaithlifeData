@@ -375,8 +375,8 @@ public abstract class Sql
 
 		internal override string Render(SqlContext context)
 		{
-			if (TupleInfo.IsTupleType(m_type))
-				return string.Join(", NULL, ", TupleInfo.GetInfo(m_type).ItemTypes.Select((x, i) => RenderDto(x, i, context)));
+			if (DbConnectorReflection.Default.IsTupleType(m_type))
+				return string.Join(", NULL, ", DbConnectorReflection.Default.GetTupleItemTypes(m_type).Select((x, i) => RenderDto(x, i, context)));
 
 			return RenderDto(m_type, 0, context);
 		}
@@ -386,7 +386,7 @@ public abstract class Sql
 
 		private string RenderDto(Type type, int index, SqlContext context)
 		{
-			var properties = DtoInfo.GetInfo(type).Properties;
+			var properties = DbConnectorReflection.Default.GetProperties(type);
 			if (properties.Count == 0)
 				throw new InvalidOperationException($"The specified type has no columns: {type.FullName}");
 
@@ -396,7 +396,7 @@ public abstract class Sql
 			var tablePrefix = tableName.Length == 0 ? "" : syntax.QuoteName(tableName) + ".";
 			var useSnakeCase = syntax.UseSnakeCase;
 
-			IEnumerable<IDtoProperty> filteredProperties = properties;
+			IEnumerable<IDbDtoProperty> filteredProperties = properties;
 			if (m_filter is not null)
 				filteredProperties = filteredProperties.Where(x => m_filter(x.Name));
 
@@ -425,11 +425,11 @@ public abstract class Sql
 		internal override string Render(SqlContext context)
 		{
 			var type = dto.GetType();
-			var properties = DtoInfo.GetInfo(type).Properties;
+			var properties = DbConnectorReflection.Default.GetProperties(type);
 			if (properties.Count == 0)
 				throw new InvalidOperationException($"The specified type has no columns: {type.FullName}");
 
-			IEnumerable<IDtoProperty> filteredProperties = properties;
+			IEnumerable<IDbDtoProperty> filteredProperties = properties;
 			if (filter is not null)
 				filteredProperties = filteredProperties.Where(x => filter(x.Name));
 
@@ -448,11 +448,11 @@ public abstract class Sql
 
 		internal override string Render(SqlContext context)
 		{
-			var properties = DtoInfo.GetInfo(m_type).Properties;
+			var properties = DbConnectorReflection.Default.GetProperties(m_type);
 			if (properties.Count == 0)
 				throw new InvalidOperationException($"The specified type has no columns: {m_type.FullName}");
 
-			IEnumerable<IDtoProperty> filteredProperties = properties;
+			IEnumerable<IDbDtoProperty> filteredProperties = properties;
 			if (m_filter is not null)
 				filteredProperties = filteredProperties.Where(x => m_filter(x.Name));
 

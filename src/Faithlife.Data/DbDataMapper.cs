@@ -78,7 +78,7 @@ public abstract class DbDataMapper
 			if (typeof(T) == typeof(object))
 				return (DbTypeMapper<T>) (object) new ObjectMapper();
 
-			if (TupleInfo.IsTupleType(typeof(T)))
+			if (DbConnectorReflection.Default.IsTupleType<T>())
 			{
 				var tupleTypes = typeof(T).GetGenericArguments();
 				var tupleMapperType = tupleTypes.Length switch
@@ -127,10 +127,10 @@ public abstract class DbDataMapper
 	{
 		public DtoMapper(DbDataMapper mapper)
 		{
-			var properties = DtoInfo.GetInfo<T>().Properties;
+			var properties = DbConnectorReflection.Default.GetProperties<T>();
 			var dbDtoInfo = DbDtoInfo.GetInfo<T>();
 
-			var propertiesByNormalizedFieldName = new Dictionary<string, (IDtoProperty<T> Dto, IDbTypeMapper Db)>(capacity: properties.Count, StringComparer.OrdinalIgnoreCase);
+			var propertiesByNormalizedFieldName = new Dictionary<string, (IDbDtoProperty<T> Dto, IDbTypeMapper Db)>(capacity: properties.Count, StringComparer.OrdinalIgnoreCase);
 			foreach (var property in properties)
 				propertiesByNormalizedFieldName.Add(NormalizeFieldName(dbDtoInfo.GetColumnAttributeName(property.Name) ?? property.Name), (property, mapper.GetTypeMapper(property.ValueType)));
 			m_propertiesByNormalizedFieldName = propertiesByNormalizedFieldName;
@@ -140,7 +140,7 @@ public abstract class DbDataMapper
 
 		protected override T MapCore(IDataRecord record, int index, int count)
 		{
-			List<(IDtoProperty<T> Property, object? Value)>? propertyValues = null;
+			List<(IDbDtoProperty<T> Property, object? Value)>? propertyValues = null;
 			for (var i = index; i < index + count; i++)
 			{
 				if (!record.IsDBNull(i))
@@ -149,11 +149,11 @@ public abstract class DbDataMapper
 					if (!m_propertiesByNormalizedFieldName!.TryGetValue(NormalizeFieldName(name), out var property))
 						throw new InvalidOperationException($"Type does not have a property for '{name}': {Type.FullName}");
 
-					propertyValues ??= new List<(IDtoProperty<T> Property, object? Value)>(capacity: count);
+					propertyValues ??= new List<(IDbDtoProperty<T> Property, object? Value)>(capacity: count);
 					propertyValues.Add((property.Dto, property.Db.Map(record, i, 1)));
 				}
 			}
-			return propertyValues is not null ? DtoInfo.GetInfo<T>().CreateNew(propertyValues) : default!;
+			return propertyValues is not null ? DbConnectorReflection.Default.CreateNew(propertyValues) : default!;
 		}
 
 #if !NETSTANDARD2_0
@@ -162,7 +162,7 @@ public abstract class DbDataMapper
 		private static string NormalizeFieldName(string text) => text.Replace("_", "");
 #endif
 
-		private readonly IReadOnlyDictionary<string, (IDtoProperty<T> Dto, IDbTypeMapper Db)>? m_propertiesByNormalizedFieldName;
+		private readonly IReadOnlyDictionary<string, (IDbDtoProperty<T> Dto, IDbTypeMapper Db)>? m_propertiesByNormalizedFieldName;
 	}
 
 	private sealed class ObjectMapper : TypeMapper<object>
@@ -227,8 +227,7 @@ public abstract class DbDataMapper
 	{
 		public TupleMapper(DbDataMapper mapper)
 		{
-			m_tupleInfo = TupleInfo.GetInfo<T>();
-			m_tupleTypeMappers = m_tupleInfo.ItemTypes.Select(mapper.GetTypeMapper).ToList();
+			m_tupleTypeMappers = DbConnectorReflection.Default.GetTupleItemTypes<T>().Select(mapper.GetTypeMapper).ToList();
 			FieldCount = m_tupleTypeMappers.Aggregate((int?) 0, (x, y) => x + y.FieldCount);
 		}
 
@@ -305,10 +304,10 @@ public abstract class DbDataMapper
 				recordIndex = nullIndex + 1 ?? recordIndex + fieldCount;
 			}
 
-			return m_tupleInfo!.CreateNew(values);
+			return DbConnectorReflection.Default.CreateNewTuple<T>(values);
 		}
 
-		private readonly TupleInfo<T>? m_tupleInfo;
+		////private readonly TupleInfo<T>? m_tupleInfo;
 		private readonly IReadOnlyList<IDbTypeMapper>? m_tupleTypeMappers;
 	}
 
