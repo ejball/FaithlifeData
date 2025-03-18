@@ -271,12 +271,12 @@ internal sealed class DbConnectorTests
 		var connectionString = new SqliteConnectionStringBuilder { DataSource = nameof(DeferredTransaction), Mode = SqliteOpenMode.Memory, Cache = SqliteCacheMode.Shared }.ConnectionString;
 		using var connector1 = DbConnector.Create(new SqliteConnection(connectionString), new DbConnectorSettings { AutoOpen = true });
 		using var connector2 = DbConnector.Create(new SqliteConnection(connectionString), new DbConnectorSettings { AutoOpen = true });
-		((SqliteConnection) connector1.Connection).DefaultTimeout = 5;
-		((SqliteConnection) connector2.Connection).DefaultTimeout = 5;
+		((SqliteConnection) connector1.GetOpenConnection()).DefaultTimeout = 5;
+		((SqliteConnection) connector2.GetOpenConnection()).DefaultTimeout = 5;
 		connector1.Command("create table Items (ItemId integer primary key, Name text not null);").Execute();
 		connector1.Command("insert into Items (Name) values ('xyzzy');").Execute();
-		using var transaction1 = connector1.AttachTransaction(((SqliteConnection) connector1.Connection).BeginTransaction(deferred: true));
-		using var transaction2 = connector2.AttachTransaction(((SqliteConnection) connector2.Connection).BeginTransaction(deferred: true));
+		using var transaction1 = connector1.AttachTransaction(((SqliteConnection) connector1.GetOpenConnection()).BeginTransaction(deferred: true));
+		using var transaction2 = connector2.AttachTransaction(((SqliteConnection) connector2.GetOpenConnection()).BeginTransaction(deferred: true));
 		connector1.Command("select count(*) from Items;").QuerySingle<long>().Should().Be(1);
 		connector2.Command("select count(*) from Items;").QuerySingle<long>().Should().Be(1);
 		connector1.CommitTransaction();

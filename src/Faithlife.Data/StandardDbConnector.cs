@@ -75,15 +75,15 @@ internal sealed class StandardDbConnector : DbConnector
 	{
 		VerifyCanBeginTransaction();
 		m_transaction = m_defaultIsolationLevel is { } isolationLevel
-			? Connection.BeginTransaction(isolationLevel)
-			: Connection.BeginTransaction();
+			? GetOpenConnection().BeginTransaction(isolationLevel)
+			: GetOpenConnection().BeginTransaction();
 		return new TransactionDisposer(this);
 	}
 
 	public override DbTransactionDisposer BeginTransaction(IsolationLevel isolationLevel)
 	{
 		VerifyCanBeginTransaction();
-		m_transaction = Connection.BeginTransaction(isolationLevel);
+		m_transaction = GetOpenConnection().BeginTransaction(isolationLevel);
 		return new TransactionDisposer(this);
 	}
 
@@ -91,15 +91,15 @@ internal sealed class StandardDbConnector : DbConnector
 	{
 		VerifyCanBeginTransaction();
 		m_transaction = m_defaultIsolationLevel is { } isolationLevel
-			? await m_providerMethods.BeginTransactionAsync(Connection, isolationLevel, cancellationToken).ConfigureAwait(false)
-			: await m_providerMethods.BeginTransactionAsync(Connection, cancellationToken).ConfigureAwait(false);
+			? await m_providerMethods.BeginTransactionAsync(await GetOpenConnectionAsync(cancellationToken).ConfigureAwait(false), isolationLevel, cancellationToken).ConfigureAwait(false)
+			: await m_providerMethods.BeginTransactionAsync(await GetOpenConnectionAsync(cancellationToken).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
 		return new TransactionDisposer(this);
 	}
 
 	public override async ValueTask<DbTransactionDisposer> BeginTransactionAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken = default)
 	{
 		VerifyCanBeginTransaction();
-		m_transaction = await m_providerMethods.BeginTransactionAsync(Connection, isolationLevel, cancellationToken).ConfigureAwait(false);
+		m_transaction = await m_providerMethods.BeginTransactionAsync(await GetOpenConnectionAsync(cancellationToken).ConfigureAwait(false), isolationLevel, cancellationToken).ConfigureAwait(false);
 		return new TransactionDisposer(this);
 	}
 

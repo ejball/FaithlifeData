@@ -305,7 +305,7 @@ public readonly struct DbConnectorCommand
 	public IDbCommand Create()
 	{
 		Validate();
-		var connection = Connector.Connection;
+		var connection = Connector.GetOpenConnection();
 		var command = DoCreate(connection, out var needsPrepare);
 		if (needsPrepare)
 			command.Prepare();
