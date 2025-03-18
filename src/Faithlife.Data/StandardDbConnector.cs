@@ -8,7 +8,6 @@ internal sealed class StandardDbConnector : DbConnector
 	public StandardDbConnector(IDbConnection connection, DbConnectorSettings settings)
 	{
 		m_connection = connection ?? throw new ArgumentNullException(nameof(connection));
-
 		m_isConnectionOpen = m_connection.State == ConnectionState.Open;
 		m_noCloseConnection = m_isConnectionOpen;
 		m_transaction = settings.CurrentTransaction;
@@ -36,8 +35,8 @@ internal sealed class StandardDbConnector : DbConnector
 
 		IDbConnection DoOpenConnection()
 		{
-			m_isConnectionOpen = true;
 			m_providerMethods.OpenConnection(m_connection);
+			m_isConnectionOpen = true;
 			return m_connection;
 		}
 	}
@@ -49,8 +48,8 @@ internal sealed class StandardDbConnector : DbConnector
 
 		async ValueTask<IDbConnection> DoOpenConnectionAsync()
 		{
-			m_isConnectionOpen = true;
 			await m_providerMethods.OpenConnectionAsync(m_connection, cancellationToken).ConfigureAwait(false);
+			m_isConnectionOpen = true;
 			return m_connection;
 		}
 	}
