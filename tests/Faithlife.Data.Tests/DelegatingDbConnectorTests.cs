@@ -36,7 +36,7 @@ internal sealed class DelegatingDbConnectorTests
 	{
 		public override IDbConnection Connection => throw new DelegatedException();
 
-		public override IDbTransaction? Transaction => throw new DelegatedException();
+		public override IDbTransaction? CurrentTransaction => throw new DelegatedException();
 
 		public override SqlSyntax SqlSyntax => throw new DelegatedException();
 

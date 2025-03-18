@@ -34,7 +34,7 @@ internal sealed class StandardDbConnector : DbConnector
 		}
 	}
 
-	public override IDbTransaction? Transaction => m_transaction;
+	public override IDbTransaction? CurrentTransaction => m_transaction;
 
 	public override SqlSyntax SqlSyntax { get; }
 

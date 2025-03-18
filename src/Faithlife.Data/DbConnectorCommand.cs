@@ -404,7 +404,7 @@ public readonly struct DbConnectorCommand
 #endif
 
 		IDbCommand? command;
-		var transaction = Connector.Transaction;
+		var transaction = Connector.CurrentTransaction;
 
 		var wasCached = false;
 		var cache = IsCached ? Connector.CommandCache : null;

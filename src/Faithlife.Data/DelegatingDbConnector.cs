@@ -20,7 +20,7 @@ public class DelegatingDbConnector : DbConnector
 	public override IDbConnection Connection => Inner.Connection;
 
 	/// <inheritdoc />
-	public override IDbTransaction? Transaction => Inner.Transaction;
+	public override IDbTransaction? CurrentTransaction => Inner.CurrentTransaction;
 
 	/// <inheritdoc />
 	public override SqlSyntax SqlSyntax => Inner.SqlSyntax;

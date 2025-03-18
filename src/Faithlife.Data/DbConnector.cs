@@ -25,7 +25,7 @@ public abstract class DbConnector : IDisposable, IAsyncDisposable
 	/// <summary>
 	/// The current transaction, if any.
 	/// </summary>
-	public abstract IDbTransaction? Transaction { get; }
+	public abstract IDbTransaction? CurrentTransaction { get; }
 
 	/// <summary>
 	/// The SQL syntax used when formatting SQL.
@@ -38,11 +38,10 @@ public abstract class DbConnector : IDisposable, IAsyncDisposable
 	public virtual DbDataMapper DataMapper => DbDataMapper.Default;
 
 	/// <summary>
-	/// Returns the database connection.
+	/// Returns the database connection, opened if necessary.
 	/// </summary>
 	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <returns>The database connection, or null if the connector is disposed.</returns>
-	/// <remarks>Allows a lazy-open connector to asynchronously open the connection.</remarks>
+	/// <returns>The opened database connection.</returns>
 	/// <seealso cref="Connection" />
 	public abstract ValueTask<IDbConnection> GetConnectionAsync(CancellationToken cancellationToken = default);
 
