@@ -29,7 +29,10 @@ public class DelegatingDbConnector : DbConnector
 	public override DbDataMapper DataMapper => Inner.DataMapper;
 
 	/// <inheritdoc />
-	public override ValueTask<IDbConnection> GetConnectionAsync(CancellationToken cancellationToken = default) => Inner.GetConnectionAsync(cancellationToken);
+	public override IDbConnection GetOpenConnection() => Inner.GetOpenConnection();
+
+	/// <inheritdoc />
+	public override ValueTask<IDbConnection> GetOpenConnectionAsync(CancellationToken cancellationToken = default) => Inner.GetOpenConnectionAsync(cancellationToken);
 
 	/// <inheritdoc />
 	public override DbConnectionCloser OpenConnection() => Inner.OpenConnection();

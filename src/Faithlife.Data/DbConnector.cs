@@ -19,7 +19,8 @@ public abstract class DbConnector : IDisposable, IAsyncDisposable
 	/// <summary>
 	/// The database connection.
 	/// </summary>
-	/// <seealso cref="GetConnectionAsync" />
+	/// <remarks>Use <see cref="GetOpenConnectionAsync" /> or <see cref="GetOpenConnection" />
+	/// to automatically open the connection if necessary.</remarks>
 	public abstract IDbConnection Connection { get; }
 
 	/// <summary>
@@ -40,10 +41,19 @@ public abstract class DbConnector : IDisposable, IAsyncDisposable
 	/// <summary>
 	/// Returns the database connection, opened if necessary.
 	/// </summary>
+	/// <returns>The opened database connection.</returns>
+	/// <seealso cref="Connection" />
+	/// <seealso cref="GetOpenConnectionAsync" />
+	public abstract IDbConnection GetOpenConnection();
+
+	/// <summary>
+	/// Returns the database connection, opened if necessary.
+	/// </summary>
 	/// <param name="cancellationToken">The cancellation token.</param>
 	/// <returns>The opened database connection.</returns>
 	/// <seealso cref="Connection" />
-	public abstract ValueTask<IDbConnection> GetConnectionAsync(CancellationToken cancellationToken = default);
+	/// <seealso cref="GetOpenConnection" />
+	public abstract ValueTask<IDbConnection> GetOpenConnectionAsync(CancellationToken cancellationToken = default);
 
 	/// <summary>
 	/// Opens the connection.

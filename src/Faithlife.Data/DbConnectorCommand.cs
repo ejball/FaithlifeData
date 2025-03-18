@@ -319,7 +319,7 @@ public readonly struct DbConnectorCommand
 	public async ValueTask<IDbCommand> CreateAsync(CancellationToken cancellationToken = default)
 	{
 		Validate();
-		var connection = await Connector.GetConnectionAsync(cancellationToken).ConfigureAwait(false);
+		var connection = await Connector.GetOpenConnectionAsync(cancellationToken).ConfigureAwait(false);
 		var command = DoCreate(connection, out var needsPrepare);
 		if (needsPrepare)
 			await Connector.ProviderMethods.PrepareCommandAsync(CachedCommand.Unwrap(command), cancellationToken).ConfigureAwait(false);

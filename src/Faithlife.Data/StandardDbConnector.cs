@@ -25,14 +25,7 @@ internal sealed class StandardDbConnector : DbConnector
 			OpenConnection();
 	}
 
-	public override IDbConnection Connection
-	{
-		get
-		{
-			VerifyNotDisposed();
-			return m_pendingLazyOpen ? LazyOpenConnection() : m_connection;
-		}
-	}
+	public override IDbConnection Connection => m_connection;
 
 	public override IDbTransaction? CurrentTransaction => m_transaction;
 
@@ -40,7 +33,13 @@ internal sealed class StandardDbConnector : DbConnector
 
 	public override DbDataMapper DataMapper { get; }
 
-	public override ValueTask<IDbConnection> GetConnectionAsync(CancellationToken cancellationToken = default)
+	public override IDbConnection GetOpenConnection()
+	{
+		VerifyNotDisposed();
+		return m_pendingLazyOpen ? LazyOpenConnection() : m_connection;
+	}
+
+	public override ValueTask<IDbConnection> GetOpenConnectionAsync(CancellationToken cancellationToken = default)
 	{
 		VerifyNotDisposed();
 		return m_pendingLazyOpen ? LazyOpenConnectionAsync(cancellationToken) : new ValueTask<IDbConnection>(m_connection);

@@ -42,7 +42,9 @@ internal sealed class DelegatingDbConnectorTests
 
 		public override DbDataMapper DataMapper => throw new DelegatedException();
 
-		public override ValueTask<IDbConnection> GetConnectionAsync(CancellationToken cancellationToken = default) => throw new DelegatedException();
+		public override IDbConnection GetOpenConnection() => throw new DelegatedException();
+
+		public override ValueTask<IDbConnection> GetOpenConnectionAsync(CancellationToken cancellationToken = default) => throw new DelegatedException();
 
 		public override DbConnectionCloser OpenConnection() => throw new DelegatedException();
 
