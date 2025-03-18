@@ -66,7 +66,7 @@ public abstract class PreparedCachedBenchmark : IDisposable
 
 	protected PreparedCachedBenchmark(IDbConnection connection, string columnsSql, int recordCount, Func<int, object>? createParameter = null)
 	{
-		m_connector = DbConnector.Create(connection, new DbConnectorSettings { AutoOpen = true, LazyOpen = true });
+		m_connector = DbConnector.Create(connection);
 		m_connector.Command("drop table if exists PreparedCachedBenchmark; ").Execute();
 		m_connector.CommandFormat($"create table PreparedCachedBenchmark ({Sql.Raw(columnsSql)});").Execute();
 		m_recordCount = recordCount;

@@ -9,7 +9,6 @@ internal sealed class StandardDbConnector : DbConnector
 	{
 		m_connection = connection ?? throw new ArgumentNullException(nameof(connection));
 
-		m_shouldLazyOpen = settings.LazyOpen;
 		m_isConnectionOpen = m_connection.State == ConnectionState.Open;
 		m_noCloseConnection = m_isConnectionOpen;
 		m_transaction = settings.CurrentTransaction;
@@ -20,9 +19,6 @@ internal sealed class StandardDbConnector : DbConnector
 		m_defaultIsolationLevel = settings.DefaultIsolationLevel;
 		SqlSyntax = settings.SqlSyntax ?? SqlSyntax.Default;
 		DataMapper = settings.DataMapper ?? DbDataMapper.Default;
-
-		if (settings.AutoOpen && !m_isConnectionOpen)
-			OpenConnection();
 	}
 
 	public override IDbConnection Connection => m_connection;
@@ -36,37 +32,51 @@ internal sealed class StandardDbConnector : DbConnector
 	public override IDbConnection GetOpenConnection()
 	{
 		VerifyNotDisposed();
-		return m_pendingLazyOpen ? LazyOpenConnection() : m_connection;
+		return m_isConnectionOpen ? m_connection : DoOpenConnection();
+
+		IDbConnection DoOpenConnection()
+		{
+			m_isConnectionOpen = true;
+			m_providerMethods.OpenConnection(m_connection);
+			return m_connection;
+		}
 	}
 
 	public override ValueTask<IDbConnection> GetOpenConnectionAsync(CancellationToken cancellationToken = default)
 	{
 		VerifyNotDisposed();
-		return m_pendingLazyOpen ? LazyOpenConnectionAsync(cancellationToken) : new ValueTask<IDbConnection>(m_connection);
+		return m_isConnectionOpen ? new ValueTask<IDbConnection>(m_connection) : DoOpenConnectionAsync();
+
+		async ValueTask<IDbConnection> DoOpenConnectionAsync()
+		{
+			m_isConnectionOpen = true;
+			await m_providerMethods.OpenConnectionAsync(m_connection, cancellationToken).ConfigureAwait(false);
+			return m_connection;
+		}
 	}
 
 	public override DbConnectionCloser OpenConnection()
 	{
-		VerifyCanOpenConnection();
+		VerifyNotDisposed();
 
-		if (m_shouldLazyOpen)
-			m_pendingLazyOpen = true;
-		else
+		if (!m_isConnectionOpen)
+		{
 			m_providerMethods.OpenConnection(m_connection);
-		m_isConnectionOpen = true;
+			m_isConnectionOpen = true;
+		}
 
 		return new ConnectionCloser(this);
 	}
 
 	public override async ValueTask<DbConnectionCloser> OpenConnectionAsync(CancellationToken cancellationToken = default)
 	{
-		VerifyCanOpenConnection();
+		VerifyNotDisposed();
 
-		if (m_shouldLazyOpen)
-			m_pendingLazyOpen = true;
-		else
+		if (!m_isConnectionOpen)
+		{
 			await m_providerMethods.OpenConnectionAsync(m_connection, cancellationToken).ConfigureAwait(false);
-		m_isConnectionOpen = true;
+			m_isConnectionOpen = true;
+		}
 
 		return new ConnectionCloser(this);
 	}
@@ -138,14 +148,10 @@ internal sealed class StandardDbConnector : DbConnector
 	{
 		VerifyNotDisposed();
 
-		if (!m_isConnectionOpen)
-			throw new InvalidOperationException("Connection must be open.");
-
-		if (!m_pendingLazyOpen)
+		if (m_isConnectionOpen && !m_noCloseConnection)
 		{
-			if (!m_noCloseConnection)
-				m_connection.Close();
-			m_pendingLazyOpen = true;
+			m_connection.Close();
+			m_isConnectionOpen = false;
 		}
 	}
 
@@ -153,14 +159,10 @@ internal sealed class StandardDbConnector : DbConnector
 	{
 		VerifyNotDisposed();
 
-		if (!m_isConnectionOpen)
-			throw new InvalidOperationException("Connection must be open.");
-
-		if (!m_pendingLazyOpen)
+		if (m_isConnectionOpen && !m_noCloseConnection)
 		{
-			if (!m_noCloseConnection)
-				await m_providerMethods.CloseConnectionAsync(m_connection).ConfigureAwait(false);
-			m_pendingLazyOpen = true;
+			await m_providerMethods.CloseConnectionAsync(m_connection).ConfigureAwait(false);
+			m_isConnectionOpen = false;
 		}
 	}
 
@@ -201,50 +203,6 @@ internal sealed class StandardDbConnector : DbConnector
 	public override DbProviderMethods ProviderMethods => m_providerMethods;
 
 	public override DbCommandCache CommandCache => m_commandCache ??= DbCommandCache.Create();
-
-	private IDbConnection LazyOpenConnection()
-	{
-		m_pendingLazyOpen = false;
-		m_providerMethods.OpenConnection(m_connection);
-		return m_connection;
-	}
-
-	private async ValueTask<IDbConnection> LazyOpenConnectionAsync(CancellationToken cancellationToken)
-	{
-		m_pendingLazyOpen = false;
-		await m_providerMethods.OpenConnectionAsync(m_connection, cancellationToken).ConfigureAwait(false);
-		return m_connection;
-	}
-
-	private void CloseConnection()
-	{
-		VerifyNotDisposed();
-
-		if (!m_isConnectionOpen)
-			throw new InvalidOperationException("Connection must be open.");
-
-		if (m_pendingLazyOpen)
-			m_pendingLazyOpen = false;
-		else if (!m_noCloseConnection)
-			m_connection.Close();
-
-		m_isConnectionOpen = false;
-	}
-
-	private async ValueTask CloseConnectionAsync()
-	{
-		VerifyNotDisposed();
-
-		if (!m_isConnectionOpen)
-			throw new InvalidOperationException("Connection must be open.");
-
-		if (m_pendingLazyOpen)
-			m_pendingLazyOpen = false;
-		else if (!m_noCloseConnection)
-			await m_providerMethods.CloseConnectionAsync(m_connection).ConfigureAwait(false);
-
-		m_isConnectionOpen = false;
-	}
 
 	private void DisposeTransaction()
 	{
@@ -288,20 +246,10 @@ internal sealed class StandardDbConnector : DbConnector
 			throw new ObjectDisposedException(typeof(StandardDbConnector).ToString());
 	}
 
-	private void VerifyCanOpenConnection()
-	{
-		VerifyNotDisposed();
-
-		if (m_isConnectionOpen)
-			throw new InvalidOperationException("Connection is already open.");
-	}
-
 	private void VerifyCanBeginTransaction()
 	{
 		VerifyNotDisposed();
 
-		if (!m_isConnectionOpen)
-			throw new InvalidOperationException("Connection must be open.");
 		if (m_transaction is not null)
 			throw new InvalidOperationException("A transaction is already started.");
 	}
@@ -324,7 +272,7 @@ internal sealed class StandardDbConnector : DbConnector
 		{
 			if (m_connector is not null)
 			{
-				m_connector.CloseConnection();
+				m_connector.ReleaseConnection();
 				m_connector = null;
 			}
 		}
@@ -333,7 +281,7 @@ internal sealed class StandardDbConnector : DbConnector
 		{
 			if (m_connector is not null)
 			{
-				await m_connector.CloseConnectionAsync().ConfigureAwait(false);
+				await m_connector.ReleaseConnectionAsync().ConfigureAwait(false);
 				m_connector = null;
 			}
 		}
@@ -369,14 +317,12 @@ internal sealed class StandardDbConnector : DbConnector
 	private readonly bool m_noDisposeConnection;
 	private readonly bool m_noDisposeTransaction;
 	private readonly bool m_noCloseConnection;
-	private readonly bool m_shouldLazyOpen;
 	private readonly DbProviderMethods m_providerMethods;
 	private readonly IsolationLevel? m_defaultIsolationLevel;
 	private readonly Action? m_whenDisposed;
 	private readonly IDbConnection m_connection;
 	private IDbTransaction? m_transaction;
 	private DbCommandCache? m_commandCache;
-	private bool m_pendingLazyOpen;
 	private bool m_isConnectionOpen;
 	private bool m_isDisposed;
 }

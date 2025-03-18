@@ -53,7 +53,7 @@ internal sealed class SqliteTests
 
 	private static DbConnector CreateConnector() => DbConnector.Create(
 		new SqliteConnection("Data Source=:memory:"),
-		new DbConnectorSettings { AutoOpen = true, LazyOpen = true, SqlSyntax = SqlSyntax.Sqlite });
+		new DbConnectorSettings { SqlSyntax = SqlSyntax.Sqlite });
 
 	private readonly struct NameValue
 	{

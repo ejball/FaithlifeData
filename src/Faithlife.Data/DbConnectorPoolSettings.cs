@@ -10,7 +10,7 @@ public class DbConnectorPoolSettings
 	/// </summary>
 	/// <remarks>The created connector is wrapped in a connector that stores the actual connector
 	/// in the pool when disposed. Since the advantage of a connector pool is keeping database
-	/// connections open, be sure to use <see cref="DbConnectorSettings.AutoOpen"/> (and optionally
-	/// <see cref="DbConnectorSettings.LazyOpen"/>) when creating the connector.</remarks>
+	/// connections open, avoid using <see cref="DbConnector.ReleaseConnection" /> or
+	/// <see cref="DbConnector.ReleaseConnectionAsync" />.</remarks>
 	public Func<DbConnector>? Create { get; set; }
 }

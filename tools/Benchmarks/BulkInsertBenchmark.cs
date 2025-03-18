@@ -67,7 +67,7 @@ public abstract class BulkInsertBenchmark : IDisposable
 
 	protected BulkInsertBenchmark(IDbConnection connection, string columnsSql, int recordCount, Func<int, object>? createParameter = null)
 	{
-		m_connector = DbConnector.Create(connection, new DbConnectorSettings { AutoOpen = true, LazyOpen = true });
+		m_connector = DbConnector.Create(connection);
 		m_connector.Command("drop table if exists BulkInsertBenchmark; ").Execute();
 		m_connector.CommandFormat($"create table BulkInsertBenchmark ({Sql.Raw(columnsSql)});").Execute();
 		m_recordCount = recordCount;
