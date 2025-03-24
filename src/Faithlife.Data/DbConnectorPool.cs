@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace Faithlife.Data;
 
 /// <summary>
@@ -28,22 +26,24 @@ public sealed class DbConnectorPool : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
-	/// Creates a connector that delegates to a connector in the pool (or a new connector if the pool is empty).
+	/// Returns a connector from the pool or creates a new connector if the pool is empty.
 	/// </summary>
-	/// <remarks>Dispose the returned connector to return the actual connector to the pool.</remarks>
+	/// <remarks>Dispose the returned connector to return it to the pool.</remarks>
 	public DbConnector Get()
 	{
-		DbConnector? innerConnector = null;
+		DbConnector? connector = null;
 
 		lock (m_lock)
 		{
 			if (m_idleConnectors is null)
 				throw new ObjectDisposedException(nameof(DbConnectorPool));
 			if (m_idleConnectors.Count != 0)
-				innerConnector = m_idleConnectors.Pop();
+				connector = m_idleConnectors.Pop();
 		}
 
-		return new PooledDbConnector(this, innerConnector ?? m_create());
+		connector ??= m_create();
+		connector.ConnectorPool = this;
+		return connector;
 	}
 
 	/// <summary>
@@ -88,39 +88,15 @@ public sealed class DbConnectorPool : IDisposable, IAsyncDisposable
 		}
 	}
 
-	private void ReturnInnerConnector(DbConnector innerConnector)
+	public void ReturnConnector(DbConnector connector)
 	{
 		lock (m_lock)
 		{
 			if (m_idleConnectors is null)
 				throw new InvalidOperationException($"{nameof(DbConnectorPool)} was disposed.");
-			m_idleConnectors.Push(innerConnector);
+			m_idleConnectors.Push(connector);
+			connector.ConnectorPool = null;
 		}
-	}
-
-	private sealed class PooledDbConnector : DelegatingDbConnector
-	{
-		public PooledDbConnector(DbConnectorPool pool, DbConnector inner)
-			: base(inner)
-		{
-			m_pool = pool;
-		}
-
-		[SuppressMessage("Usage", "CA2215:Dispose methods should call base class dispose", Justification = "Don't dispose inner connector.")]
-		public override void Dispose()
-		{
-			m_pool?.ReturnInnerConnector(Inner);
-			m_pool = null;
-		}
-
-		[SuppressMessage("Usage", "CA2215:Dispose methods should call base class dispose", Justification = "Don't dispose inner connector.")]
-		public override ValueTask DisposeAsync()
-		{
-			Dispose();
-			return default;
-		}
-
-		private DbConnectorPool? m_pool;
 	}
 
 	private readonly Func<DbConnector> m_create;

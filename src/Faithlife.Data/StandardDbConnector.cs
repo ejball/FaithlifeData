@@ -167,6 +167,13 @@ internal sealed class StandardDbConnector : DbConnector
 
 	public override void Dispose()
 	{
+		if (ConnectorPool is not null)
+		{
+			DisposeTransaction();
+			ConnectorPool.ReturnConnector(this);
+			return;
+		}
+
 		if (!m_isDisposed)
 		{
 			DisposeTransaction();
@@ -184,6 +191,13 @@ internal sealed class StandardDbConnector : DbConnector
 
 	public override async ValueTask DisposeAsync()
 	{
+		if (ConnectorPool is not null)
+		{
+			ConnectorPool.ReturnConnector(this);
+			ConnectorPool = null;
+			return;
+		}
+
 		if (!m_isDisposed)
 		{
 			await DisposeTransactionAsync().ConfigureAwait(false);

@@ -261,5 +261,7 @@ public abstract class DbConnector : IDisposable, IAsyncDisposable
 	/// </summary>
 	public abstract DbCommandCache? CommandCache { get; }
 
+	internal DbConnectorPool? ConnectorPool { get; set; }
+
 	private static readonly DbConnectorSettings s_defaultSettings = new();
 }
