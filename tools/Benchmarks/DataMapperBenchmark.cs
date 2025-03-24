@@ -11,7 +11,7 @@ public class DataMapperBenchmark : IDisposable
 {
 	protected DataMapperBenchmark()
 	{
-		m_connector = DbConnector.Create(new SqliteConnection("Data Source=:memory:"));
+		m_connector = new DbConnector(new SqliteConnection("Data Source=:memory:"));
 		m_connector.Command("drop table if exists DataMapperBenchmark;").Execute();
 		m_connector.Command("create table DataMapperBenchmark (ItemId integer primary key, AnInteger integer, AReal real, AString text, ABlob blob);").Execute();
 

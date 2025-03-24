@@ -13,14 +13,6 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	/// </summary>
 	/// <param name="connection">The database connection.</param>
 	/// <param name="settings">The settings.</param>
-	public static DbConnector Create(IDbConnection connection, DbConnectorSettings? settings = null) =>
-		new DbConnector(connection, settings);
-
-	/// <summary>
-	/// Creates a new DbConnector.
-	/// </summary>
-	/// <param name="connection">The database connection.</param>
-	/// <param name="settings">The settings.</param>
 	public DbConnector(IDbConnection connection, DbConnectorSettings? settings = null)
 	{
 		settings ??= s_defaultSettings;

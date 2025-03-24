@@ -51,9 +51,8 @@ internal sealed class SqliteTests
 			.Query<NameValue>().Should().Equal(items);
 	}
 
-	private static DbConnector CreateConnector() => DbConnector.Create(
-		new SqliteConnection("Data Source=:memory:"),
-		new DbConnectorSettings { SqlSyntax = SqlSyntax.Sqlite });
+	private static DbConnector CreateConnector() =>
+		new(new SqliteConnection("Data Source=:memory:"), new DbConnectorSettings { SqlSyntax = SqlSyntax.Sqlite });
 
 	private readonly struct NameValue
 	{

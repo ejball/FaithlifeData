@@ -41,7 +41,7 @@ internal sealed class DbConnectorPoolTests
 		DbConnector CreateConnection()
 		{
 			createCount++;
-			return DbConnector.Create(new SqliteConnection("Data Source=:memory:"));
+			return new DbConnector(new SqliteConnection("Data Source=:memory:"));
 		}
 	}
 
@@ -66,7 +66,7 @@ internal sealed class DbConnectorPoolTests
 		DbConnector CreateConnection()
 		{
 			createCount++;
-			return DbConnector.Create(new SqliteConnection("Data Source=:memory:"));
+			return new DbConnector(new SqliteConnection("Data Source=:memory:"));
 		}
 	}
 }

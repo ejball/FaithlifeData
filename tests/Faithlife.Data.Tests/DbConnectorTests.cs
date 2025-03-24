@@ -15,13 +15,13 @@ internal sealed class DbConnectorTests
 	[Test]
 	public void NullConnection()
 	{
-		Invoking(() => DbConnector.Create(null!)).Should().Throw<ArgumentNullException>();
+		Invoking(() => new DbConnector(null!)).Should().Throw<ArgumentNullException>();
 	}
 
 	[Test]
 	public void OpenConnection()
 	{
-		using var connector = DbConnector.Create(new SqliteConnection("Data Source=:memory:"));
+		using var connector = new DbConnector(new SqliteConnection("Data Source=:memory:"));
 		using (connector.OpenConnection())
 			connector.Command("create table Items1 (ItemId integer primary key, Name text not null);").Execute().Should().Be(0);
 	}
@@ -29,7 +29,7 @@ internal sealed class DbConnectorTests
 	[Test]
 	public async Task OpenConnectionAsync()
 	{
-		await using var connector = DbConnector.Create(new SqliteConnection("Data Source=:memory:"));
+		await using var connector = new DbConnector(new SqliteConnection("Data Source=:memory:"));
 		await using (await connector.OpenConnectionAsync())
 			(await connector.Command("create table Items1 (ItemId integer primary key, Name text not null);").ExecuteAsync()).Should().Be(0);
 	}
@@ -269,8 +269,8 @@ internal sealed class DbConnectorTests
 	public void DeferredTransaction()
 	{
 		var connectionString = new SqliteConnectionStringBuilder { DataSource = nameof(DeferredTransaction), Mode = SqliteOpenMode.Memory, Cache = SqliteCacheMode.Shared }.ConnectionString;
-		using var connector1 = DbConnector.Create(new SqliteConnection(connectionString));
-		using var connector2 = DbConnector.Create(new SqliteConnection(connectionString));
+		using var connector1 = new DbConnector(new SqliteConnection(connectionString));
+		using var connector2 = new DbConnector(new SqliteConnection(connectionString));
 		((SqliteConnection) connector1.GetOpenConnection()).DefaultTimeout = 5;
 		((SqliteConnection) connector2.GetOpenConnection()).DefaultTimeout = 5;
 		connector1.Command("create table Items (ItemId integer primary key, Name text not null);").Execute();
@@ -466,8 +466,8 @@ internal sealed class DbConnectorTests
 	public void TimeoutTest()
 	{
 		var connectionString = new SqliteConnectionStringBuilder { DataSource = nameof(TimeoutTest), Mode = SqliteOpenMode.Memory, Cache = SqliteCacheMode.Shared }.ConnectionString;
-		using var connector1 = DbConnector.Create(new SqliteConnection(connectionString));
-		using var connector2 = DbConnector.Create(new SqliteConnection(connectionString));
+		using var connector1 = new DbConnector(new SqliteConnection(connectionString));
+		using var connector2 = new DbConnector(new SqliteConnection(connectionString));
 		connector1.Command("create table Items (ItemId integer primary key, Name text not null);").Execute();
 		connector2.Command("insert into Items (Name) values ('xyzzy');").Execute();
 		using var transaction1 = connector1.BeginTransaction();
@@ -541,7 +541,7 @@ internal sealed class DbConnectorTests
 		throw new InvalidOperationException();
 	}
 
-	private static DbConnector CreateConnector() => DbConnector.Create(new SqliteConnection("Data Source=:memory:"));
+	private static DbConnector CreateConnector() => new DbConnector(new SqliteConnection("Data Source=:memory:"));
 
 	private static string ToUpper(IDataRecord x) => DbDataMapper.Default.Map<string>(x).ToUpperInvariant();
 }
