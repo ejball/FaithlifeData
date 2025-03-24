@@ -512,7 +512,7 @@ internal sealed class DbConnectorTests
 		// if connection was not closed and reopened, the temporary table would still exist and recreating it would fail
 		using var connector = CreateConnector();
 		connector.Command("create temporary table Items (ItemId integer primary key);").Execute().Should().Be(0);
-		connector.ReleaseConnection();
+		connector.CloseConnection();
 		connector.Command("create temporary table Items (ItemId integer primary key);").Execute().Should().Be(0);
 	}
 
@@ -522,7 +522,7 @@ internal sealed class DbConnectorTests
 		// if connection was not closed and reopened, the temporary table would still exist and recreating it would fail
 		await using var connector = CreateConnector();
 		(await connector.Command("create temporary table Items (ItemId integer primary key);").ExecuteAsync()).Should().Be(0);
-		await connector.ReleaseConnectionAsync();
+		await connector.CloseConnectionAsync();
 		(await connector.Command("create temporary table Items (ItemId integer primary key);").ExecuteAsync()).Should().Be(0);
 	}
 

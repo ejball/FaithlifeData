@@ -143,7 +143,7 @@ internal sealed class StandardDbConnector : DbConnector
 		await DisposeTransactionAsync().ConfigureAwait(false);
 	}
 
-	public override void ReleaseConnection()
+	public override void CloseConnection()
 	{
 		VerifyNotDisposed();
 
@@ -154,7 +154,7 @@ internal sealed class StandardDbConnector : DbConnector
 		}
 	}
 
-	public override async ValueTask ReleaseConnectionAsync()
+	public override async ValueTask CloseConnectionAsync()
 	{
 		VerifyNotDisposed();
 
@@ -271,7 +271,7 @@ internal sealed class StandardDbConnector : DbConnector
 		{
 			if (m_connector is not null)
 			{
-				m_connector.ReleaseConnection();
+				m_connector.CloseConnection();
 				m_connector = null;
 			}
 		}
@@ -280,7 +280,7 @@ internal sealed class StandardDbConnector : DbConnector
 		{
 			if (m_connector is not null)
 			{
-				await m_connector.ReleaseConnectionAsync().ConfigureAwait(false);
+				await m_connector.CloseConnectionAsync().ConfigureAwait(false);
 				m_connector = null;
 			}
 		}

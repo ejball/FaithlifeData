@@ -68,10 +68,10 @@ public class DelegatingDbConnector : DbConnector
 	public override ValueTask RollbackTransactionAsync(CancellationToken cancellationToken = default) => Inner.RollbackTransactionAsync(cancellationToken);
 
 	/// <inheritdoc />
-	public override void ReleaseConnection() => Inner.ReleaseConnection();
+	public override void CloseConnection() => Inner.CloseConnection();
 
 	/// <inheritdoc />
-	public override ValueTask ReleaseConnectionAsync() => Inner.ReleaseConnectionAsync();
+	public override ValueTask CloseConnectionAsync() => Inner.CloseConnectionAsync();
 
 	/// <inheritdoc />
 	public override void Dispose() => Inner.Dispose();

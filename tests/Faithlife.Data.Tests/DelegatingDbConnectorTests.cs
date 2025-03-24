@@ -68,9 +68,9 @@ internal sealed class DelegatingDbConnectorTests
 
 		public override ValueTask RollbackTransactionAsync(CancellationToken cancellationToken = default) => throw new DelegatedException();
 
-		public override void ReleaseConnection() => throw new DelegatedException();
+		public override void CloseConnection() => throw new DelegatedException();
 
-		public override ValueTask ReleaseConnectionAsync() => throw new DelegatedException();
+		public override ValueTask CloseConnectionAsync() => throw new DelegatedException();
 
 		public override void Dispose() => throw new DelegatedException();
 

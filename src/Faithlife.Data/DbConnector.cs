@@ -228,16 +228,16 @@ public abstract class DbConnector : IDisposable, IAsyncDisposable
 	public DbConnectorCommand StoredProcedure(string name, params (string Name, object? Value)[] parameters) => StoredProcedure(name, DbParameters.Create(parameters));
 
 	/// <summary>
-	/// Releases the open connection.
+	/// Closes the connection.
 	/// </summary>
-	/// <remarks>This method closes the underlying connection, automatically reopening it if it is used again.</remarks>
-	public virtual void ReleaseConnection() => throw new NotImplementedException();
+	/// <remarks>This method closes the underlying connection, which will be automatically reopened it if it is used again.</remarks>
+	public virtual void CloseConnection() => throw new NotImplementedException();
 
 	/// <summary>
-	/// Releases the open connection.
+	/// Closes the connection.
 	/// </summary>
-	/// <remarks>This method closes the underlying connection, automatically reopening it if it is used again.</remarks>
-	public virtual ValueTask ReleaseConnectionAsync() => throw new NotImplementedException();
+	/// <remarks>This method closes the underlying connection, which will be automatically reopened it if it is used again.</remarks>
+	public virtual ValueTask CloseConnectionAsync() => throw new NotImplementedException();
 
 	/// <summary>
 	/// Disposes the connector.
