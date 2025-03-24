@@ -3,15 +3,15 @@ namespace Faithlife.Data;
 /// <summary>
 /// Disposes the transaction when disposed.
 /// </summary>
-public abstract class DbTransactionDisposer : IDisposable, IAsyncDisposable
+public readonly struct DbTransactionDisposer(DbConnector connector) : IDisposable, IAsyncDisposable
 {
 	/// <summary>
 	/// Disposes the transaction.
 	/// </summary>
-	public abstract void Dispose();
+	public void Dispose() => connector.DisposeTransaction();
 
 	/// <summary>
 	/// Disposes the transaction.
 	/// </summary>
-	public abstract ValueTask DisposeAsync();
+	public ValueTask DisposeAsync() => connector.DisposeTransactionAsync();
 }

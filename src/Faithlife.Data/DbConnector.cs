@@ -113,7 +113,7 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 			m_isConnectionOpen = true;
 		}
 
-		return new ConnectionCloser(this);
+		return new DbConnectionCloser(this);
 	}
 
 	/// <summary>
@@ -132,7 +132,7 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 			m_isConnectionOpen = true;
 		}
 
-		return new ConnectionCloser(this);
+		return new DbConnectionCloser(this);
 	}
 
 	/// <summary>
@@ -146,7 +146,7 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 		m_transaction = m_defaultIsolationLevel is { } isolationLevel
 			? GetOpenConnection().BeginTransaction(isolationLevel)
 			: GetOpenConnection().BeginTransaction();
-		return new TransactionDisposer(this);
+		return new DbTransactionDisposer(this);
 	}
 
 	/// <summary>
@@ -159,7 +159,7 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	{
 		VerifyCanBeginTransaction();
 		m_transaction = GetOpenConnection().BeginTransaction(isolationLevel);
-		return new TransactionDisposer(this);
+		return new DbTransactionDisposer(this);
 	}
 
 	/// <summary>
@@ -174,7 +174,7 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 		m_transaction = m_defaultIsolationLevel is { } isolationLevel
 			? await m_providerMethods.BeginTransactionAsync(await GetOpenConnectionAsync(cancellationToken).ConfigureAwait(false), isolationLevel, cancellationToken).ConfigureAwait(false)
 			: await m_providerMethods.BeginTransactionAsync(await GetOpenConnectionAsync(cancellationToken).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
-		return new TransactionDisposer(this);
+		return new DbTransactionDisposer(this);
 	}
 
 	/// <summary>
@@ -188,7 +188,7 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	{
 		VerifyCanBeginTransaction();
 		m_transaction = await m_providerMethods.BeginTransactionAsync(await GetOpenConnectionAsync(cancellationToken).ConfigureAwait(false), isolationLevel, cancellationToken).ConfigureAwait(false);
-		return new TransactionDisposer(this);
+		return new DbTransactionDisposer(this);
 	}
 
 	/// <summary>
@@ -199,7 +199,7 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	{
 		VerifyCanBeginTransaction();
 		m_transaction = transaction;
-		return new TransactionDisposer(this);
+		return new DbTransactionDisposer(this);
 	}
 
 	/// <summary>
@@ -435,7 +435,7 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 
 	internal DbConnectorPool? ConnectorPool { get; set; }
 
-	private void DisposeTransaction()
+	internal void DisposeTransaction()
 	{
 		VerifyNotDisposed();
 
@@ -444,7 +444,7 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 		m_transaction = null;
 	}
 
-	private async ValueTask DisposeTransactionAsync()
+	internal async ValueTask DisposeTransactionAsync()
 	{
 		VerifyNotDisposed();
 
@@ -493,56 +493,6 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 			throw new InvalidOperationException("No transaction available; call BeginTransaction first.");
 
 		return m_transaction;
-	}
-
-	private sealed class ConnectionCloser : DbConnectionCloser
-	{
-		public ConnectionCloser(DbConnector connector) => m_connector = connector;
-
-		public override void Dispose()
-		{
-			if (m_connector is not null)
-			{
-				m_connector.CloseConnection();
-				m_connector = null;
-			}
-		}
-
-		public override async ValueTask DisposeAsync()
-		{
-			if (m_connector is not null)
-			{
-				await m_connector.CloseConnectionAsync().ConfigureAwait(false);
-				m_connector = null;
-			}
-		}
-
-		private DbConnector? m_connector;
-	}
-
-	private sealed class TransactionDisposer : DbTransactionDisposer
-	{
-		public TransactionDisposer(DbConnector connector) => m_connector = connector;
-
-		public override void Dispose()
-		{
-			if (m_connector is not null)
-			{
-				m_connector.DisposeTransaction();
-				m_connector = null;
-			}
-		}
-
-		public override async ValueTask DisposeAsync()
-		{
-			if (m_connector is not null)
-			{
-				await m_connector.DisposeTransactionAsync().ConfigureAwait(false);
-				m_connector = null;
-			}
-		}
-
-		private DbConnector? m_connector;
 	}
 
 	private static readonly DbConnectorSettings s_defaultSettings = new();

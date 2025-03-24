@@ -3,15 +3,15 @@ namespace Faithlife.Data;
 /// <summary>
 /// Closes the connection when disposed.
 /// </summary>
-public abstract class DbConnectionCloser : IDisposable, IAsyncDisposable
+public readonly struct DbConnectionCloser(DbConnector connector) : IDisposable, IAsyncDisposable
 {
 	/// <summary>
 	/// Closes the connection.
 	/// </summary>
-	public abstract void Dispose();
+	public void Dispose() => connector.CloseConnection();
 
 	/// <summary>
 	/// Closes the connection.
 	/// </summary>
-	public abstract ValueTask DisposeAsync();
+	public ValueTask DisposeAsync() => connector.CloseConnectionAsync();
 }
