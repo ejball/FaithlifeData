@@ -423,15 +423,9 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 		}
 	}
 
-	/// <summary>
-	/// Special methods provided by the database provider.
-	/// </summary>
-	public DbProviderMethods ProviderMethods => m_providerMethods;
+	internal DbProviderMethods ProviderMethods => m_providerMethods;
 
-	/// <summary>
-	/// Gets the command cache, if supported.
-	/// </summary>
-	public DbCommandCache CommandCache => m_commandCache ??= DbCommandCache.Create();
+	internal DbCommandCache CommandCache => m_commandCache ??= new();
 
 	internal DbConnectorPool? ConnectorPool { get; set; }
 

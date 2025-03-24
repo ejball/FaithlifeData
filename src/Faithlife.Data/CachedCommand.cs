@@ -75,6 +75,5 @@ internal sealed class CachedCommand : IDbCommand
 		set => throw CreateException();
 	}
 
-	private static InvalidOperationException CreateException() =>
-		new InvalidOperationException("Property cannot be modified for cached command.");
+	private static InvalidOperationException CreateException() => new("Property cannot be modified for cached command.");
 }
