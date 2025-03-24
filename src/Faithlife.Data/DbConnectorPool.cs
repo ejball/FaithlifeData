@@ -17,11 +17,7 @@ public sealed class DbConnectorPool : IDisposable, IAsyncDisposable
 		_ = settings ?? throw new ArgumentNullException(nameof(settings));
 		m_create = settings.Create ?? throw new ArgumentException($"{nameof(settings.Create)} is required.");
 
-#if NET9_0_OR_GREATER
 		m_lock = new Lock();
-#else
-		m_lock = new object();
-#endif
 		m_idleConnectors = new Stack<DbConnector>();
 	}
 
@@ -88,7 +84,7 @@ public sealed class DbConnectorPool : IDisposable, IAsyncDisposable
 		}
 	}
 
-	public void ReturnConnector(DbConnector connector)
+	internal void ReturnConnector(DbConnector connector)
 	{
 		lock (m_lock)
 		{
@@ -100,10 +96,6 @@ public sealed class DbConnectorPool : IDisposable, IAsyncDisposable
 	}
 
 	private readonly Func<DbConnector> m_create;
-#if NET9_0_OR_GREATER
 	private readonly Lock m_lock;
-#else
-	private readonly object m_lock;
-#endif
 	private Stack<DbConnector>? m_idleConnectors;
 }

@@ -291,12 +291,12 @@ public readonly struct DbConnectorCommand
 	/// <summary>
 	/// Caches the command.
 	/// </summary>
-	public DbConnectorCommand Cache() => new DbConnectorCommand(Connector, Text, Parameters, CommandType, Timeout, isCached: true, isPrepared: IsPrepared);
+	public DbConnectorCommand Cache() => new(Connector, Text, Parameters, CommandType, Timeout, isCached: true, isPrepared: IsPrepared);
 
 	/// <summary>
 	/// Prepares the command.
 	/// </summary>
-	public DbConnectorCommand Prepare() => new DbConnectorCommand(Connector, Text, Parameters, CommandType, Timeout, isCached: IsCached, isPrepared: true);
+	public DbConnectorCommand Prepare() => new(Connector, Text, Parameters, CommandType, Timeout, isCached: IsCached, isPrepared: true);
 
 	/// <summary>
 	/// Creates an <see cref="IDbCommand" /> from the text and parameters.
@@ -555,11 +555,9 @@ public readonly struct DbConnectorCommand
 		return value;
 	}
 
-	private static InvalidOperationException CreateNoRecordsException() =>
-		new InvalidOperationException("No records were found; use 'OrDefault' to permit this.");
+	private static InvalidOperationException CreateNoRecordsException() => new("No records were found; use 'OrDefault' to permit this.");
 
-	private static InvalidOperationException CreateTooManyRecordsException() =>
-		new InvalidOperationException("Additional records were found; use 'First' to permit this.");
+	private static InvalidOperationException CreateTooManyRecordsException() => new("Additional records were found; use 'First' to permit this.");
 
 	private IEnumerable<T> DoEnumerate<T>(Func<IDataRecord, T>? map)
 	{

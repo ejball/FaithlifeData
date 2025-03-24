@@ -248,7 +248,7 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	/// <param name="text">The text of the command.</param>
 	/// <param name="parameters">The command parameters.</param>
 	public DbConnectorCommand Command(string text, DbParameters parameters) =>
-		new DbConnectorCommand(this, text, parameters, CommandType.Text, timeout: null, isCached: false, isPrepared: false);
+		new(this, text, parameters, CommandType.Text, timeout: null, isCached: false, isPrepared: false);
 
 	/// <summary>
 	/// Creates a new command.
