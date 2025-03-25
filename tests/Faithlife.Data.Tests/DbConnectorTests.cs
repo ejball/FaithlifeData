@@ -22,16 +22,28 @@ internal sealed class DbConnectorTests
 	public void OpenConnection()
 	{
 		using var connector = new DbConnector(new SqliteConnection("Data Source=:memory:"));
+		connector.Connection.State.Should().Be(ConnectionState.Closed);
 		using (connector.OpenConnection())
+		{
+			connector.Connection.State.Should().Be(ConnectionState.Open);
 			connector.Command("create table Items1 (ItemId integer primary key, Name text not null);").Execute().Should().Be(0);
+			connector.Connection.State.Should().Be(ConnectionState.Open);
+		}
+		connector.Connection.State.Should().Be(ConnectionState.Closed);
 	}
 
 	[Test]
 	public async Task OpenConnectionAsync()
 	{
 		await using var connector = new DbConnector(new SqliteConnection("Data Source=:memory:"));
+		connector.Connection.State.Should().Be(ConnectionState.Closed);
 		await using (await connector.OpenConnectionAsync())
+		{
+			connector.Connection.State.Should().Be(ConnectionState.Open);
 			(await connector.Command("create table Items1 (ItemId integer primary key, Name text not null);").ExecuteAsync()).Should().Be(0);
+			connector.Connection.State.Should().Be(ConnectionState.Open);
+		}
+		connector.Connection.State.Should().Be(ConnectionState.Closed);
 	}
 
 	[Test]

@@ -60,14 +60,12 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	public IDbConnection GetOpenConnection()
 	{
 		VerifyNotDisposed();
-		return m_isConnectionOpen ? m_connection : DoOpenConnection();
-
-		IDbConnection DoOpenConnection()
-		{
-			m_providerMethods.OpenConnection(m_connection);
-			m_isConnectionOpen = true;
+		if (m_isConnectionOpen)
 			return m_connection;
-		}
+
+		m_providerMethods.OpenConnection(m_connection);
+		m_isConnectionOpen = true;
+		return m_connection;
 	}
 
 	/// <summary>
@@ -80,9 +78,9 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	public ValueTask<IDbConnection> GetOpenConnectionAsync(CancellationToken cancellationToken = default)
 	{
 		VerifyNotDisposed();
-		return m_isConnectionOpen ? new ValueTask<IDbConnection>(m_connection) : DoOpenConnectionAsync();
+		return m_isConnectionOpen ? new ValueTask<IDbConnection>(m_connection) : DoAsync();
 
-		async ValueTask<IDbConnection> DoOpenConnectionAsync()
+		async ValueTask<IDbConnection> DoAsync()
 		{
 			await m_providerMethods.OpenConnectionAsync(m_connection, cancellationToken).ConfigureAwait(false);
 			m_isConnectionOpen = true;
@@ -98,13 +96,11 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	public DbConnectionCloser OpenConnection()
 	{
 		VerifyNotDisposed();
+		if (m_isConnectionOpen)
+			return default;
 
-		if (!m_isConnectionOpen)
-		{
-			m_providerMethods.OpenConnection(m_connection);
-			m_isConnectionOpen = true;
-		}
-
+		m_providerMethods.OpenConnection(m_connection);
+		m_isConnectionOpen = true;
 		return new DbConnectionCloser(this);
 	}
 
@@ -114,17 +110,17 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	/// <param name="cancellationToken">The cancellation token.</param>
 	/// <returns>An <see cref="IDisposable" /> that should be disposed when the connection should be closed.</returns>
 	/// <seealso cref="OpenConnection" />
-	public async ValueTask<DbConnectionCloser> OpenConnectionAsync(CancellationToken cancellationToken = default)
+	public ValueTask<DbConnectionCloser> OpenConnectionAsync(CancellationToken cancellationToken = default)
 	{
 		VerifyNotDisposed();
+		return m_isConnectionOpen ? default : DoAsync();
 
-		if (!m_isConnectionOpen)
+		async ValueTask<DbConnectionCloser> DoAsync()
 		{
 			await m_providerMethods.OpenConnectionAsync(m_connection, cancellationToken).ConfigureAwait(false);
 			m_isConnectionOpen = true;
+			return new DbConnectionCloser(this);
 		}
-
-		return new DbConnectionCloser(this);
 	}
 
 	/// <summary>
@@ -163,9 +159,10 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	public async ValueTask<DbTransactionDisposer> BeginTransactionAsync(CancellationToken cancellationToken = default)
 	{
 		VerifyCanBeginTransaction();
+		var connection = await GetOpenConnectionAsync(cancellationToken).ConfigureAwait(false);
 		m_transaction = m_defaultIsolationLevel is { } isolationLevel
-			? await m_providerMethods.BeginTransactionAsync(await GetOpenConnectionAsync(cancellationToken).ConfigureAwait(false), isolationLevel, cancellationToken).ConfigureAwait(false)
-			: await m_providerMethods.BeginTransactionAsync(await GetOpenConnectionAsync(cancellationToken).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
+			? await m_providerMethods.BeginTransactionAsync(connection, isolationLevel, cancellationToken).ConfigureAwait(false)
+			: await m_providerMethods.BeginTransactionAsync(connection, cancellationToken).ConfigureAwait(false);
 		return new DbTransactionDisposer(this);
 	}
 
@@ -179,7 +176,8 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	public async ValueTask<DbTransactionDisposer> BeginTransactionAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken = default)
 	{
 		VerifyCanBeginTransaction();
-		m_transaction = await m_providerMethods.BeginTransactionAsync(await GetOpenConnectionAsync(cancellationToken).ConfigureAwait(false), isolationLevel, cancellationToken).ConfigureAwait(false);
+		var connection = await GetOpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+		m_transaction = await m_providerMethods.BeginTransactionAsync(connection, isolationLevel, cancellationToken).ConfigureAwait(false);
 		return new DbTransactionDisposer(this);
 	}
 
@@ -337,22 +335,27 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	{
 		VerifyNotDisposed();
 
-		if (m_isConnectionOpen && !m_noCloseConnection)
-		{
-			m_connection.Close();
-			m_isConnectionOpen = false;
-		}
+		if (!m_isConnectionOpen || m_noCloseConnection)
+			return;
+
+		m_connection.Close();
+		m_isConnectionOpen = false;
 	}
 
 	/// <summary>
 	/// Closes the connection.
 	/// </summary>
 	/// <remarks>This method closes the underlying connection, which will be automatically reopened it if it is used again.</remarks>
-	public async ValueTask CloseConnectionAsync()
+	public ValueTask CloseConnectionAsync()
 	{
 		VerifyNotDisposed();
 
-		if (m_isConnectionOpen && !m_noCloseConnection)
+		if (!m_isConnectionOpen || m_noCloseConnection)
+			return default;
+
+		return DoAsync();
+
+		async ValueTask DoAsync()
 		{
 			await m_providerMethods.CloseConnectionAsync(m_connection).ConfigureAwait(false);
 			m_isConnectionOpen = false;
@@ -372,45 +375,39 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 			return;
 		}
 
-		if (!m_isDisposed)
-		{
-			DisposeTransaction();
+		if (m_isDisposed)
+			return;
 
-			DisposeCachedCommands();
-
-			if (!m_noDisposeConnection)
-				m_connection.Dispose();
-
-			m_whenDisposed?.Invoke();
-
-			m_isDisposed = true;
-		}
+		DisposeTransaction();
+		DisposeCachedCommands();
+		if (!m_noDisposeConnection)
+			m_connection.Dispose();
+		m_whenDisposed?.Invoke();
+		m_isDisposed = true;
 	}
 
 	/// <summary>
 	/// Disposes the connector.
 	/// </summary>
 	/// <seealso cref="Dispose" />
-	public async ValueTask DisposeAsync()
+	public ValueTask DisposeAsync()
 	{
 		if (ConnectorPool is not null)
 		{
 			ConnectorPool.ReturnConnector(this);
 			ConnectorPool = null;
-			return;
+			return default;
 		}
 
-		if (!m_isDisposed)
+		return m_isDisposed ? default : DoAsync();
+
+		async ValueTask DoAsync()
 		{
 			await DisposeTransactionAsync().ConfigureAwait(false);
-
 			await DisposeCachedCommandsAsync().ConfigureAwait(false);
-
 			if (!m_noDisposeConnection)
 				await m_providerMethods.DisposeConnectionAsync(m_connection).ConfigureAwait(false);
-
 			m_whenDisposed?.Invoke();
-
 			m_isDisposed = true;
 		}
 	}
@@ -425,34 +422,46 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	{
 		VerifyNotDisposed();
 
-		if (!m_noDisposeTransaction)
-			m_transaction?.Dispose();
+		var transaction = m_transaction;
 		m_transaction = null;
+
+		if (!m_noDisposeTransaction && transaction is not null)
+			transaction.Dispose();
 	}
 
-	internal async ValueTask DisposeTransactionAsync()
+	internal ValueTask DisposeTransactionAsync()
 	{
 		VerifyNotDisposed();
 
-		if (!m_noDisposeTransaction && m_transaction is not null)
-			await m_providerMethods.DisposeTransactionAsync(m_transaction).ConfigureAwait(false);
+		var transaction = m_transaction;
 		m_transaction = null;
+
+		return !m_noDisposeTransaction && transaction is not null ? DoAsync() : default;
+
+		async ValueTask DoAsync() => await m_providerMethods.DisposeTransactionAsync(transaction).ConfigureAwait(false);
 	}
 
 	private void DisposeCachedCommands()
 	{
-		if (m_commandCache is not null)
-		{
-			foreach (var command in m_commandCache.GetCommands())
-				CachedCommand.Unwrap(command).Dispose();
-		}
+		if (m_commandCache is null)
+			return;
+
+		var commands = m_commandCache.GetCommands();
+		foreach (var command in commands)
+			CachedCommand.Unwrap(command).Dispose();
 	}
 
-	private async ValueTask DisposeCachedCommandsAsync()
+	private ValueTask DisposeCachedCommandsAsync()
 	{
-		if (m_commandCache is not null)
+		if (m_commandCache is null)
+			return default;
+
+		var commands = m_commandCache.GetCommands();
+		return commands.Count != 0 ? DoAsync() : default;
+
+		async ValueTask DoAsync()
 		{
-			foreach (var command in m_commandCache.GetCommands())
+			foreach (var command in commands)
 				await m_providerMethods.DisposeCommandAsync(CachedCommand.Unwrap(command)).ConfigureAwait(false);
 		}
 	}
