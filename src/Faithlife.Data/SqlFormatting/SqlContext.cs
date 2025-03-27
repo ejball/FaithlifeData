@@ -11,16 +11,16 @@ internal sealed class SqlContext
 
 	public SqlSyntax Syntax { get; }
 
-	public DbParameters Parameters => m_parameters is null ? DbParameters.Empty : DbParameters.Create(m_parameters);
+	public DbParameters Parameters => m_parametersList is null ? DbParameters.Empty : m_parametersList.Count == 1 ? m_parametersList[0] : new MergedDbParameters(m_parametersList);
 
-	public string RenderParam(object? key, object? value)
+	public string RenderParam<T>(object? key, T value)
 	{
 		if (key is not null && m_renderedParams is not null && m_renderedParams.TryGetValue(key, out var rendered))
 			return rendered;
 
-		m_parameters ??= [];
-		var name = Invariant($"fdp{m_parameters.Count}");
-		m_parameters.Add((name, value));
+		m_parametersList ??= [];
+		var name = Invariant($"fdp{m_parametersList.Count}");
+		m_parametersList.Add(DbParameters.Create(name, value));
 		rendered = Syntax.ParameterPrefix + name;
 
 		if (key is not null)
@@ -32,6 +32,6 @@ internal sealed class SqlContext
 		return rendered;
 	}
 
-	private List<(string Name, object? Value)>? m_parameters;
+	private List<DbParameters>? m_parametersList;
 	private Dictionary<object, string>? m_renderedParams;
 }

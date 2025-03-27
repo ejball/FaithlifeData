@@ -75,8 +75,8 @@ public readonly struct DbConnectorCommand
 	/// <summary>
 	/// Executes the query, reading every record and converting it to the specified type with the specified delegate.
 	/// </summary>
-	/// <seealso cref="QueryAsync{T}(Func{DbRecordReader, T}, CancellationToken)" />
-	public IReadOnlyList<T> Query<T>(Func<DbRecordReader, T> map) =>
+	/// <seealso cref="QueryAsync{T}(Func{DbRecord, T}, CancellationToken)" />
+	public IReadOnlyList<T> Query<T>(Func<DbRecord, T> map) =>
 		DoQuery(map ?? throw new ArgumentNullException(nameof(map)));
 
 	/// <summary>
@@ -91,8 +91,8 @@ public readonly struct DbConnectorCommand
 	/// Executes the query, converting the first record to the specified type with the specified delegate.
 	/// </summary>
 	/// <remarks>Throws <see cref="InvalidOperationException"/> if no records are returned.</remarks>
-	/// <seealso cref="QueryFirstAsync{T}(Func{DbRecordReader, T}, CancellationToken)" />
-	public T QueryFirst<T>(Func<DbRecordReader, T> map) =>
+	/// <seealso cref="QueryFirstAsync{T}(Func{DbRecord, T}, CancellationToken)" />
+	public T QueryFirst<T>(Func<DbRecord, T> map) =>
 		DoQueryFirst(map ?? throw new ArgumentNullException(nameof(map)), single: false, orDefault: false);
 
 	/// <summary>
@@ -107,8 +107,8 @@ public readonly struct DbConnectorCommand
 	/// Executes the query, converting the first record to the specified type with the specified delegate.
 	/// </summary>
 	/// <remarks>Returns <c>default(T)</c> if no records are returned.</remarks>
-	/// <seealso cref="QueryFirstOrDefaultAsync{T}(Func{DbRecordReader, T}, CancellationToken)" />
-	public T QueryFirstOrDefault<T>(Func<DbRecordReader, T> map) =>
+	/// <seealso cref="QueryFirstOrDefaultAsync{T}(Func{DbRecord, T}, CancellationToken)" />
+	public T QueryFirstOrDefault<T>(Func<DbRecord, T> map) =>
 		DoQueryFirst(map ?? throw new ArgumentNullException(nameof(map)), single: false, orDefault: true);
 
 	/// <summary>
@@ -123,8 +123,8 @@ public readonly struct DbConnectorCommand
 	/// Executes the query, converting the first record to the specified type with the specified delegate.
 	/// </summary>
 	/// <remarks>Throws <see cref="InvalidOperationException"/> if no records are returned, or if more than one record is returned.</remarks>
-	/// <seealso cref="QuerySingleAsync{T}(Func{DbRecordReader, T}, CancellationToken)" />
-	public T QuerySingle<T>(Func<DbRecordReader, T> map) =>
+	/// <seealso cref="QuerySingleAsync{T}(Func{DbRecord, T}, CancellationToken)" />
+	public T QuerySingle<T>(Func<DbRecord, T> map) =>
 		DoQueryFirst(map ?? throw new ArgumentNullException(nameof(map)), single: true, orDefault: false);
 
 	/// <summary>
@@ -141,8 +141,8 @@ public readonly struct DbConnectorCommand
 	/// </summary>
 	/// <remarks>Returns <c>default(T)</c> if no records are returned.
 	/// Throws <see cref="InvalidOperationException"/> if more than one record is returned.</remarks>
-	/// <seealso cref="QuerySingleOrDefaultAsync{T}(Func{DbRecordReader, T}, CancellationToken)" />
-	public T QuerySingleOrDefault<T>(Func<DbRecordReader, T> map) =>
+	/// <seealso cref="QuerySingleOrDefaultAsync{T}(Func{DbRecord, T}, CancellationToken)" />
+	public T QuerySingleOrDefault<T>(Func<DbRecord, T> map) =>
 		DoQueryFirst(map ?? throw new ArgumentNullException(nameof(map)), single: true, orDefault: true);
 
 	/// <summary>
@@ -155,8 +155,8 @@ public readonly struct DbConnectorCommand
 	/// <summary>
 	/// Executes the query, converting each record to the specified type with the specified delegate.
 	/// </summary>
-	/// <seealso cref="Query{T}(Func{DbRecordReader, T})" />
-	public ValueTask<IReadOnlyList<T>> QueryAsync<T>(Func<DbRecordReader, T> map, CancellationToken cancellationToken = default) =>
+	/// <seealso cref="Query{T}(Func{DbRecord, T})" />
+	public ValueTask<IReadOnlyList<T>> QueryAsync<T>(Func<DbRecord, T> map, CancellationToken cancellationToken = default) =>
 		DoQueryAsync(map ?? throw new ArgumentNullException(nameof(map)), cancellationToken);
 
 	/// <summary>
@@ -171,8 +171,8 @@ public readonly struct DbConnectorCommand
 	/// Executes the query, converting the first record to the specified type with the specified delegate.
 	/// </summary>
 	/// <remarks>Throws <see cref="InvalidOperationException"/> if no records are returned.</remarks>
-	/// <seealso cref="QueryFirst{T}(Func{DbRecordReader, T})" />
-	public ValueTask<T> QueryFirstAsync<T>(Func<DbRecordReader, T> map, CancellationToken cancellationToken = default) =>
+	/// <seealso cref="QueryFirst{T}(Func{DbRecord, T})" />
+	public ValueTask<T> QueryFirstAsync<T>(Func<DbRecord, T> map, CancellationToken cancellationToken = default) =>
 		DoQueryFirstAsync(map ?? throw new ArgumentNullException(nameof(map)), single: false, orDefault: false, cancellationToken);
 
 	/// <summary>
@@ -187,8 +187,8 @@ public readonly struct DbConnectorCommand
 	/// Executes the query, converting the first record to the specified type with the specified delegate.
 	/// </summary>
 	/// <remarks>Returns <c>default(T)</c> if no records are returned.</remarks>
-	/// <seealso cref="QueryFirstOrDefault{T}(Func{DbRecordReader, T})" />
-	public ValueTask<T> QueryFirstOrDefaultAsync<T>(Func<DbRecordReader, T> map, CancellationToken cancellationToken = default) =>
+	/// <seealso cref="QueryFirstOrDefault{T}(Func{DbRecord, T})" />
+	public ValueTask<T> QueryFirstOrDefaultAsync<T>(Func<DbRecord, T> map, CancellationToken cancellationToken = default) =>
 		DoQueryFirstAsync(map ?? throw new ArgumentNullException(nameof(map)), single: false, orDefault: true, cancellationToken);
 
 	/// <summary>
@@ -203,8 +203,8 @@ public readonly struct DbConnectorCommand
 	/// Executes the query, converting the first record to the specified type with the specified delegate.
 	/// </summary>
 	/// <remarks>Throws <see cref="InvalidOperationException"/> if no records are returned, or if more than one record is returned.</remarks>
-	/// <seealso cref="QuerySingle{T}(Func{DbRecordReader, T})" />
-	public ValueTask<T> QuerySingleAsync<T>(Func<DbRecordReader, T> map, CancellationToken cancellationToken = default) =>
+	/// <seealso cref="QuerySingle{T}(Func{DbRecord, T})" />
+	public ValueTask<T> QuerySingleAsync<T>(Func<DbRecord, T> map, CancellationToken cancellationToken = default) =>
 		DoQueryFirstAsync(map ?? throw new ArgumentNullException(nameof(map)), single: true, orDefault: false, cancellationToken);
 
 	/// <summary>
@@ -221,8 +221,8 @@ public readonly struct DbConnectorCommand
 	/// </summary>
 	/// <remarks>Returns <c>default(T)</c> if no records are returned.
 	/// Throws <see cref="InvalidOperationException"/> if more than one record is returned.</remarks>
-	/// <seealso cref="QuerySingleOrDefault{T}(Func{DbRecordReader, T})" />
-	public ValueTask<T> QuerySingleOrDefaultAsync<T>(Func<DbRecordReader, T> map, CancellationToken cancellationToken = default) =>
+	/// <seealso cref="QuerySingleOrDefault{T}(Func{DbRecord, T})" />
+	public ValueTask<T> QuerySingleOrDefaultAsync<T>(Func<DbRecord, T> map, CancellationToken cancellationToken = default) =>
 		DoQueryFirstAsync(map ?? throw new ArgumentNullException(nameof(map)), single: true, orDefault: true, cancellationToken);
 
 	/// <summary>
@@ -235,8 +235,8 @@ public readonly struct DbConnectorCommand
 	/// <summary>
 	/// Executes the query, reading one record at a time and converting it to the specified type with the specified delegate.
 	/// </summary>
-	/// <seealso cref="EnumerateAsync{T}(Func{DbRecordReader, T}, CancellationToken)" />
-	public IEnumerable<T> Enumerate<T>(Func<DbRecordReader, T> map) =>
+	/// <seealso cref="EnumerateAsync{T}(Func{DbRecord, T}, CancellationToken)" />
+	public IEnumerable<T> Enumerate<T>(Func<DbRecord, T> map) =>
 		DoEnumerate(map ?? throw new ArgumentNullException(nameof(map)));
 
 	/// <summary>
@@ -249,8 +249,8 @@ public readonly struct DbConnectorCommand
 	/// <summary>
 	/// Executes the query, reading one record at a time and converting it to the specified type with the specified delegate.
 	/// </summary>
-	/// <seealso cref="Enumerate{T}(Func{DbRecordReader, T})" />
-	public IAsyncEnumerable<T> EnumerateAsync<T>(Func<DbRecordReader, T> map, CancellationToken cancellationToken = default) =>
+	/// <seealso cref="Enumerate{T}(Func{DbRecord, T})" />
+	public IAsyncEnumerable<T> EnumerateAsync<T>(Func<DbRecord, T> map, CancellationToken cancellationToken = default) =>
 		DoEnumerateAsync(map ?? throw new ArgumentNullException(nameof(map)), cancellationToken);
 
 	/// <summary>
@@ -464,11 +464,11 @@ public readonly struct DbConnectorCommand
 		}
 	}
 
-	private IReadOnlyList<T> DoQuery<T>(Func<DbRecordReader, T>? map)
+	private IReadOnlyList<T> DoQuery<T>(Func<DbRecord, T>? map)
 	{
 		using var command = Create();
 		using var reader = command.ExecuteReader();
-		var record = new DbRecordReader(Connector.DataMapper, reader);
+		var record = new DbRecord(reader, Connector.DataMapper);
 
 		var list = new List<T>();
 
@@ -482,7 +482,7 @@ public readonly struct DbConnectorCommand
 		return list;
 	}
 
-	private async ValueTask<IReadOnlyList<T>> DoQueryAsync<T>(Func<DbRecordReader, T>? map, CancellationToken cancellationToken)
+	private async ValueTask<IReadOnlyList<T>> DoQueryAsync<T>(Func<DbRecord, T>? map, CancellationToken cancellationToken)
 	{
 		var methods = Connector.ProviderMethods;
 
@@ -490,7 +490,7 @@ public readonly struct DbConnectorCommand
 		await using var commandScope = new AsyncScope(command).ConfigureAwait(false);
 		var reader = await methods.ExecuteReaderAsync(CachedCommand.Unwrap(command), cancellationToken).ConfigureAwait(false);
 		await using var readerScope = new AsyncScope(reader).ConfigureAwait(false);
-		var record = new DbRecordReader(Connector.DataMapper, reader);
+		var record = new DbRecord(reader, Connector.DataMapper);
 
 		var list = new List<T>();
 
@@ -504,7 +504,7 @@ public readonly struct DbConnectorCommand
 		return list;
 	}
 
-	private T DoQueryFirst<T>(Func<DbRecordReader, T>? map, bool single, bool orDefault)
+	private T DoQueryFirst<T>(Func<DbRecord, T>? map, bool single, bool orDefault)
 	{
 		using var command = Create();
 		using var reader = single ? command.ExecuteReader() : command.ExecuteReader(CommandBehavior.SingleRow);
@@ -515,7 +515,7 @@ public readonly struct DbConnectorCommand
 				return orDefault ? default(T)! : throw new InvalidOperationException("No records were found; use 'OrDefault' to permit this.");
 		}
 
-		var record = new DbRecordReader(Connector.DataMapper, reader);
+		var record = new DbRecord(reader, Connector.DataMapper);
 		var value = map is not null ? map(record) : record.Get<T>();
 
 		if (single && reader.Read())
@@ -527,7 +527,7 @@ public readonly struct DbConnectorCommand
 		return value;
 	}
 
-	private async ValueTask<T> DoQueryFirstAsync<T>(Func<DbRecordReader, T>? map, bool single, bool orDefault, CancellationToken cancellationToken)
+	private async ValueTask<T> DoQueryFirstAsync<T>(Func<DbRecord, T>? map, bool single, bool orDefault, CancellationToken cancellationToken)
 	{
 		var methods = Connector.ProviderMethods;
 
@@ -542,7 +542,7 @@ public readonly struct DbConnectorCommand
 				return orDefault ? default(T)! : throw CreateNoRecordsException();
 		}
 
-		var record = new DbRecordReader(Connector.DataMapper, reader);
+		var record = new DbRecord(reader, Connector.DataMapper);
 		var value = map is not null ? map(record) : record.Get<T>();
 
 		if (single && await methods.ReadAsync(reader, cancellationToken).ConfigureAwait(false))
@@ -558,11 +558,11 @@ public readonly struct DbConnectorCommand
 
 	private static InvalidOperationException CreateTooManyRecordsException() => new("Additional records were found; use 'First' to permit this.");
 
-	private IEnumerable<T> DoEnumerate<T>(Func<DbRecordReader, T>? map)
+	private IEnumerable<T> DoEnumerate<T>(Func<DbRecord, T>? map)
 	{
 		using var command = Create();
 		using var reader = command.ExecuteReader();
-		var record = new DbRecordReader(Connector.DataMapper, reader);
+		var record = new DbRecord(reader, Connector.DataMapper);
 
 		do
 		{
@@ -572,7 +572,7 @@ public readonly struct DbConnectorCommand
 		while (reader.NextResult());
 	}
 
-	private async IAsyncEnumerable<T> DoEnumerateAsync<T>(Func<DbRecordReader, T>? map, [EnumeratorCancellation] CancellationToken cancellationToken)
+	private async IAsyncEnumerable<T> DoEnumerateAsync<T>(Func<DbRecord, T>? map, [EnumeratorCancellation] CancellationToken cancellationToken)
 	{
 		var methods = Connector.ProviderMethods;
 
@@ -580,7 +580,7 @@ public readonly struct DbConnectorCommand
 		await using var commandScope = new AsyncScope(command).ConfigureAwait(false);
 		var reader = await methods.ExecuteReaderAsync(CachedCommand.Unwrap(command), cancellationToken).ConfigureAwait(false);
 		await using var readerScope = new AsyncScope(reader).ConfigureAwait(false);
-		var record = new DbRecordReader(Connector.DataMapper, reader);
+		var record = new DbRecord(reader, Connector.DataMapper);
 
 		do
 		{

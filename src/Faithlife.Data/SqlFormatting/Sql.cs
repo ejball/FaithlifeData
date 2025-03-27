@@ -282,11 +282,11 @@ public abstract class Sql
 	/// <summary>
 	/// Creates SQL for an arbitrarily-named parameter with the specified value.
 	/// </summary>
-	public static Sql Param(object? value)
+	public static Sql Param<T>(T value)
 	{
 		if (value is Sql)
 			throw new ArgumentException("Param may not be used with Sql instances.", nameof(value));
-		return new ParamSql(value);
+		return new ParamSql<T>(value);
 	}
 
 	/// <summary>
@@ -506,7 +506,7 @@ public abstract class Sql
 		}
 	}
 
-	private sealed class ParamSql(object? value) : Sql
+	private sealed class ParamSql<T>(T value) : Sql
 	{
 		internal override string Render(SqlContext context) => context.RenderParam(key: this, value: value);
 	}

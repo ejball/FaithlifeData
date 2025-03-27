@@ -22,8 +22,8 @@ public abstract class DbParameters
 	/// <summary>
 	/// Creates a list of parameters with one parameter.
 	/// </summary>
-	public static DbParameters Create(string name, object? value) =>
-		new StandardDbParameters([(name, value)]);
+	public static DbParameters Create<T>(string name, T value) =>
+		new OneDbParameter<T>(name, value);
 
 	/// <summary>
 	/// Creates a list of parameters from tuples.
