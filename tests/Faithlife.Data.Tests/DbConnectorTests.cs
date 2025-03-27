@@ -308,7 +308,7 @@ internal sealed class DbConnectorTests
 		using (var resultSet = connector.Command(sql).QueryMultiple())
 		{
 			var id1 = resultSet.Read<long>().First();
-			var id2 = resultSet.Read(DbDataMapper.Default.Map<long>).Single();
+			var id2 = resultSet.Read(x => x.Get<long>()).Single();
 			id1.Should().BeLessThan(id2);
 			Invoking(() => resultSet.Read(x => 0)).Should().Throw<InvalidOperationException>();
 		}
@@ -316,7 +316,7 @@ internal sealed class DbConnectorTests
 		using (var resultSet = connector.Command(sql).QueryMultiple())
 		{
 			var id1 = resultSet.Enumerate<long>().First();
-			var id2 = resultSet.Enumerate(DbDataMapper.Default.Map<long>).Single();
+			var id2 = resultSet.Enumerate(x => x.Get<long>()).Single();
 			id1.Should().BeLessThan(id2);
 			Invoking(() => resultSet.Enumerate(x => 0).Count()).Should().Throw<InvalidOperationException>();
 		}
@@ -336,7 +336,7 @@ internal sealed class DbConnectorTests
 		await using (var resultSet = await connector.Command(sql).QueryMultipleAsync())
 		{
 			var id1 = (await resultSet.ReadAsync<long>()).First();
-			var id2 = (await resultSet.ReadAsync(DbDataMapper.Default.Map<long>)).Single();
+			var id2 = (await resultSet.ReadAsync(x => x.Get<long>())).Single();
 			id1.Should().BeLessThan(id2);
 			await Awaiting(async () => await resultSet.ReadAsync(x => 0)).Should().ThrowAsync<InvalidOperationException>();
 		}
@@ -344,7 +344,7 @@ internal sealed class DbConnectorTests
 		await using (var resultSet = await connector.Command(sql).QueryMultipleAsync())
 		{
 			var id1 = await FirstAsync(resultSet.EnumerateAsync<long>());
-			var id2 = await FirstAsync(resultSet.EnumerateAsync(DbDataMapper.Default.Map<long>));
+			var id2 = await FirstAsync(resultSet.EnumerateAsync(x => x.Get<long>()));
 			id1.Should().BeLessThan(id2);
 			await Awaiting(async () => await ToListAsync(resultSet.EnumerateAsync(x => 0))).Should().ThrowAsync<InvalidOperationException>();
 		}
@@ -555,5 +555,5 @@ internal sealed class DbConnectorTests
 
 	private static DbConnector CreateConnector() => new DbConnector(new SqliteConnection("Data Source=:memory:"));
 
-	private static string ToUpper(IDataRecord x) => DbDataMapper.Default.Map<string>(x).ToUpperInvariant();
+	private static string ToUpper(DbRecordReader x) => x.Get<string>().ToUpperInvariant();
 }
