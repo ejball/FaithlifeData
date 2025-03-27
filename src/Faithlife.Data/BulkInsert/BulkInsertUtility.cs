@@ -112,7 +112,7 @@ public static class BulkInsertUtility
 
 	private static DbConnectorCommand CreateBatchCommand(DbConnectorCommand command, string sql, DbParameters parameters)
 	{
-		var batchCommand = command.Connector.Command(sql, parameters);
+		var batchCommand = command.Connector.Command(sql).WithParameters(parameters);
 		if (command.IsCached)
 			batchCommand = batchCommand.Cache();
 		if (command.IsPrepared)

@@ -58,7 +58,7 @@ public abstract class Sql
 	/// <remarks>This overload is used with SELECT statements when the table name (or alias)
 	/// needs to be specified with each column name. If a tuple of DTOs is specified, a NULL column
 	/// will separate the DTOs.</remarks>
-	public static Sql ColumnNames<T>(params string[] tableNames) => new ColumnNamesSql(typeof(T), tableNames);
+	public static Sql ColumnNames<T>(params IEnumerable<string> tableNames) => new ColumnNamesSql(typeof(T), AsReadOnlyList(tableNames));
 
 	/// <summary>
 	/// Returns a comma-delimited list of column names for a DTO of the specified type.
@@ -66,7 +66,7 @@ public abstract class Sql
 	/// <remarks>This overload is used with SELECT statements when the table name (or alias)
 	/// needs to be specified with each column name. If a tuple of DTOs is specified, a NULL column
 	/// will separate the DTOs.</remarks>
-	public static Sql ColumnNames(Type type, params string[] tableNames) => new ColumnNamesSql(type ?? throw new ArgumentNullException(nameof(type)), tableNames);
+	public static Sql ColumnNames(Type type, params IEnumerable<string> tableNames) => new ColumnNamesSql(type ?? throw new ArgumentNullException(nameof(type)), AsReadOnlyList(tableNames));
 
 	/// <summary>
 	/// Returns a comma-delimited list of column names for a DTO of the specified type
@@ -105,7 +105,7 @@ public abstract class Sql
 	/// <remarks>This overload is used with SELECT statements when the table name (or alias)
 	/// needs to be specified with each column name. If a tuple of DTOs is specified, a NULL column
 	/// will separate the DTOs.</remarks>
-	public static Sql ColumnNamesWhere<T>(Func<string, bool> filter, params string[] tableNames) => new ColumnNamesSql(typeof(T), tableNames, filter);
+	public static Sql ColumnNamesWhere<T>(Func<string, bool> filter, params IEnumerable<string> tableNames) => new ColumnNamesSql(typeof(T), AsReadOnlyList(tableNames), filter);
 
 	/// <summary>
 	/// Returns a comma-delimited list of column names for a DTO of the specified type
@@ -114,7 +114,7 @@ public abstract class Sql
 	/// <remarks>This overload is used with SELECT statements when the table name (or alias)
 	/// needs to be specified with each column name. If a tuple of DTOs is specified, a NULL column
 	/// will separate the DTOs.</remarks>
-	public static Sql ColumnNamesWhere(Type type, Func<string, bool> filter, params string[] tableNames) => new ColumnNamesSql(type ?? throw new ArgumentNullException(nameof(type)), tableNames, filter);
+	public static Sql ColumnNamesWhere(Type type, Func<string, bool> filter, params IEnumerable<string> tableNames) => new ColumnNamesSql(type ?? throw new ArgumentNullException(nameof(type)), AsReadOnlyList(tableNames), filter);
 
 	/// <summary>
 	/// Returns a comma-delimited list of arbitrarily-named parameters for the column values of the specified DTO.
@@ -127,12 +127,6 @@ public abstract class Sql
 	/// </summary>
 	public static Sql ColumnParamsWhere(object dto, Func<string, bool> filter) =>
 		new ColumnParamsSql(dto ?? throw new ArgumentNullException(nameof(dto)), filter ?? throw new ArgumentNullException(nameof(filter)));
-
-	/// <summary>
-	/// Concatenates SQL fragments.
-	/// </summary>
-	public static Sql Concat(params Sql[] sqls) =>
-		new ConcatSql(sqls ?? throw new ArgumentNullException(nameof(sqls)));
 
 	/// <summary>
 	/// Concatenates SQL fragments.
@@ -240,13 +234,6 @@ public abstract class Sql
 	/// Joins SQL fragments with the specified separator.
 	/// </summary>
 	/// <remarks>Empty SQL fragments are ignored.</remarks>
-	public static Sql Join(string separator, params Sql[] sqls) =>
-		new JoinSql(separator ?? throw new ArgumentNullException(nameof(separator)), sqls ?? throw new ArgumentNullException(nameof(sqls)));
-
-	/// <summary>
-	/// Joins SQL fragments with the specified separator.
-	/// </summary>
-	/// <remarks>Empty SQL fragments are ignored.</remarks>
 	public static Sql Join(string separator, params IEnumerable<Sql> sqls) =>
 		new JoinSql(separator ?? throw new ArgumentNullException(nameof(separator)), AsReadOnlyList(sqls ?? throw new ArgumentNullException(nameof(sqls))));
 
@@ -301,7 +288,7 @@ public abstract class Sql
 	/// </summary>
 	/// <remarks>Empty SQL fragments are ignored. Since it would otherwise result in a confusing SQL syntax error, an <see cref="InvalidOperationException" />
 	/// is thrown if the collection of values is empty. Use <c>Sql.Join(", ", values.Select(Sql.Param))")</c> to allow an empty collection.</remarks>
-	public static Sql ParamList(IEnumerable<object?> values) => JoinOrThrow(", ", values.Select(Param), "Sql.ParamList was empty.");
+	public static Sql ParamList<T>(IEnumerable<T> values) => JoinOrThrow(", ", values.Select(Param), "Sql.ParamList was empty.");
 
 	/// <summary>
 	/// Creates SQL for a comma-delimted list of arbitrarily-named parameters with the specified values, surrounded by parentheses.
@@ -315,7 +302,7 @@ public abstract class Sql
 	/// </summary>
 	/// <remarks>Empty SQL fragments are ignored. Since it would otherwise result in a confusing SQL syntax error, an <see cref="InvalidOperationException" />
 	/// is thrown if the collection of values is empty. Use <c>Sql.Format($"({Sql.Join(", ", values.Select(Sql.Param))})")</c> to permit an empty tuple.</remarks>
-	public static Sql ParamTuple(IEnumerable<object?> values) => Format($"({JoinOrThrow(", ", values.Select(Param), "Sql.ParamTuple was empty.")})");
+	public static Sql ParamTuple<T>(IEnumerable<T> values) => Format($"({JoinOrThrow(", ", values.Select(Param), "Sql.ParamTuple was empty.")})");
 
 	/// <summary>
 	/// Creates SQL from a raw string.
@@ -371,7 +358,7 @@ public abstract class Sql
 	{
 		public ColumnNamesSql(Type type, Func<string, bool>? filter = null) => (m_type, m_filter) = (type, filter);
 		public ColumnNamesSql(Type type, string? tableName, Func<string, bool>? filter = null) => (m_type, m_tableName, m_filter) = (type, tableName, filter);
-		public ColumnNamesSql(Type type, string[] tableNames, Func<string, bool>? filter = null) => (m_type, m_tableNames, m_filter) = (type, tableNames, filter);
+		public ColumnNamesSql(Type type, IReadOnlyList<string> tableNames, Func<string, bool>? filter = null) => (m_type, m_tableNames, m_filter) = (type, tableNames, filter);
 
 		internal override string Render(SqlContext context)
 		{
@@ -416,7 +403,7 @@ public abstract class Sql
 
 		private readonly Type m_type;
 		private readonly string? m_tableName;
-		private readonly string[]? m_tableNames;
+		private readonly IReadOnlyList<string>? m_tableNames;
 		private readonly Func<string, bool>? m_filter;
 	}
 

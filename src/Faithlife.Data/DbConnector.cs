@@ -238,22 +238,7 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	/// Creates a new command.
 	/// </summary>
 	/// <param name="text">The text of the command.</param>
-	public DbConnectorCommand Command(string text) => Command(text, DbParameters.Empty);
-
-	/// <summary>
-	/// Creates a new command.
-	/// </summary>
-	/// <param name="text">The text of the command.</param>
-	/// <param name="parameters">The command parameters.</param>
-	public DbConnectorCommand Command(string text, DbParameters parameters) =>
-		new(this, text, parameters, CommandType.Text, timeout: null, isCached: false, isPrepared: false);
-
-	/// <summary>
-	/// Creates a new command.
-	/// </summary>
-	/// <param name="text">The text of the command.</param>
-	/// <param name="parameters">The command parameters.</param>
-	public DbConnectorCommand Command(string text, params (string Name, object? Value)[] parameters) => Command(text, DbParameters.Create(parameters));
+	public DbConnectorCommand Command(string text) => new(this, text, DbParameters.Empty, CommandType.Text, timeout: null, isCached: false, isPrepared: false);
 
 	/// <summary>
 	/// Creates a new command from parameterized SQL.
@@ -262,26 +247,8 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	public DbConnectorCommand Command(Sql sql)
 	{
 		var (sqlText, sqlParameters) = SqlSyntax.Render(sql);
-		return Command(sqlText, sqlParameters);
+		return Command(sqlText).WithParameters(sqlParameters);
 	}
-
-	/// <summary>
-	/// Creates a new command from parameterized SQL.
-	/// </summary>
-	/// <param name="sql">The parameterized SQL.</param>
-	/// <param name="parameters">Additional command parameters.</param>
-	public DbConnectorCommand Command(Sql sql, DbParameters parameters)
-	{
-		var (text, sqlParameters) = SqlSyntax.Render(sql);
-		return Command(text, sqlParameters.Add(parameters));
-	}
-
-	/// <summary>
-	/// Creates a new command from parameterized SQL.
-	/// </summary>
-	/// <param name="sql">The parameterized SQL.</param>
-	/// <param name="parameters">Additional command parameters.</param>
-	public DbConnectorCommand Command(Sql sql, params (string Name, object? Value)[] parameters) => Command(sql, DbParameters.Create(parameters));
 
 	/// <summary>
 	/// Creates a new command from a formatted SQL string.
@@ -291,41 +258,10 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	public DbConnectorCommand CommandFormat(SqlFormatStringHandler sql) => Command(Sql.Format(sql));
 
 	/// <summary>
-	/// Creates a new command from a formatted SQL string.
-	/// </summary>
-	/// <param name="sql">The formatted SQL string.</param>
-	/// <param name="parameters">Additional command parameters.</param>
-	/// <remarks>Shorthand for <c>Command(Sql.Format($"..."), parameters)</c>.</remarks>
-	public DbConnectorCommand CommandFormat(SqlFormatStringHandler sql, DbParameters parameters) => Command(Sql.Format(sql), parameters);
-
-	/// <summary>
-	/// Creates a new command from a formatted SQL string.
-	/// </summary>
-	/// <param name="sql">The formatted SQL string.</param>
-	/// <param name="parameters">Additional command parameters.</param>
-	/// <remarks>Shorthand for <c>Command(Sql.Format($"..."), parameters)</c>.</remarks>
-	public DbConnectorCommand CommandFormat(SqlFormatStringHandler sql, params (string Name, object? Value)[] parameters) => Command(Sql.Format(sql), parameters);
-
-	/// <summary>
 	/// Creates a new command to access a stored procedure.
 	/// </summary>
 	/// <param name="name">The name of the stored procedure.</param>
-	public DbConnectorCommand StoredProcedure(string name) => StoredProcedure(name, DbParameters.Empty);
-
-	/// <summary>
-	/// Creates a new command.
-	/// </summary>
-	/// <param name="name">The name of the stored procedure.</param>
-	/// <param name="parameters">The command parameters.</param>
-	public DbConnectorCommand StoredProcedure(string name, DbParameters parameters) =>
-		new DbConnectorCommand(this, name, parameters, CommandType.StoredProcedure, timeout: null, isCached: false, isPrepared: false);
-
-	/// <summary>
-	/// Creates a new command.
-	/// </summary>
-	/// <param name="name">The name of the stored procedure.</param>
-	/// <param name="parameters">The command parameters.</param>
-	public DbConnectorCommand StoredProcedure(string name, params (string Name, object? Value)[] parameters) => StoredProcedure(name, DbParameters.Create(parameters));
+	public DbConnectorCommand StoredProcedure(string name) => new(this, name, DbParameters.Empty, CommandType.StoredProcedure, timeout: null, isCached: false, isPrepared: false);
 
 	/// <summary>
 	/// Closes the connection.

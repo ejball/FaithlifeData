@@ -105,10 +105,8 @@ internal sealed class DbConnectorTests
 	{
 		using var connector = CreateConnector();
 		connector.Command("create table Items (ItemId integer primary key, Name text not null);").Execute().Should().Be(0);
-		connector.Command("insert into Items (Name) values (@item1); insert into Items (Name) values (@item2);",
-			("item1", "one"), ("item2", "two")).Execute().Should().Be(2);
-		connector.Command("select Name from Items where Name like @like;",
-			DbParameters.Create("like", "t%")).QueryFirst<string>().Should().Be("two");
+		connector.Command("insert into Items (Name) values (@item1); insert into Items (Name) values (@item2);").WithParameter("item1", "one").WithParameter("item2", "two").Execute().Should().Be(2);
+		connector.Command("select Name from Items where Name like @like;").WithParameters(DbParameters.Create("like", "t%")).QueryFirst<string>().Should().Be("two");
 	}
 
 	[Test]
@@ -116,10 +114,8 @@ internal sealed class DbConnectorTests
 	{
 		await using var connector = CreateConnector();
 		(await connector.Command("create table Items (ItemId integer primary key, Name text not null);").ExecuteAsync()).Should().Be(0);
-		(await connector.Command("insert into Items (Name) values (@item1); insert into Items (Name) values (@item2);",
-			("item1", "one"), ("item2", "two")).ExecuteAsync()).Should().Be(2);
-		(await connector.Command("select Name from Items where Name like @like;",
-			DbParameters.Create("like", "t%")).QueryFirstAsync<string>()).Should().Be("two");
+		(await connector.Command("insert into Items (Name) values (@item1); insert into Items (Name) values (@item2);").WithParameter("item1", "one").WithParameter("item2", "two").ExecuteAsync()).Should().Be(2);
+		(await connector.Command("select Name from Items where Name like @like;").WithParameters(DbParameters.Create("like", "t%")).QueryFirstAsync<string>()).Should().Be("two");
 	}
 
 	[Test]
@@ -129,8 +125,7 @@ internal sealed class DbConnectorTests
 		const string item1 = "one";
 		const string item2 = "two";
 		connector.Command("create table Items (ItemId integer primary key, Name text not null);").Execute().Should().Be(0);
-		connector.Command("insert into Items (Name) values (@item1); insert into Items (Name) values (@item2);",
-			DbParameters.FromDto(new { item1, item2 })).Execute().Should().Be(2);
+		connector.Command("insert into Items (Name) values (@item1); insert into Items (Name) values (@item2);").WithParameters(DbParameters.FromDto(new { item1, item2 })).Execute().Should().Be(2);
 		connector.Command("select Name from Items order by ItemId;").Query<string>().Should().Equal(item1, item2);
 	}
 
@@ -156,11 +151,11 @@ internal sealed class DbConnectorTests
 		createCmd.Execute().Should().Be(0);
 
 		string insertStmt = "insert into Items (Name) values (@item);";
-		var preparedCmd = connector.Command(insertStmt, ("item", "one")).Prepare();
+		var preparedCmd = connector.Command(insertStmt).WithParameter("item", "one").Prepare();
 		preparedCmd.IsPrepared.Should().Be(true);
 		preparedCmd.Execute().Should().Be(1);
 
-		connector.Command(insertStmt, ("item", "two")).Execute().Should().Be(1);
+		connector.Command(insertStmt).WithParameter("item", "two").Execute().Should().Be(1);
 		connector.Command("select Name from Items order by ItemId;").Query<string>().Should().Equal("one", "two");
 	}
 
@@ -171,8 +166,8 @@ internal sealed class DbConnectorTests
 		connector.Command("create table Items (ItemId integer primary key, Name text not null);").Execute();
 
 		var insertStmt = "insert into Items (Name) values (@item);";
-		connector.Command(insertStmt, ("item", "one")).Prepare().Cache().Execute().Should().Be(1);
-		connector.Command(insertStmt, ("item", "two")).Prepare().Cache().Execute().Should().Be(1);
+		connector.Command(insertStmt).WithParameter("item", "one").Prepare().Cache().Execute().Should().Be(1);
+		connector.Command(insertStmt).WithParameter("item", "two").Prepare().Cache().Execute().Should().Be(1);
 
 		connector.Command("select Name from Items order by ItemId;").Query<string>().Should().Equal("one", "two");
 	}
@@ -184,8 +179,8 @@ internal sealed class DbConnectorTests
 		await connector.Command("create table Items (ItemId integer primary key, Name text not null);").ExecuteAsync();
 
 		var insertStmt = "insert into Items (Name) values (@item);";
-		(await connector.Command(insertStmt, ("item", "one")).Prepare().Cache().ExecuteAsync()).Should().Be(1);
-		(await connector.Command(insertStmt, ("item", "two")).Prepare().Cache().ExecuteAsync()).Should().Be(1);
+		(await connector.Command(insertStmt).WithParameter("item", "one").Prepare().Cache().ExecuteAsync()).Should().Be(1);
+		(await connector.Command(insertStmt).WithParameter("item", "two").Prepare().Cache().ExecuteAsync()).Should().Be(1);
 
 		(await connector.Command("select Name from Items order by ItemId;").QueryAsync<string>()).Should().Equal("one", "two");
 	}
@@ -267,12 +262,12 @@ internal sealed class DbConnectorTests
 		{
 			using (connector.BeginTransaction())
 			{
-				connector.Command("insert into Items (Name) values (@item);", ("item", item)).Prepare().Cache().Execute().Should().Be(1);
+				connector.Command("insert into Items (Name) values (@item);").WithParameter("item", item).Prepare().Cache().Execute().Should().Be(1);
 				connector.CommitTransaction();
 			}
 		}
 
-		connector.Command("insert into Items (Name) values (@item);", ("item", "three")).Prepare().Cache().Execute().Should().Be(1);
+		connector.Command("insert into Items (Name) values (@item);").WithParameter("item", "three").Prepare().Cache().Execute().Should().Be(1);
 
 		connector.Command("select Name from Items order by ItemId;").Query<string>().Should().Equal("one", "two", "three");
 	}
@@ -412,7 +407,7 @@ internal sealed class DbConnectorTests
 		using var connector = CreateConnector();
 		connector.Command("create table Items (ItemId integer primary key, Name text not null);").Execute().Should().Be(0);
 		foreach (var name in new[] { "one", "two", "three" })
-			connector.Command("insert into Items (Name) values (@name);", ("name", name)).Cache().Execute().Should().Be(1);
+			connector.Command("insert into Items (Name) values (@name);").WithParameter("name", name).Cache().Execute().Should().Be(1);
 		connector.Command("select Name from Items order by ItemId;").Query<string>().Should().Equal("one", "two", "three");
 	}
 
@@ -422,9 +417,9 @@ internal sealed class DbConnectorTests
 		using var connector = CreateConnector();
 		connector.Command("create table Items (ItemId integer primary key, Name text not null);").Execute();
 		var sql = "insert into Items (Name) values (@name);";
-		connector.Command(sql, ("name", "one")).Cache().Execute().Should().Be(1);
-		Invoking(() => connector.Command(sql, ("name", "two"), ("three", "four")).Cache().Execute()).Should().Throw<InvalidOperationException>();
-		Invoking(() => connector.Command(sql, ("title", "three")).Cache().Execute()).Should().Throw<InvalidOperationException>();
+		connector.Command(sql).WithParameter("name", "one").Cache().Execute().Should().Be(1);
+		Invoking(() => connector.Command(sql).WithParameter("three", "four").WithParameter("name", "two").Cache().Execute()).Should().Throw<InvalidOperationException>();
+		Invoking(() => connector.Command(sql).WithParameter("title", "three").Cache().Execute()).Should().Throw<InvalidOperationException>();
 		connector.Command("select Name from Items order by ItemId;").Query<string>().Should().Equal("one");
 	}
 
@@ -434,7 +429,7 @@ internal sealed class DbConnectorTests
 		await using var connector = CreateConnector();
 		(await connector.Command("create table Items (ItemId integer primary key, Name text not null);").ExecuteAsync()).Should().Be(0);
 		foreach (var name in new[] { "one", "two", "three" })
-			(await connector.Command("insert into Items (Name) values (@name);", ("name", name)).Cache().ExecuteAsync()).Should().Be(1);
+			(await connector.Command("insert into Items (Name) values (@name);").WithParameter("name", name).Cache().ExecuteAsync()).Should().Be(1);
 		(await connector.Command("select Name from Items order by ItemId;").QueryAsync<string>()).Should().Equal("one", "two", "three");
 	}
 
@@ -445,12 +440,12 @@ internal sealed class DbConnectorTests
 		var createCommand = connector.Command("create table Items (ItemId integer primary key, Name text not null);");
 		createCommand.CommandType.Should().Be(CommandType.Text);
 		createCommand.Execute().Should().Be(0);
-		connector.Command("insert into Items (Name) values (@item1);", ("item1", "one")).CommandType.Should().Be(CommandType.Text);
+		connector.Command("insert into Items (Name) values (@item1);").WithParameter("item1", "one").CommandType.Should().Be(CommandType.Text);
 
 		var storedProcedureCommand = connector.StoredProcedure("values (1);");
 		storedProcedureCommand.CommandType.Should().Be(CommandType.StoredProcedure);
 		Invoking(storedProcedureCommand.Execute).Should().Throw<ArgumentException>("CommandType must be Text. (Parameter 'value')");
-		connector.StoredProcedure("values (@two);", ("two", 2)).CommandType.Should().Be(CommandType.StoredProcedure);
+		connector.StoredProcedure("values (@two);").WithParameter("two", 2).CommandType.Should().Be(CommandType.StoredProcedure);
 	}
 
 	[Test]
@@ -511,10 +506,9 @@ internal sealed class DbConnectorTests
 	{
 		using var connector = CreateConnector();
 		connector.Command("create table Items (ItemId integer primary key, Name text null, Number integer null);").Execute();
-		connector.Command("insert into Items (Name, Number) values (@Name, @Number);", ("Name", 'A'), ("Number", 'A')).Execute();
+		connector.Command("insert into Items (Name, Number) values (@Name, @Number);").WithParameter("Name", 'A').WithParameter("Number", 'A').Execute();
 		connector.Command("select Name, Number from Items order by ItemId limit 1;").QuerySingle<(string, string)>().Should().Be(("A", "A"));
-		connector.Command("insert into Items (Name, Number) values (@Name, @Number);",
-			("Name", new SqliteParameter { Value = 'A', SqliteType = SqliteType.Text }), ("Number", new SqliteParameter { Value = 'A', SqliteType = SqliteType.Integer })).Execute();
+		connector.Command("insert into Items (Name, Number) values (@Name, @Number);").WithParameter("Name", new SqliteParameter { Value = 'A', SqliteType = SqliteType.Text }).WithParameter("Number", new SqliteParameter { Value = 'A', SqliteType = SqliteType.Integer }).Execute();
 		connector.Command("select Name, Number from Items order by ItemId limit 1 offset 1;").QuerySingle<(string, long)>().Should().Be(("A", 65L));
 	}
 

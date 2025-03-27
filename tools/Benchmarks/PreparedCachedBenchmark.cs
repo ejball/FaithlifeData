@@ -80,28 +80,28 @@ public abstract class PreparedCachedBenchmark : IDisposable
 	public void Normal()
 	{
 		for (var i = 0; i < m_recordCount; i++)
-			m_connector.Command(m_sql, Params(i)).Execute();
+			m_connector.Command(m_sql).WithParameters(Params(i)).Execute();
 	}
 
 	[Benchmark]
 	public void Cached()
 	{
 		for (var i = 0; i < m_recordCount; i++)
-			m_connector.Command(m_sql, Params(i)).Cache().Execute();
+			m_connector.Command(m_sql).WithParameters(Params(i)).Cache().Execute();
 	}
 
 	[Benchmark]
 	public void Prepared()
 	{
 		for (var i = 0; i < m_recordCount; i++)
-			m_connector.Command(m_sql, Params(i)).Prepare().Execute();
+			m_connector.Command(m_sql).WithParameters(Params(i)).Prepare().Execute();
 	}
 
 	[Benchmark]
 	public void PreparedAndCached()
 	{
 		for (var i = 0; i < m_recordCount; i++)
-			m_connector.Command(m_sql, Params(i)).Prepare().Cache().Execute();
+			m_connector.Command(m_sql).WithParameters(Params(i)).Prepare().Cache().Execute();
 	}
 
 	public void Dispose() => m_connector.Dispose();

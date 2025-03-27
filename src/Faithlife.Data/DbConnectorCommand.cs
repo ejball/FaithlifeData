@@ -289,6 +289,20 @@ public readonly struct DbConnectorCommand
 	}
 
 	/// <summary>
+	/// Sets the timeout of the command.
+	/// </summary>
+	/// <remarks>Use <see cref="System.Threading.Timeout.InfiniteTimeSpan" /> (not <see cref="TimeSpan.Zero" />) for infinite timeout.</remarks>
+	/// <exception cref="ArgumentOutOfRangeException"><c>timeSpan</c> is not positive or <see cref="System.Threading.Timeout.InfiniteTimeSpan" />.</exception>
+	public DbConnectorCommand WithParameter<T>(string key, T value) => WithParameters(DbParameters.Create(key, value));
+
+	/// <summary>
+	/// Sets the timeout of the command.
+	/// </summary>
+	/// <remarks>Use <see cref="System.Threading.Timeout.InfiniteTimeSpan" /> (not <see cref="TimeSpan.Zero" />) for infinite timeout.</remarks>
+	/// <exception cref="ArgumentOutOfRangeException"><c>timeSpan</c> is not positive or <see cref="System.Threading.Timeout.InfiniteTimeSpan" />.</exception>
+	public DbConnectorCommand WithParameters(DbParameters parameters) => new(Connector, Text, new MergedDbParameters([Parameters, parameters]), CommandType, Timeout, IsCached, IsPrepared);
+
+	/// <summary>
 	/// Caches the command.
 	/// </summary>
 	public DbConnectorCommand Cache() => new(Connector, Text, Parameters, CommandType, Timeout, isCached: true, isPrepared: IsPrepared);
