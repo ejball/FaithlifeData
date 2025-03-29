@@ -86,7 +86,11 @@ public abstract class DbDataMapper
 				{
 					2 => typeof(ValueTupleMapper<,>),
 					3 => typeof(ValueTupleMapper<,,>),
-					_ => throw new NotImplementedException($"{tupleTypes.Length}"),
+					4 => typeof(ValueTupleMapper<,,,>),
+					5 => typeof(ValueTupleMapper<,,,,>),
+					6 => typeof(ValueTupleMapper<,,,,,>),
+					7 => typeof(ValueTupleMapper<,,,,,,>),
+					_ => throw new NotImplementedException($"ValueTuple with {tupleTypes.Length} fields is not supported"),
 				};
 				return (DbTypeMapper<T>) Activator.CreateInstance(tupleMapperType.MakeGenericType(tupleTypes), [.. tupleTypes.Select(GetTypeMapper)])!;
 			}
@@ -337,6 +341,72 @@ public abstract class DbDataMapper
 				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count),
 				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count),
 				mapper3.Map(record, valueRanges[2].Index, valueRanges[2].Count));
+		}
+	}
+
+	private sealed class ValueTupleMapper<T1, T2, T3, T4>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2, DbTypeMapper<T3> mapper3, DbTypeMapper<T4> mapper4)
+		: ValueTupleMapper<(T1, T2, T3, T4)>([mapper1, mapper2, mapper3, mapper4])
+	{
+		protected override (T1, T2, T3, T4) MapCore(IDataRecord record, int index, int count)
+		{
+			Span<(int Index, int Count)> valueRanges = stackalloc (int Index, int Count)[4];
+			GetValueRanges(record, index, count, valueRanges);
+			return (
+				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count),
+				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count),
+				mapper3.Map(record, valueRanges[2].Index, valueRanges[2].Count),
+				mapper4.Map(record, valueRanges[3].Index, valueRanges[3].Count));
+		}
+	}
+
+	private sealed class ValueTupleMapper<T1, T2, T3, T4, T5>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2, DbTypeMapper<T3> mapper3, DbTypeMapper<T4> mapper4, DbTypeMapper<T5> mapper5)
+		: ValueTupleMapper<(T1, T2, T3, T4, T5)>([mapper1, mapper2, mapper3, mapper4, mapper5])
+	{
+		protected override (T1, T2, T3, T4, T5) MapCore(IDataRecord record, int index, int count)
+		{
+			Span<(int Index, int Count)> valueRanges = stackalloc (int Index, int Count)[5];
+			GetValueRanges(record, index, count, valueRanges);
+			return (
+				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count),
+				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count),
+				mapper3.Map(record, valueRanges[2].Index, valueRanges[2].Count),
+				mapper4.Map(record, valueRanges[3].Index, valueRanges[3].Count),
+				mapper5.Map(record, valueRanges[4].Index, valueRanges[4].Count));
+		}
+	}
+
+	private sealed class ValueTupleMapper<T1, T2, T3, T4, T5, T6>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2, DbTypeMapper<T3> mapper3, DbTypeMapper<T4> mapper4, DbTypeMapper<T5> mapper5, DbTypeMapper<T6> mapper6)
+		: ValueTupleMapper<(T1, T2, T3, T4, T5, T6)>([mapper1, mapper2, mapper3, mapper4, mapper5, mapper6])
+	{
+		protected override (T1, T2, T3, T4, T5, T6) MapCore(IDataRecord record, int index, int count)
+		{
+			Span<(int Index, int Count)> valueRanges = stackalloc (int Index, int Count)[6];
+			GetValueRanges(record, index, count, valueRanges);
+			return (
+				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count),
+				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count),
+				mapper3.Map(record, valueRanges[2].Index, valueRanges[2].Count),
+				mapper4.Map(record, valueRanges[3].Index, valueRanges[3].Count),
+				mapper5.Map(record, valueRanges[4].Index, valueRanges[4].Count),
+				mapper6.Map(record, valueRanges[5].Index, valueRanges[5].Count));
+		}
+	}
+
+	private sealed class ValueTupleMapper<T1, T2, T3, T4, T5, T6, T7>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2, DbTypeMapper<T3> mapper3, DbTypeMapper<T4> mapper4, DbTypeMapper<T5> mapper5, DbTypeMapper<T6> mapper6, DbTypeMapper<T7> mapper7)
+		: ValueTupleMapper<(T1, T2, T3, T4, T5, T6, T7)>([mapper1, mapper2, mapper3, mapper4, mapper5, mapper6, mapper7])
+	{
+		protected override (T1, T2, T3, T4, T5, T6, T7) MapCore(IDataRecord record, int index, int count)
+		{
+			Span<(int Index, int Count)> valueRanges = stackalloc (int Index, int Count)[7];
+			GetValueRanges(record, index, count, valueRanges);
+			return (
+				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count),
+				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count),
+				mapper3.Map(record, valueRanges[2].Index, valueRanges[2].Count),
+				mapper4.Map(record, valueRanges[3].Index, valueRanges[3].Count),
+				mapper5.Map(record, valueRanges[4].Index, valueRanges[4].Count),
+				mapper6.Map(record, valueRanges[5].Index, valueRanges[5].Count),
+				mapper7.Map(record, valueRanges[6].Index, valueRanges[6].Count));
 		}
 	}
 
