@@ -43,4 +43,9 @@ public class DbConnectorSettings
 	/// Maps data record values to objects.
 	/// </summary>
 	public DbDataMapper? DataMapper { get; set; }
+
+	/// <summary>
+	/// Used to create new objects and get properties.
+	/// </summary>
+	public DbConnectorReflection? Reflection { get; set; }
 }

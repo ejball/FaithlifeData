@@ -24,6 +24,7 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 		m_noDisposeConnection = m_noDisposeTransaction || settings.NoDispose;
 		m_whenDisposed = settings.WhenDisposed;
 		m_providerMethods = settings.ProviderMethods ?? DbProviderMethods.Default;
+		m_reflection = settings.Reflection ?? DbConnectorReflection.Default;
 		m_defaultIsolationLevel = settings.DefaultIsolationLevel;
 		SqlSyntax = settings.SqlSyntax ?? SqlSyntax.Default;
 		DataMapper = settings.DataMapper ?? DbDataMapper.Default;
@@ -246,7 +247,7 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	/// <param name="sql">The parameterized SQL.</param>
 	public DbConnectorCommand Command(Sql sql)
 	{
-		var (sqlText, sqlParameters) = SqlSyntax.Render(sql);
+		var (sqlText, sqlParameters) = SqlSyntax.Render(sql, Reflection);
 		return Command(sqlText).WithParameters(sqlParameters);
 	}
 
@@ -350,6 +351,8 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 
 	internal DbProviderMethods ProviderMethods => m_providerMethods;
 
+	internal DbConnectorReflection Reflection => m_reflection;
+
 	internal DbCommandCache CommandCache => m_commandCache ??= new();
 
 	internal DbConnectorPool? ConnectorPool { get; set; }
@@ -432,6 +435,7 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	private readonly bool m_noDisposeTransaction;
 	private readonly bool m_noCloseConnection;
 	private readonly DbProviderMethods m_providerMethods;
+	private readonly DbConnectorReflection m_reflection;
 	private readonly IsolationLevel? m_defaultIsolationLevel;
 	private readonly Action? m_whenDisposed;
 	private readonly IDbConnection m_connection;

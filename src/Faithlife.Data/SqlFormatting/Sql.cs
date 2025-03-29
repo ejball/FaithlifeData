@@ -362,8 +362,8 @@ public abstract class Sql
 
 		internal override string Render(SqlContext context)
 		{
-			if (DbConnectorReflection.Default.IsTupleType(m_type))
-				return string.Join(", NULL, ", DbConnectorReflection.Default.GetTupleItemTypes(m_type).Select((x, i) => RenderDto(x, i, context)));
+			if (context.Reflection.IsTupleType(m_type))
+				return string.Join(", NULL, ", context.Reflection.GetTupleItemTypes(m_type).Select((x, i) => RenderDto(x, i, context)));
 
 			return RenderDto(m_type, 0, context);
 		}
@@ -373,7 +373,7 @@ public abstract class Sql
 
 		private string RenderDto(Type type, int index, SqlContext context)
 		{
-			var properties = DbConnectorReflection.Default.GetProperties(type);
+			var properties = context.Reflection.GetProperties(type);
 			if (properties.Count == 0)
 				throw new InvalidOperationException($"The specified type has no columns: {type.FullName}");
 
@@ -412,7 +412,7 @@ public abstract class Sql
 		internal override string Render(SqlContext context)
 		{
 			var type = dto.GetType();
-			var properties = DbConnectorReflection.Default.GetProperties(type);
+			var properties = context.Reflection.GetProperties(type);
 			if (properties.Count == 0)
 				throw new InvalidOperationException($"The specified type has no columns: {type.FullName}");
 
@@ -435,7 +435,7 @@ public abstract class Sql
 
 		internal override string Render(SqlContext context)
 		{
-			var properties = DbConnectorReflection.Default.GetProperties(m_type);
+			var properties = context.Reflection.GetProperties(m_type);
 			if (properties.Count == 0)
 				throw new InvalidOperationException($"The specified type has no columns: {m_type.FullName}");
 
