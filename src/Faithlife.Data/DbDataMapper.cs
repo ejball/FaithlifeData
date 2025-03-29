@@ -78,23 +78,6 @@ public abstract class DbDataMapper
 			if (typeof(T) == typeof(object))
 				return (DbTypeMapper<T>) (object) new ObjectMapper();
 
-			var typeName = typeof(T).FullName ?? "";
-			if (typeName.StartsWith("System.ValueTuple`", StringComparison.Ordinal))
-			{
-				var tupleTypes = typeof(T).GetGenericArguments();
-				var tupleMapperType = tupleTypes.Length switch
-				{
-					2 => typeof(ValueTupleMapper<,>),
-					3 => typeof(ValueTupleMapper<,,>),
-					4 => typeof(ValueTupleMapper<,,,>),
-					5 => typeof(ValueTupleMapper<,,,,>),
-					6 => typeof(ValueTupleMapper<,,,,,>),
-					7 => typeof(ValueTupleMapper<,,,,,,>),
-					_ => throw new NotImplementedException($"ValueTuple with {tupleTypes.Length} fields is not supported"),
-				};
-				return (DbTypeMapper<T>) Activator.CreateInstance(tupleMapperType.MakeGenericType(tupleTypes), [.. tupleTypes.Select(GetTypeMapper)])!;
-			}
-
 			if (typeof(T).IsEnum)
 				return (DbTypeMapper<T>) (Activator.CreateInstance(typeof(EnumMapper<>).MakeGenericType(typeof(T)), [])!);
 
@@ -111,8 +94,24 @@ public abstract class DbDataMapper
 				return (DbTypeMapper<T>) (object) new StreamMapper();
 
 			if (Nullable.GetUnderlyingType(typeof(T)) is { } nonNullType)
-			{
 				return (DbTypeMapper<T>) (Activator.CreateInstance(typeof(NullableValueMapper<>).MakeGenericType(nonNullType), [GetTypeMapper(nonNullType)])!);
+
+			var typeName = typeof(T).FullName ?? "";
+			if (typeName.StartsWith("System.ValueTuple`", StringComparison.Ordinal))
+			{
+				var tupleTypes = typeof(T).GetGenericArguments();
+				var tupleMapperType = tupleTypes.Length switch
+				{
+					1 => typeof(ValueTupleMapper<>),
+					2 => typeof(ValueTupleMapper<,>),
+					3 => typeof(ValueTupleMapper<,,>),
+					4 => typeof(ValueTupleMapper<,,,>),
+					5 => typeof(ValueTupleMapper<,,,,>),
+					6 => typeof(ValueTupleMapper<,,,,,>),
+					7 => typeof(ValueTupleMapper<,,,,,,>),
+					_ => typeof(ValueTupleMapperRest<,,,,,,,>),
+				};
+				return (DbTypeMapper<T>) Activator.CreateInstance(tupleMapperType.MakeGenericType(tupleTypes), [.. tupleTypes.Select(GetTypeMapper)])!;
 			}
 
 			return new DtoMapper<T>(this);
@@ -228,7 +227,7 @@ public abstract class DbDataMapper
 		}
 	}
 
-	private abstract class ValueTupleMapper<T>(IDbTypeMapper[] mappers) : TypeMapper<T>
+	private abstract class ValueTupleMapperBase<T>(IDbTypeMapper[] mappers) : TypeMapper<T>
 	{
 		public override int? FieldCount
 		{
@@ -317,8 +316,19 @@ public abstract class DbDataMapper
 		}
 	}
 
+	private sealed class ValueTupleMapper<T1>(DbTypeMapper<T1> mapper1)
+		: ValueTupleMapperBase<ValueTuple<T1>>([mapper1])
+	{
+		protected override ValueTuple<T1> MapCore(IDataRecord record, int index, int count)
+		{
+			Span<(int Index, int Count)> valueRanges = stackalloc (int Index, int Count)[1];
+			GetValueRanges(record, index, count, valueRanges);
+			return new ValueTuple<T1>(mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count));
+		}
+	}
+
 	private sealed class ValueTupleMapper<T1, T2>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2)
-		: ValueTupleMapper<(T1, T2)>([mapper1, mapper2])
+		: ValueTupleMapperBase<(T1, T2)>([mapper1, mapper2])
 	{
 		protected override (T1, T2) MapCore(IDataRecord record, int index, int count)
 		{
@@ -331,7 +341,7 @@ public abstract class DbDataMapper
 	}
 
 	private sealed class ValueTupleMapper<T1, T2, T3>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2, DbTypeMapper<T3> mapper3)
-		: ValueTupleMapper<(T1, T2, T3)>([mapper1, mapper2, mapper3])
+		: ValueTupleMapperBase<(T1, T2, T3)>([mapper1, mapper2, mapper3])
 	{
 		protected override (T1, T2, T3) MapCore(IDataRecord record, int index, int count)
 		{
@@ -345,7 +355,7 @@ public abstract class DbDataMapper
 	}
 
 	private sealed class ValueTupleMapper<T1, T2, T3, T4>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2, DbTypeMapper<T3> mapper3, DbTypeMapper<T4> mapper4)
-		: ValueTupleMapper<(T1, T2, T3, T4)>([mapper1, mapper2, mapper3, mapper4])
+		: ValueTupleMapperBase<(T1, T2, T3, T4)>([mapper1, mapper2, mapper3, mapper4])
 	{
 		protected override (T1, T2, T3, T4) MapCore(IDataRecord record, int index, int count)
 		{
@@ -360,7 +370,7 @@ public abstract class DbDataMapper
 	}
 
 	private sealed class ValueTupleMapper<T1, T2, T3, T4, T5>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2, DbTypeMapper<T3> mapper3, DbTypeMapper<T4> mapper4, DbTypeMapper<T5> mapper5)
-		: ValueTupleMapper<(T1, T2, T3, T4, T5)>([mapper1, mapper2, mapper3, mapper4, mapper5])
+		: ValueTupleMapperBase<(T1, T2, T3, T4, T5)>([mapper1, mapper2, mapper3, mapper4, mapper5])
 	{
 		protected override (T1, T2, T3, T4, T5) MapCore(IDataRecord record, int index, int count)
 		{
@@ -376,7 +386,7 @@ public abstract class DbDataMapper
 	}
 
 	private sealed class ValueTupleMapper<T1, T2, T3, T4, T5, T6>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2, DbTypeMapper<T3> mapper3, DbTypeMapper<T4> mapper4, DbTypeMapper<T5> mapper5, DbTypeMapper<T6> mapper6)
-		: ValueTupleMapper<(T1, T2, T3, T4, T5, T6)>([mapper1, mapper2, mapper3, mapper4, mapper5, mapper6])
+		: ValueTupleMapperBase<(T1, T2, T3, T4, T5, T6)>([mapper1, mapper2, mapper3, mapper4, mapper5, mapper6])
 	{
 		protected override (T1, T2, T3, T4, T5, T6) MapCore(IDataRecord record, int index, int count)
 		{
@@ -393,7 +403,7 @@ public abstract class DbDataMapper
 	}
 
 	private sealed class ValueTupleMapper<T1, T2, T3, T4, T5, T6, T7>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2, DbTypeMapper<T3> mapper3, DbTypeMapper<T4> mapper4, DbTypeMapper<T5> mapper5, DbTypeMapper<T6> mapper6, DbTypeMapper<T7> mapper7)
-		: ValueTupleMapper<(T1, T2, T3, T4, T5, T6, T7)>([mapper1, mapper2, mapper3, mapper4, mapper5, mapper6, mapper7])
+		: ValueTupleMapperBase<(T1, T2, T3, T4, T5, T6, T7)>([mapper1, mapper2, mapper3, mapper4, mapper5, mapper6, mapper7])
 	{
 		protected override (T1, T2, T3, T4, T5, T6, T7) MapCore(IDataRecord record, int index, int count)
 		{
@@ -407,6 +417,26 @@ public abstract class DbDataMapper
 				mapper5.Map(record, valueRanges[4].Index, valueRanges[4].Count),
 				mapper6.Map(record, valueRanges[5].Index, valueRanges[5].Count),
 				mapper7.Map(record, valueRanges[6].Index, valueRanges[6].Count));
+		}
+	}
+
+	private sealed class ValueTupleMapperRest<T1, T2, T3, T4, T5, T6, T7, TRest>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2, DbTypeMapper<T3> mapper3, DbTypeMapper<T4> mapper4, DbTypeMapper<T5> mapper5, DbTypeMapper<T6> mapper6, DbTypeMapper<T7> mapper7, DbTypeMapper<TRest> mapperRest)
+		: ValueTupleMapperBase<ValueTuple<T1, T2, T3, T4, T5, T6, T7, TRest>>([mapper1, mapper2, mapper3, mapper4, mapper5, mapper6, mapper7, mapperRest])
+		where TRest : struct
+	{
+		protected override ValueTuple<T1, T2, T3, T4, T5, T6, T7, TRest> MapCore(IDataRecord record, int index, int count)
+		{
+			Span<(int Index, int Count)> valueRanges = stackalloc (int Index, int Count)[8];
+			GetValueRanges(record, index, count, valueRanges);
+			return new ValueTuple<T1, T2, T3, T4, T5, T6, T7, TRest>(
+				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count),
+				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count),
+				mapper3.Map(record, valueRanges[2].Index, valueRanges[2].Count),
+				mapper4.Map(record, valueRanges[3].Index, valueRanges[3].Count),
+				mapper5.Map(record, valueRanges[4].Index, valueRanges[4].Count),
+				mapper6.Map(record, valueRanges[5].Index, valueRanges[5].Count),
+				mapper7.Map(record, valueRanges[6].Index, valueRanges[6].Count),
+				mapperRest.Map(record, valueRanges[7].Index, valueRanges[7].Count));
 		}
 	}
 

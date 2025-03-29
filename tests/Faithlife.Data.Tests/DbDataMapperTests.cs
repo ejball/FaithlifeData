@@ -190,7 +190,7 @@ internal sealed class DbDataMapperTests
 	}
 
 	[Test]
-	public void TupleTests([Values(2, 3, 4, 5, 6, 7)] int fieldCount)
+	public void TupleTests([Values(2, 3, 4, 5, 6, 7, 8, 9, 10)] int fieldCount)
 	{
 		using var connection = GetOpenConnection();
 		using var command = connection.CreateCommand();
@@ -221,6 +221,12 @@ internal sealed class DbDataMapperTests
 			record.Get<(int, int, int, int, int, int)>().Should().Be((1, 2, 3, 4, 5, 6));
 		else if (fieldCount == 7)
 			record.Get<(int, int, int, int, int, int, int)>().Should().Be((1, 2, 3, 4, 5, 6, 7));
+		else if (fieldCount == 8)
+			record.Get<(int, int, int, int, int, int, int, int)>().Should().Be((1, 2, 3, 4, 5, 6, 7, 8));
+		else if (fieldCount == 9)
+			record.Get<(int, int, int, int, int, int, int, int, int)>().Should().Be((1, 2, 3, 4, 5, 6, 7, 8, 9));
+		else if (fieldCount == 10)
+			record.Get<(int, int, int, int, int, int, int, int, int, int)>().Should().Be((1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
 
 		// get nulls
 		reader.Read().Should().BeTrue();
@@ -236,6 +242,12 @@ internal sealed class DbDataMapperTests
 			record.Get<(int?, int?, int?, int?, int?, int?)>().Should().Be((null, null, null, null, null, null));
 		else if (fieldCount == 7)
 			record.Get<(int?, int?, int?, int?, int?, int?, int?)>().Should().Be((null, null, null, null, null, null, null));
+		else if (fieldCount == 8)
+			record.Get<(int?, int?, int?, int?, int?, int?, int?, int?)>().Should().Be((null, null, null, null, null, null, null, null));
+		else if (fieldCount == 9)
+			record.Get<(int?, int?, int?, int?, int?, int?, int?, int?, int?)>().Should().Be((null, null, null, null, null, null, null, null, null));
+		else if (fieldCount == 10)
+			record.Get<(int?, int?, int?, int?, int?, int?, int?, int?, int?, int?)>().Should().Be((null, null, null, null, null, null, null, null, null, null));
 		else
 			throw new InvalidOperationException();
 	}
