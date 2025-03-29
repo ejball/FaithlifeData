@@ -19,7 +19,7 @@ public class DataMapperBenchmark : IDisposable
 		m_connector
 			.Command("insert into DataMapperBenchmark (AnInteger, AReal, AString, ABlob) values (@AnInteger, @AReal, @AString, @ABlob)...;")
 			.BulkInsert(Enumerable.Range(0, recordCount)
-				.Select(x => new DbParametersSet(
+				.Select(x => new DbParametersList(
 					DbParameters.Create("AnInteger", x < recordCount ? x : (int?) null),
 					DbParameters.Create("AReal", x < recordCount ? 1.0 / (x + 1.0) : (double?) null),
 					DbParameters.Create("AString", x < recordCount ? $"{x:0000}" : null),

@@ -35,6 +35,6 @@ internal sealed class SqlContext
 		return rendered;
 	}
 
-	private DbParametersSet? m_parametersList;
+	private DbParametersList? m_parametersList;
 	private Dictionary<object, string>? m_renderedParams;
 }

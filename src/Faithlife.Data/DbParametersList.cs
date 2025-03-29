@@ -3,13 +3,13 @@ using System.Data;
 namespace Faithlife.Data;
 
 /// <summary>
-/// A set of parameters.
+/// A list of parameters.
 /// </summary>
-public sealed class DbParametersSet : DbParameters
+public sealed class DbParametersList : DbParameters
 {
-	public DbParametersSet() => m_parametersList = [];
+	public DbParametersList() => m_parametersList = [];
 
-	public DbParametersSet(params IEnumerable<DbParameters> parametersList) => m_parametersList = [.. parametersList];
+	public DbParametersList(params IEnumerable<DbParameters> parametersList) => m_parametersList = [.. parametersList];
 
 	public void Add(DbParameters item)
 	{
@@ -41,7 +41,7 @@ public sealed class DbParametersSet : DbParameters
 	private void VerifyNotReadOnly()
 	{
 		if (IsReadOnly)
-			throw new NotSupportedException("The set becomes read-only after it has been applied to a command.");
+			throw new NotSupportedException("The list becomes read-only after it has been applied to a command.");
 	}
 
 	private readonly List<DbParameters> m_parametersList;

@@ -614,5 +614,5 @@ public sealed class DbConnectorCommand
 		while (await methods.NextResultAsync(reader, cancellationToken).ConfigureAwait(false));
 	}
 
-	private readonly DbParametersSet m_parameters;
+	private readonly DbParametersList m_parameters;
 }

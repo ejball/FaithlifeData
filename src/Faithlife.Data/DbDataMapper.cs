@@ -78,12 +78,13 @@ public abstract class DbDataMapper
 			if (typeof(T) == typeof(object))
 				return (DbTypeMapper<T>) (object) new ObjectMapper();
 
-			if (DbConnectorReflection.Default.IsTupleType<T>())
+			var typeName = typeof(T).FullName ?? "";
+			if (typeName.StartsWith("System.ValueTuple`", StringComparison.Ordinal))
 			{
 				var tupleTypes = typeof(T).GetGenericArguments();
 				var tupleMapperType = tupleTypes.Length switch
 				{
-					2 => typeof(TupleMapper<,>),
+					2 => typeof(ValueTupleMapper<,>),
 					////3 => typeof(TupleMapper<,,>),
 					_ => null,
 				};
@@ -311,7 +312,7 @@ public abstract class DbDataMapper
 		private readonly IReadOnlyList<IDbTypeMapper>? m_tupleTypeMappers;
 	}
 
-	private sealed class TupleMapper<T1, T2>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2) : TypeMapper<(T1, T2)>
+	private sealed class ValueTupleMapper<T1, T2>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2) : TypeMapper<(T1, T2)>
 	{
 		public override int? FieldCount => mapper1.FieldCount + mapper2.FieldCount;
 
