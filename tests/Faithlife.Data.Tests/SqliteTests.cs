@@ -14,8 +14,8 @@ internal sealed class SqliteTests
 		var tableName = Sql.Name(nameof(PrepareCacheTests));
 
 		using var connector = CreateConnector();
-		connector.Command(Sql.Format($"drop table if exists {tableName};")).Execute();
-		connector.Command(Sql.Format($"create table {tableName} (ItemId integer primary key, Name text not null);")).Execute();
+		connector.CommandFormat($"drop table if exists {tableName};").Execute();
+		connector.CommandFormat($"create table {tableName} (ItemId integer primary key, Name text not null);").Execute();
 
 		var insertSql = Sql.Format($"insert into {tableName} (Name) values (@itemA); insert into {tableName} (Name) values (@itemB);");
 		connector.Command(insertSql).WithParameter("itemA", "one").WithParameter("itemB", "two").Prepare().Cache().Execute().Should().Be(2);

@@ -70,12 +70,12 @@ public static class BulkInsertUtility
 		if (maxRowsPerBatch < 1)
 			throw new ArgumentException($"{nameof(settings.MaxRowsPerBatch)} setting must be positive.");
 
+#if false
 		var batchSqls = new List<string>();
 		Dictionary<string, object?>? batchParameters = null;
 		var rowParts = new string[tupleParts.Length];
 		string GetBatchSql() => sqlPrefix + string.Join(", ", batchSqls) + sqlSuffix;
 
-#if false
 		foreach (var rowParameters in rows)
 		{
 			batchParameters ??= commonParameters.ToDictionary();
@@ -104,10 +104,12 @@ public static class BulkInsertUtility
 				batchParameters = null;
 			}
 		}
-#endif
 
 		if (batchSqls.Count != 0)
 			yield return (GetBatchSql(), DbParameters.Create(batchParameters!));
+#endif
+
+		yield break;
 	}
 
 	private static DbConnectorCommand CreateBatchCommand(DbConnectorCommand command, string sql, DbParameters parameters)

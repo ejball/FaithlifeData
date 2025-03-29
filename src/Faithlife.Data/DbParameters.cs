@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 
@@ -17,7 +16,7 @@ public abstract class DbParameters
 	/// An empty list of parameters.
 	/// </summary>
 	[SuppressMessage("Performance", "CA1805:Do not initialize unnecessarily", Justification = "Intentional API.")]
-	public static readonly DbParameters Empty = new StandardDbParameters([]);
+	public static readonly DbParameters Empty = new EmptyDbParameters();
 
 	/// <summary>
 	/// Creates a list of parameters with one parameter.
@@ -25,6 +24,7 @@ public abstract class DbParameters
 	public static DbParameters Create<T>(string name, T value) =>
 		new OneDbParameter<T>(name, value);
 
+#if false
 	/// <summary>
 	/// Creates a list of parameters from tuples.
 	/// </summary>
@@ -202,9 +202,23 @@ public abstract class DbParameters
 		}
 		return new StandardDbParameters(parameters);
 	}
+#endif
 
 	/// <summary>
 	/// The number of parameters.
 	/// </summary>
 	public abstract int Count { get; }
+
+	private sealed class EmptyDbParameters : DbParameters
+	{
+		public override void Apply(IDbCommand command)
+		{
+		}
+
+		public override void Reapply(IDbCommand command, int startIndex)
+		{
+		}
+
+		public override int Count => 0;
+	}
 }

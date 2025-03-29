@@ -14,16 +14,6 @@ public class DbProviderMethods
 	public static readonly DbProviderMethods Default = new();
 
 	/// <summary>
-	/// Provides access via connector. Used when creating wrapping connectors.
-	/// </summary>
-	public static DbProviderMethods FromConnector(DbConnector connector) => connector.ProviderMethods;
-
-	/// <summary>
-	/// Opens the connection.
-	/// </summary>
-	public virtual void OpenConnection(IDbConnection connection) => connection.Open();
-
-	/// <summary>
 	/// Opens the connection asynchronously.
 	/// </summary>
 	public virtual ValueTask OpenConnectionAsync(IDbConnection connection, CancellationToken cancellationToken)

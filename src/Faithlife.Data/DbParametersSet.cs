@@ -41,7 +41,7 @@ public sealed class DbParametersSet : DbParameters
 	private void VerifyNotReadOnly()
 	{
 		if (IsReadOnly)
-			throw new NotSupportedException("The collection becomes read-only after it has been applied to a command.");
+			throw new NotSupportedException("The set becomes read-only after it has been applied to a command.");
 	}
 
 	private readonly List<DbParameters> m_parametersList;

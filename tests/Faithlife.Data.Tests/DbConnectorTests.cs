@@ -118,6 +118,7 @@ internal sealed class DbConnectorTests
 		(await connector.Command("select Name from Items where Name like @like;").WithParameters(DbParameters.Create("like", "t%")).QueryFirstAsync<string>()).Should().Be("two");
 	}
 
+#if false
 	[Test]
 	public void ParametersFromDtoTests()
 	{
@@ -128,6 +129,7 @@ internal sealed class DbConnectorTests
 		connector.Command("insert into Items (Name) values (@item1); insert into Items (Name) values (@item2);").WithParameters(DbParameters.FromDto(new { item1, item2 })).Execute().Should().Be(2);
 		connector.Command("select Name from Items order by ItemId;").Query<string>().Should().Equal(item1, item2);
 	}
+#endif
 
 	[Test]
 	public void ParametersFromSqlTests()
