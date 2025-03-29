@@ -5,12 +5,6 @@ namespace Faithlife.Data;
 internal sealed class StandardDbConnectorReflection : DbConnectorReflection
 {
 	/// <inheritdoc />
-	public override bool IsTupleType(Type type) => TupleInfo.IsTupleType(type);
-
-	/// <inheritdoc />
-	public override bool IsTupleType<T>() => TupleInfo.IsTupleType(typeof(T));
-
-	/// <inheritdoc />
 	public override IReadOnlyList<IDbDtoProperty> GetProperties(Type type) => DtoInfo.GetInfo(type).Properties.Select(Map).ToList()!;
 
 	/// <inheritdoc />
@@ -21,15 +15,6 @@ internal sealed class StandardDbConnectorReflection : DbConnectorReflection
 
 	/// <inheritdoc />
 	public override T CreateNew<T>(IReadOnlyList<(IDbDtoProperty<T> Property, object? Value)> propertyValues) => DtoInfo.GetInfo<T>().CreateNew(propertyValues.Select(x => (((DbDtoProperty<T>) x.Property).Property, x.Value)).ToList());
-
-	/// <inheritdoc />
-	public override IReadOnlyList<Type> GetTupleItemTypes(Type type) => TupleInfo.GetInfo(type).ItemTypes;
-
-	/// <inheritdoc />
-	public override IReadOnlyList<Type> GetTupleItemTypes<T>() => TupleInfo.GetInfo<T>().ItemTypes;
-
-	/// <inheritdoc />
-	public override T CreateNewTuple<T>(IReadOnlyList<object?> values) => TupleInfo.GetInfo<T>().CreateNew(values);
 
 	private static IDbDtoProperty? Map(IDtoProperty? property) => property is null ? null : new DbDtoProperty(property);
 

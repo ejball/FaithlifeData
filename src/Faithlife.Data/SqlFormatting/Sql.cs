@@ -362,8 +362,8 @@ public abstract class Sql
 
 		internal override string Render(SqlContext context)
 		{
-			if (context.Reflection.IsTupleType(m_type))
-				return string.Join(", NULL, ", context.Reflection.GetTupleItemTypes(m_type).Select((x, i) => RenderDto(x, i, context)));
+			////if (context.Reflection.IsTupleType(m_type))
+			////	return string.Join(", NULL, ", context.Reflection.GetTupleItemTypes(m_type).Select((x, i) => RenderDto(x, i, context)));
 
 			return RenderDto(m_type, 0, context);
 		}

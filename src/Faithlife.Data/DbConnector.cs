@@ -24,7 +24,6 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 		m_noDisposeConnection = m_noDisposeTransaction || settings.NoDispose;
 		m_whenDisposed = settings.WhenDisposed;
 		ProviderMethods = settings.ProviderMethods ?? DbProviderMethods.Default;
-		Reflection = settings.Reflection ?? DbConnectorReflection.Default;
 		m_defaultIsolationLevel = settings.DefaultIsolationLevel;
 		SqlSyntax = settings.SqlSyntax ?? SqlSyntax.Default;
 		DataMapper = settings.DataMapper ?? DbDataMapper.Default;
@@ -351,7 +350,7 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 
 	internal DbProviderMethods ProviderMethods { get; }
 
-	internal DbConnectorReflection Reflection { get; }
+	internal DbConnectorReflection Reflection => DataMapper.Reflection;
 
 	internal DbCommandCache CommandCache => m_commandCache ??= new();
 

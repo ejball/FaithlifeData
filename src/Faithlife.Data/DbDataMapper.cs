@@ -15,7 +15,9 @@ public abstract class DbDataMapper
 	/// <summary>
 	/// The default data mapper allows the ADO.NET provider to convert values to the expected type.
 	/// </summary>
-	public static DbDataMapper Default { get; } = new DefaultDbDataMapper();
+	public static DbDataMapper Default { get; } = new DefaultDbDataMapper(DbConnectorReflection.Default);
+
+	public abstract DbConnectorReflection Reflection { get; }
 
 	/// <summary>
 	/// Gets a type mapper for the specified type.
@@ -56,8 +58,10 @@ public abstract class DbDataMapper
 
 	protected abstract DbTypeMapper<T> CreateTypeMapper<T>();
 
-	private sealed class DefaultDbDataMapper : DbDataMapper
+	private sealed class DefaultDbDataMapper(DbConnectorReflection reflection) : DbDataMapper
 	{
+		public override DbConnectorReflection Reflection { get; } = reflection;
+
 		protected override DbTypeMapper<T> CreateTypeMapper<T>()
 		{
 			if (typeof(T) == typeof(string))
@@ -131,7 +135,8 @@ public abstract class DbDataMapper
 	{
 		public DtoMapper(DbDataMapper mapper)
 		{
-			var properties = DbConnectorReflection.Default.GetProperties<T>();
+			m_reflection = mapper.Reflection;
+			var properties = mapper.Reflection.GetProperties<T>();
 			var dbDtoInfo = DbDtoInfo.GetInfo<T>();
 
 			var propertiesByNormalizedFieldName = new Dictionary<string, (IDbDtoProperty<T> Dto, IDbTypeMapper Db)>(capacity: properties.Count, StringComparer.OrdinalIgnoreCase);
@@ -157,7 +162,7 @@ public abstract class DbDataMapper
 					propertyValues.Add((property.Dto, property.Db.Map(record, i, 1)));
 				}
 			}
-			return propertyValues is not null ? DbConnectorReflection.Default.CreateNew(propertyValues) : default!;
+			return propertyValues is not null ? m_reflection.CreateNew(propertyValues) : default!;
 		}
 
 #if !NETSTANDARD2_0
@@ -167,6 +172,7 @@ public abstract class DbDataMapper
 #endif
 
 		private readonly IReadOnlyDictionary<string, (IDbDtoProperty<T> Dto, IDbTypeMapper Db)>? m_propertiesByNormalizedFieldName;
+		private readonly DbConnectorReflection m_reflection;
 	}
 
 	private sealed class ObjectMapper : TypeMapper<object>
