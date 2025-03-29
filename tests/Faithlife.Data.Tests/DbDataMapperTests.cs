@@ -14,7 +14,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void Strings()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
 		using var reader = command.ExecuteReader();
@@ -34,7 +34,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void NonNullableScalars()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
 		using var reader = command.ExecuteReader();
@@ -56,7 +56,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void NullableScalars()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
 		using var reader = command.ExecuteReader();
@@ -78,7 +78,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void Enums()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
 		using var reader = command.ExecuteReader();
@@ -100,7 +100,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void BadIndexCount()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
 		using var reader = command.ExecuteReader();
@@ -117,7 +117,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void BadCast()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
 		using var reader = command.ExecuteReader();
@@ -133,7 +133,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void BadFieldCount()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
 		using var reader = command.ExecuteReader();
@@ -149,7 +149,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void ByteArrayTests()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
 		using var reader = command.ExecuteReader();
@@ -169,7 +169,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void StreamTests()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
 		using var reader = command.ExecuteReader();
@@ -190,35 +190,48 @@ internal sealed class DbDataMapperTests
 	}
 
 	[Test]
-	public void TupleTests()
+	public void TupleTests([Values(2, 3, 4)] int fieldCount)
 	{
 		using var connection = GetOpenConnection();
 		using var command = connection.CreateCommand();
-		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
+
+		var columns = string.Join(", ", Enumerable.Range(1, fieldCount).Select(x => $"Item{x}"));
+		command.CommandText = $"""
+			create table Tuples ({columns});
+			insert into Tuples ({columns}) values ({string.Join(", ", Enumerable.Range(1, fieldCount).Select(x => x))});
+			insert into Tuples ({columns}) values ({string.Join(", ", Enumerable.Range(1, fieldCount).Select(_ => "null"))});
+			""";
+		command.ExecuteNonQuery();
+
+		command.CommandText = "select * from Tuples;";
 		using var reader = command.ExecuteReader();
 		var record = WrapRecord(reader);
 
 		// get non-nulls
 		reader.Read().Should().BeTrue();
-
-		record.Get<(string?, long, double)>(0, 3)
-			.Should().Be((s_dto.TheText, s_dto.TheInteger, s_dto.TheReal));
-		record.Get<(string?, long, double)>(..^1)
-			.Should().Be((s_dto.TheText, s_dto.TheInteger, s_dto.TheReal));
+		if (fieldCount == 2)
+			record.Get<(int, int)>().Should().Be((1, 2));
+		else if (fieldCount == 3)
+			record.Get<(int, int, int)>().Should().Be((1, 2, 3));
+		else if (fieldCount == 4)
+			record.Get<(int, int, int, int)>().Should().Be((1, 2, 3, 4));
 
 		// get nulls
 		reader.Read().Should().BeTrue();
-
-		record.Get<(string?, long?, double?)>(0, 3)
-			.Should().Be((null, null, null));
-		record.Get<(string?, long?, double?)>(..3)
-			.Should().Be((null, null, null));
+		if (fieldCount == 2)
+			record.Get<(int?, int?)>().Should().Be((null, null));
+		else if (fieldCount == 3)
+			record.Get<(int?, int?, int?)>().Should().Be((null, null, null));
+		else if (fieldCount == 4)
+			record.Get<(int?, int?, int?, int?)>().Should().Be((null, null, null, null));
+		else
+			throw new InvalidOperationException();
 	}
 
 	[Test]
 	public void DtoTests()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
 		using var reader = command.ExecuteReader();
@@ -252,7 +265,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void TwoDtos()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger, null, TheReal, TheBlob from items;";
 		using var reader = command.ExecuteReader();
@@ -278,7 +291,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void TwoOneFieldDtos()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger from items;";
 		using var reader = command.ExecuteReader();
@@ -304,7 +317,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void RecordTests()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
 		using var reader = command.ExecuteReader();
@@ -338,7 +351,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void CaseInsensitivePropertyName()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select thetext, THEinteger from items;";
 		using var reader = command.ExecuteReader();
@@ -352,7 +365,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void UnderscorePropertyName()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText as the_text, TheInteger as the_integer from items;";
 		using var reader = command.ExecuteReader();
@@ -366,7 +379,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void BadPropertyName()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger as Nope from items;";
 		using var reader = command.ExecuteReader();
@@ -379,7 +392,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void DynamicTests()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
 		using var reader = command.ExecuteReader();
@@ -412,7 +425,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void DictionaryTests()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
 		using var reader = command.ExecuteReader();
@@ -437,7 +450,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void ObjectTests()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
 		using var reader = command.ExecuteReader();
@@ -473,7 +486,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void GetExtension()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
 		using var reader = command.ExecuteReader();
@@ -486,7 +499,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void GetAtExtension()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
 		using var reader = command.ExecuteReader();
@@ -501,7 +514,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void GetRangeExtension()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
 		using var reader = command.ExecuteReader();
@@ -517,7 +530,7 @@ internal sealed class DbDataMapperTests
 	[Test]
 	public void CustomDtoTests()
 	{
-		using var connection = GetOpenConnection();
+		using var connection = GetOpenConnectionWithItems();
 		using var command = connection.CreateCommand();
 		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
 		using var reader = command.ExecuteReader();
@@ -533,6 +546,12 @@ internal sealed class DbDataMapperTests
 	{
 		var connection = new SqliteConnection("Data Source=:memory:");
 		connection.Open();
+		return connection;
+	}
+
+	private static IDbConnection GetOpenConnectionWithItems()
+	{
+		var connection = GetOpenConnection();
 
 		using (var command = connection.CreateCommand())
 		{

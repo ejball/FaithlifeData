@@ -85,10 +85,10 @@ public abstract class DbDataMapper
 				var tupleMapperType = tupleTypes.Length switch
 				{
 					2 => typeof(ValueTupleMapper<,>),
-					////3 => typeof(TupleMapper<,,>),
-					_ => null,
+					3 => typeof(ValueTupleMapper<,,>),
+					_ => throw new NotImplementedException($"{tupleTypes.Length}"),
 				};
-				return (DbTypeMapper<T>) (tupleMapperType is null ? new TupleMapper<T>(this) : Activator.CreateInstance(tupleMapperType.MakeGenericType(tupleTypes), [.. tupleTypes.Select(GetTypeMapper)])!);
+				return (DbTypeMapper<T>) Activator.CreateInstance(tupleMapperType.MakeGenericType(tupleTypes), [.. tupleTypes.Select(GetTypeMapper)])!;
 			}
 
 			if (typeof(T).IsEnum)
@@ -224,113 +224,33 @@ public abstract class DbDataMapper
 		}
 	}
 
-	private sealed class TupleMapper<T> : TypeMapper<T>
+	private abstract class ValueTupleMapper<T>(IDbTypeMapper[] mappers) : TypeMapper<T>
 	{
-		public TupleMapper(DbDataMapper mapper)
+		public override int? FieldCount
 		{
-			m_tupleTypeMappers = DbConnectorReflection.Default.GetTupleItemTypes<T>().Select(mapper.GetTypeMapper).ToList();
-			FieldCount = m_tupleTypeMappers.Aggregate((int?) 0, (x, y) => x + y.FieldCount);
-		}
-
-		public override int? FieldCount { get; }
-
-		protected override T MapCore(IDataRecord record, int index, int count)
-		{
-			if (FieldCount is not null && count != FieldCount.GetValueOrDefault())
-				throw BadFieldCount(count);
-
-			var valueCount = m_tupleTypeMappers!.Count;
-			object?[] values = new object[valueCount];
-			var recordIndex = index;
-			for (var valueIndex = 0; valueIndex < valueCount; valueIndex++)
+			get
 			{
-				var mapper = m_tupleTypeMappers[valueIndex];
-
-				int fieldCount;
-				int? nullIndex = null;
-				if (mapper.FieldCount is null)
+				var totalFieldCount = 0;
+				foreach (var mapper in mappers)
 				{
-					int? remainingFieldCount = 0;
-					var minimumRemainingFieldCount = 0;
-					for (var nextValueIndex = valueIndex + 1; nextValueIndex < valueCount; nextValueIndex++)
-					{
-						var nextFieldCount = m_tupleTypeMappers[nextValueIndex].FieldCount;
-						if (nextFieldCount is not null)
-						{
-							remainingFieldCount += nextFieldCount.Value;
-							minimumRemainingFieldCount += nextFieldCount.Value;
-						}
-						else
-						{
-							remainingFieldCount = null;
-							minimumRemainingFieldCount += 1;
-						}
-					}
-
-					if (remainingFieldCount is not null)
-					{
-						fieldCount = count - recordIndex - remainingFieldCount.Value;
-					}
-					else
-					{
-						for (var nextRecordIndex = recordIndex + 1; nextRecordIndex < count; nextRecordIndex++)
-						{
-							if (record.GetName(nextRecordIndex).Equals("NULL", StringComparison.OrdinalIgnoreCase))
-							{
-								nullIndex = nextRecordIndex;
-								break;
-							}
-						}
-
-						if (nullIndex is not null)
-						{
-							fieldCount = nullIndex.Value - recordIndex;
-						}
-						else if (count - (recordIndex + 1) == minimumRemainingFieldCount)
-						{
-							fieldCount = 1;
-						}
-						else
-						{
-							throw new InvalidOperationException($"Tuple item {valueIndex} must be terminated by a field named 'NULL': {Type.FullName}");
-						}
-					}
+					if (mapper.FieldCount is not { } fieldCount)
+						return null;
+					totalFieldCount += fieldCount;
 				}
-				else
-				{
-					fieldCount = mapper.FieldCount.Value;
-				}
-
-				values[valueIndex] = mapper.Map(record, recordIndex, fieldCount);
-				recordIndex = nullIndex + 1 ?? recordIndex + fieldCount;
+				return totalFieldCount;
 			}
-
-			return DbConnectorReflection.Default.CreateNewTuple<T>(values);
 		}
 
-		////private readonly TupleInfo<T>? m_tupleInfo;
-		private readonly IReadOnlyList<IDbTypeMapper>? m_tupleTypeMappers;
-	}
-
-	private sealed class ValueTupleMapper<T1, T2>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2) : TypeMapper<(T1, T2)>
-	{
-		public override int? FieldCount => mapper1.FieldCount + mapper2.FieldCount;
-
-		protected override (T1, T2) MapCore(IDataRecord record, int index, int count)
+		protected void GetValueRanges(IDataRecord record, int index, int count, Span<(int Index, int Count)> valueRanges)
 		{
 			if (FieldCount is { } requiredFieldCount && count != requiredFieldCount)
 				throw BadFieldCount(count);
 
-			var valueCount = 2;
-#if !NETSTANDARD2_0
-			Span<(int Index, int Count)> valueRanges = stackalloc (int Index, int Count)[valueCount];
-#else
-			var valueRanges = new (int Index, int Count)[valueCount];
-#endif
+			var valueCount = mappers.Length;
 			var recordIndex = index;
 			for (var valueIndex = 0; valueIndex < valueCount; valueIndex++)
 			{
-				var mapperFieldCount = valueIndex == 0 ? mapper1.FieldCount : mapper2.FieldCount;
+				var mapperFieldCount = mappers[valueIndex].FieldCount;
 
 				int fieldCount;
 				int? nullIndex = null;
@@ -340,7 +260,7 @@ public abstract class DbDataMapper
 					var minimumRemainingFieldCount = 0;
 					for (var nextValueIndex = valueIndex + 1; nextValueIndex < valueCount; nextValueIndex++)
 					{
-						var nextFieldCount = nextValueIndex == 0 ? mapper1.FieldCount : mapper2.FieldCount;
+						var nextFieldCount = mappers[nextValueIndex].FieldCount;
 						if (nextFieldCount is not null)
 						{
 							remainingFieldCount += nextFieldCount.Value;
@@ -390,10 +310,33 @@ public abstract class DbDataMapper
 				valueRanges[valueIndex] = (recordIndex, fieldCount);
 				recordIndex = nullIndex + 1 ?? recordIndex + fieldCount;
 			}
+		}
+	}
 
+	private sealed class ValueTupleMapper<T1, T2>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2)
+		: ValueTupleMapper<(T1, T2)>([mapper1, mapper2])
+	{
+		protected override (T1, T2) MapCore(IDataRecord record, int index, int count)
+		{
+			Span<(int Index, int Count)> valueRanges = stackalloc (int Index, int Count)[2];
+			GetValueRanges(record, index, count, valueRanges);
 			return (
 				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count),
 				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count));
+		}
+	}
+
+	private sealed class ValueTupleMapper<T1, T2, T3>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2, DbTypeMapper<T3> mapper3)
+		: ValueTupleMapper<(T1, T2, T3)>([mapper1, mapper2, mapper3])
+	{
+		protected override (T1, T2, T3) MapCore(IDataRecord record, int index, int count)
+		{
+			Span<(int Index, int Count)> valueRanges = stackalloc (int Index, int Count)[3];
+			GetValueRanges(record, index, count, valueRanges);
+			return (
+				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count),
+				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count),
+				mapper3.Map(record, valueRanges[2].Index, valueRanges[2].Count));
 		}
 	}
 
