@@ -300,7 +300,7 @@ public readonly struct DbConnectorCommand
 	/// </summary>
 	/// <remarks>Use <see cref="System.Threading.Timeout.InfiniteTimeSpan" /> (not <see cref="TimeSpan.Zero" />) for infinite timeout.</remarks>
 	/// <exception cref="ArgumentOutOfRangeException"><c>timeSpan</c> is not positive or <see cref="System.Threading.Timeout.InfiniteTimeSpan" />.</exception>
-	public DbConnectorCommand WithParameters(DbParameters parameters) => new(Connector, Text, new MergedDbParameters([Parameters, parameters]), CommandType, Timeout, IsCached, IsPrepared);
+	public DbConnectorCommand WithParameters(DbParameters parameters) => new(Connector, Text, new DbParametersSet([Parameters, parameters]), CommandType, Timeout, IsCached, IsPrepared);
 
 	/// <summary>
 	/// Caches the command.
@@ -447,13 +447,13 @@ public readonly struct DbConnectorCommand
 			if (command.Parameters.Count != parameterCount)
 				throw new InvalidOperationException($"Cached commands must always be executed with the same number of parameters (was {command.Parameters.Count}, now {parameters.Count}).");
 
-			parameters.ReapplyTo(command, startIndex: 0);
+			parameters.Reapply(command, startIndex: 0);
 
 			needsPrepare = false;
 		}
 		else
 		{
-			parameters.AddTo(command);
+			parameters.Apply(command);
 
 			needsPrepare = IsPrepared;
 		}

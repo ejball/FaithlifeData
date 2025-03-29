@@ -9,9 +9,9 @@ namespace Faithlife.Data;
 /// </summary>
 public abstract class DbParameters
 {
-	public abstract void AddTo(IDbCommand command);
+	public abstract void Apply(IDbCommand command);
 
-	public abstract void ReapplyTo(IDbCommand command, int startIndex);
+	public abstract void Reapply(IDbCommand command, int startIndex);
 
 	/// <summary>
 	/// An empty list of parameters.
@@ -207,113 +207,4 @@ public abstract class DbParameters
 	/// The number of parameters.
 	/// </summary>
 	public abstract int Count { get; }
-
-#if false
-	/// <summary>
-	/// The parameter at the specified index.
-	/// </summary>
-	public (string Name, object? Value) this[int index] => Parameters[index];
-#endif
-
-	/// <summary>
-	/// Adds a parameter.
-	/// </summary>
-	public DbParameters Add(string name, object? value) => new MergedDbParameters([this, Create((name, value))]);
-
-	/// <summary>
-	/// Adds parameters from another instance.
-	/// </summary>
-	public DbParameters Add(DbParameters parameters) => new MergedDbParameters([this, parameters]);
-
-	/// <summary>
-	/// Adds parameters from tuples.
-	/// </summary>
-	public DbParameters Add(params (string Name, object? Value)[] parameters) => Add(Create(parameters));
-
-	/// <summary>
-	/// Adds parameters from a sequence of tuples.
-	/// </summary>
-	public DbParameters Add(IEnumerable<(string Name, object? Value)> parameters) => Add(Create(parameters));
-
-	/// <summary>
-	/// Adds parameters from a sequence of tuples.
-	/// </summary>
-	public DbParameters Add<T>(IEnumerable<(string Name, T Value)> parameters) => Add(Create(parameters));
-
-	/// <summary>
-	/// Adds parameters from a dictionary.
-	/// </summary>
-	public DbParameters Add<T>(IEnumerable<KeyValuePair<string, T>> parameters) => Add(Create(parameters));
-
-	/// <summary>
-	/// Adds parameters from a single name and a collection of values.
-	/// </summary>
-	/// <remarks>The name of each parameter is <c>name_index</c>, where <c>name</c> is as specified and <c>index</c>
-	/// is the zero-based index of the value.</remarks>
-	public DbParameters AddMany(string name, IEnumerable values) => Add(FromMany(name, values));
-
-	/// <summary>
-	/// Adds parameters from a collection of values.
-	/// </summary>
-	/// <remarks>The name of each parameter is determined by calling the specified function with the zero-based index of the value.</remarks>
-	public DbParameters AddMany(Func<int, string> name, IEnumerable values) => Add(FromMany(name, values));
-
-	/// <summary>
-	/// Adds parameters from the properties of a DTO.
-	/// </summary>
-	/// <remarks>The name of each parameter is the name of the corresponding DTO property.</remarks>
-	public DbParameters AddDto(object dto) => Add(FromDto(dto));
-
-	/// <summary>
-	/// Adds parameters from the properties of a DTO.
-	/// </summary>
-	/// <remarks>The name of each parameter is <c>name_prop</c>, where <c>name</c> is as specified and <c>prop</c> is the
-	/// name of the corresponding DTO property.</remarks>
-	public DbParameters AddDto(string name, object dto) => Add(FromDto(name, dto));
-
-	/// <summary>
-	/// Adds parameters from the properties of a DTO.
-	/// </summary>
-	/// <remarks>The name of each parameter is determined by calling the function with the name of the corresponding DTO property.</remarks>
-	public DbParameters AddDto(Func<string, string> name, object dto) => Add(FromDto(name, dto));
-
-	/// <summary>
-	/// Adds parameters from the properties of a DTO whose names match the specified filter.
-	/// </summary>
-	/// <remarks>The name of each parameter is the name of the corresponding DTO property.</remarks>
-	public DbParameters AddDtoWhere(object dto, Func<string, bool> filter) => Add(FromDtoWhere(dto, filter));
-
-	/// <summary>
-	/// Adds parameters from the properties of a DTO whose names match the specified filter.
-	/// </summary>
-	/// <remarks>The name of each parameter is <c>name_prop</c>, where <c>name</c> is as specified and <c>prop</c> is the
-	/// name of the corresponding DTO property.</remarks>
-	public DbParameters AddDtoWhere(string name, object dto, Func<string, bool> filter) => Add(FromDtoWhere(name, dto, filter));
-
-	/// <summary>
-	/// Adds parameters from the properties of a DTO whose names match the specified filter.
-	/// </summary>
-	/// <remarks>The name of each parameter is determined by calling the function with the name of the corresponding DTO property.</remarks>
-	public DbParameters AddDtoWhere(Func<string, string> name, object dto, Func<string, bool> filter) => Add(FromDtoWhere(name, dto, filter));
-
-	/// <summary>
-	/// Adds parameters from the collective properties of a sequence of DTOs.
-	/// </summary>
-	/// <remarks>The name of each parameter is <c>prop_index</c>, where <c>prop</c> is the name of the corresponding DTO property
-	/// and <c>index</c> is the zero-based index of the DTO.</remarks>
-	public DbParameters AddDtos(IEnumerable dtos) => Add(FromDtos(dtos));
-
-	/// <summary>
-	/// Adds parameters from the collective properties of a sequence of DTOs.
-	/// </summary>
-	/// <remarks>The name of each parameter is <c>name_prop_index</c>, where <c>name</c> is as specified and <c>prop</c> is the name
-	/// of the corresponding DTO property and <c>index</c> is the zero-based index of the DTO.</remarks>
-	public DbParameters AddDtos(string name, IEnumerable dtos) => Add(FromDtos(name, dtos));
-
-	/// <summary>
-	/// Adds parameters from the collective properties of a sequence of DTOs.
-	/// </summary>
-	/// <remarks>The name of each parameter is determined by calling the specified function with the name of the corresponding DTO property
-	/// and the zero-based index of the DTO.</remarks>
-	public DbParameters AddDtos(Func<string, int, string> name, IEnumerable dtos) => Add(FromDtos(name, dtos));
 }

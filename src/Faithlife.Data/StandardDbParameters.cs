@@ -7,7 +7,7 @@ namespace Faithlife.Data;
 /// </summary>
 internal sealed class StandardDbParameters : DbParameters
 {
-	public override void AddTo(IDbCommand command)
+	public override void Apply(IDbCommand command)
 	{
 		foreach (var (name, value) in Parameters)
 		{
@@ -23,7 +23,7 @@ internal sealed class StandardDbParameters : DbParameters
 		}
 	}
 
-	public override void ReapplyTo(IDbCommand command, int startIndex)
+	public override void Reapply(IDbCommand command, int startIndex)
 	{
 		var parameterCount = Parameters.Count;
 		for (var parameterIndex = 0; parameterIndex < parameterCount; parameterIndex++)

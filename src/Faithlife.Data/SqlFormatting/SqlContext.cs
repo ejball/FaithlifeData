@@ -14,14 +14,14 @@ internal sealed class SqlContext
 
 	public DbConnectorReflection Reflection { get; }
 
-	public DbParameters Parameters => m_parametersList is null ? DbParameters.Empty : m_parametersList.Count == 1 ? m_parametersList[0] : new MergedDbParameters(m_parametersList);
+	public DbParameters Parameters => m_parametersList ?? DbParameters.Empty;
 
 	public string RenderParam<T>(object? key, T value)
 	{
 		if (key is not null && m_renderedParams is not null && m_renderedParams.TryGetValue(key, out var rendered))
 			return rendered;
 
-		m_parametersList ??= [];
+		m_parametersList ??= new();
 		var name = Invariant($"fdp{m_parametersList.Count}");
 		m_parametersList.Add(DbParameters.Create(name, value));
 		rendered = Syntax.ParameterPrefix + name;
@@ -35,6 +35,6 @@ internal sealed class SqlContext
 		return rendered;
 	}
 
-	private List<DbParameters>? m_parametersList;
+	private DbParametersSet? m_parametersList;
 	private Dictionary<object, string>? m_renderedParams;
 }

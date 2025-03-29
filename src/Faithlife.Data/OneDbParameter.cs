@@ -4,7 +4,7 @@ namespace Faithlife.Data;
 
 internal sealed class OneDbParameter<T>(string name, T value) : DbParameters
 {
-	public override void AddTo(IDbCommand command)
+	public override void Apply(IDbCommand command)
 	{
 		if (!(value is IDbDataParameter dbParameter))
 		{
@@ -17,7 +17,7 @@ internal sealed class OneDbParameter<T>(string name, T value) : DbParameters
 		command.Parameters.Add(dbParameter);
 	}
 
-	public override void ReapplyTo(IDbCommand command, int startIndex)
+	public override void Reapply(IDbCommand command, int startIndex)
 	{
 		var dbParameter = command.Parameters[startIndex] as IDataParameter;
 		if (dbParameter is null || dbParameter.ParameterName != name)
