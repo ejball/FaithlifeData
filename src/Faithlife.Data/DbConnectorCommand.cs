@@ -6,7 +6,7 @@ namespace Faithlife.Data;
 /// <summary>
 /// Encapsulates the text and parameters of a database command.
 /// </summary>
-public readonly struct DbConnectorCommand
+public sealed class DbConnectorCommand
 {
 	/// <summary>
 	/// The text of the command.
@@ -16,7 +16,7 @@ public readonly struct DbConnectorCommand
 	/// <summary>
 	/// The parameters of the command.
 	/// </summary>
-	public DbParameters Parameters { get; }
+	public DbParameters Parameters => m_parameters;
 
 	/// <summary>
 	/// The connector of the command.
@@ -32,17 +32,17 @@ public readonly struct DbConnectorCommand
 	/// The timeout of the command.
 	/// </summary>
 	/// <remarks>If not specified, the default timeout for the connection is used.</remarks>
-	public TimeSpan? Timeout { get; }
+	public TimeSpan? Timeout { get; private set; }
 
 	/// <summary>
 	/// True after <see cref="Cache"/> is called.
 	/// </summary>
-	public bool IsCached { get; }
+	public bool IsCached { get; private set; }
 
 	/// <summary>
 	/// True after <see cref="Prepare"/> is called.
 	/// </summary>
-	public bool IsPrepared { get; }
+	public bool IsPrepared { get; private set; }
 
 	/// <summary>
 	/// Executes the command, returning the number of rows affected.
@@ -285,7 +285,8 @@ public readonly struct DbConnectorCommand
 		if (timeSpan <= TimeSpan.Zero && timeSpan != System.Threading.Timeout.InfiniteTimeSpan)
 			throw new ArgumentOutOfRangeException(nameof(timeSpan), "Must be positive or 'Timeout.InfiniteTimeSpan'.");
 
-		return new DbConnectorCommand(Connector, Text, Parameters, CommandType, timeSpan, IsCached, IsPrepared);
+		Timeout = timeSpan;
+		return this;
 	}
 
 	/// <summary>
@@ -300,17 +301,29 @@ public readonly struct DbConnectorCommand
 	/// </summary>
 	/// <remarks>Use <see cref="System.Threading.Timeout.InfiniteTimeSpan" /> (not <see cref="TimeSpan.Zero" />) for infinite timeout.</remarks>
 	/// <exception cref="ArgumentOutOfRangeException"><c>timeSpan</c> is not positive or <see cref="System.Threading.Timeout.InfiniteTimeSpan" />.</exception>
-	public DbConnectorCommand WithParameters(DbParameters parameters) => new(Connector, Text, new DbParametersSet([Parameters, parameters]), CommandType, Timeout, IsCached, IsPrepared);
+	public DbConnectorCommand WithParameters(DbParameters parameters)
+	{
+		m_parameters.Add(parameters);
+		return this;
+	}
 
 	/// <summary>
 	/// Caches the command.
 	/// </summary>
-	public DbConnectorCommand Cache() => new(Connector, Text, Parameters, CommandType, Timeout, isCached: true, isPrepared: IsPrepared);
+	public DbConnectorCommand Cache()
+	{
+		IsCached = true;
+		return this;
+	}
 
 	/// <summary>
 	/// Prepares the command.
 	/// </summary>
-	public DbConnectorCommand Prepare() => new(Connector, Text, Parameters, CommandType, Timeout, isCached: IsCached, isPrepared: true);
+	public DbConnectorCommand Prepare()
+	{
+		IsPrepared = true;
+		return this;
+	}
 
 	/// <summary>
 	/// Creates an <see cref="IDbCommand" /> from the text and parameters.
@@ -340,15 +353,12 @@ public readonly struct DbConnectorCommand
 		return command;
 	}
 
-	internal DbConnectorCommand(DbConnector connector, string text, DbParameters parameters, CommandType commandType, TimeSpan? timeout, bool isCached, bool isPrepared)
+	internal DbConnectorCommand(DbConnector connector, string text, CommandType commandType)
 	{
 		Connector = connector;
 		Text = text;
-		Parameters = parameters;
 		CommandType = commandType;
-		Timeout = timeout;
-		IsCached = isCached;
-		IsPrepared = isPrepared;
+		m_parameters = new();
 	}
 
 	private void Validate()
@@ -603,4 +613,6 @@ public readonly struct DbConnectorCommand
 		}
 		while (await methods.NextResultAsync(reader, cancellationToken).ConfigureAwait(false));
 	}
+
+	private readonly DbParametersSet m_parameters;
 }

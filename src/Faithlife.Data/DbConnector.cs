@@ -239,7 +239,7 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	/// Creates a new command.
 	/// </summary>
 	/// <param name="text">The text of the command.</param>
-	public DbConnectorCommand Command(string text) => new(this, text, DbParameters.Empty, CommandType.Text, timeout: null, isCached: false, isPrepared: false);
+	public DbConnectorCommand Command(string text) => new(this, text, CommandType.Text);
 
 	/// <summary>
 	/// Creates a new command from parameterized SQL.
@@ -262,7 +262,7 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	/// Creates a new command to access a stored procedure.
 	/// </summary>
 	/// <param name="name">The name of the stored procedure.</param>
-	public DbConnectorCommand StoredProcedure(string name) => new(this, name, DbParameters.Empty, CommandType.StoredProcedure, timeout: null, isCached: false, isPrepared: false);
+	public DbConnectorCommand StoredProcedure(string name) => new(this, name, CommandType.StoredProcedure);
 
 	/// <summary>
 	/// Closes the connection.

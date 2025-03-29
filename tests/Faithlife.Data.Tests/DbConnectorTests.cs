@@ -367,12 +367,6 @@ internal sealed class DbConnectorTests
 	}
 #endif
 
-	[Test]
-	public async Task BadCommandTest()
-	{
-		Invoking(() => default(DbConnectorCommand).Create()).Should().Throw<InvalidOperationException>();
-	}
-
 #if false
 	[Test]
 	public void ParameterCollectionTests()
