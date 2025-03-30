@@ -131,13 +131,12 @@ public class DbDataMapper
 	{
 		public DtoMapper(DbDataMapper mapper)
 		{
-			////m_reflection = mapper.Reflection;
-			var properties = mapper.Reflection.GetProperties<T>();
+			var properties = GetProperties<T>();
 			var dbDtoInfo = DbDtoInfo.GetInfo<T>();
 
-			var propertiesByNormalizedFieldName = new Dictionary<string, (IDbDtoProperty<T> Dto, IDbTypeMapper Db)>(capacity: properties.Count, StringComparer.OrdinalIgnoreCase);
+			var propertiesByNormalizedFieldName = new Dictionary<string, (MemberInfo Member, IDbTypeMapper Mapper)>(capacity: properties.Count, StringComparer.OrdinalIgnoreCase);
 			foreach (var property in properties)
-				propertiesByNormalizedFieldName.Add(NormalizeFieldName(dbDtoInfo.GetColumnAttributeName(property.Name) ?? property.Name), (property, mapper.GetTypeMapper(property.ValueType)));
+				propertiesByNormalizedFieldName.Add(NormalizeFieldName(dbDtoInfo.GetColumnAttributeName(property.Member.Name) ?? property.Member.Name), (property.Member, mapper.GetTypeMapper(property.ValueType)));
 			m_propertiesByNormalizedFieldName = propertiesByNormalizedFieldName;
 		}
 
@@ -148,37 +147,44 @@ public class DbDataMapper
 			if (count == 0)
 				return default!;
 
-			if (Enumerable.Range(index, count).All(record.IsDBNull))
+			var fieldNames = new string[count];
+			var allNull = true;
+			for (var i = 0; i < count; i++)
+			{
+				fieldNames[i] = record.GetName(index + i);
+				if (allNull && !record.IsDBNull(index + i))
+					allNull = false;
+			}
+
+			if (allNull)
 				return default!;
 
-			var fieldNames = Enumerable.Range(index, count).Select(record.GetName).ToList();
-			var func = m_funcsByFieldNameSet.GetOrAdd(new FieldNameSet(fieldNames), CreateFunc);
-			return func(record, index);
+			return m_funcsByFieldNameSet.GetOrAdd(new FieldNameSet(fieldNames), CreateFunc)(record, index);
 		}
 
-		private Func<IDataRecord, int, T> CreateFunc(FieldNameSet fieldNames)
+		private Func<IDataRecord, int, T> CreateFunc(FieldNameSet fieldNameSet)
 		{
 			var recordParam = Expression.Parameter(typeof(IDataRecord), "record");
 			var indexParam = Expression.Parameter(typeof(int), "index");
 
-			var memberBindings = new List<MemberBinding>();
+			var count = fieldNameSet.Names.Count;
+			var memberBindings = new MemberBinding[count];
 
-			var count = fieldNames.Names.Count;
-			for (var i = 0; i < count; i++)
+			for (var index = 0; index < count; index++)
 			{
-				var name = fieldNames.Names[i];
-				if (!m_propertiesByNormalizedFieldName!.TryGetValue(NormalizeFieldName(name), out var property))
-					throw new InvalidOperationException($"Type does not have a property for '{name}': {Type.FullName}");
+				var fieldName = fieldNameSet.Names[index];
+				if (!m_propertiesByNormalizedFieldName!.TryGetValue(NormalizeFieldName(fieldName), out var property))
+					throw new InvalidOperationException($"Type does not have a property for '{fieldName}': {Type.FullName}");
 
-				memberBindings.Add(
+				memberBindings[index] =
 					Expression.Bind(
-						property.Dto.MemberInfo,
+						property.Member,
 						Expression.Call(
-							Expression.Constant(property.Db),
-							property.Db.GetType().GetMethod("Map", [typeof(IDataRecord), typeof(int), typeof(int)])!,
+							Expression.Constant(property.Mapper),
+							property.Mapper.GetType().GetMethod("Map", [typeof(IDataRecord), typeof(int), typeof(int)])!,
 							recordParam,
-							Expression.Add(indexParam, Expression.Constant(i)),
-							Expression.Constant(1))));
+							Expression.Add(indexParam, Expression.Constant(index)),
+							Expression.Constant(1)));
 			}
 
 			var memberInit = Expression.MemberInit(Expression.New(typeof(T)), memberBindings);
@@ -191,7 +197,7 @@ public class DbDataMapper
 		private static string NormalizeFieldName(string text) => text.Replace("_", "");
 #endif
 
-		private readonly IReadOnlyDictionary<string, (IDbDtoProperty<T> Dto, IDbTypeMapper Db)>? m_propertiesByNormalizedFieldName;
+		private readonly IReadOnlyDictionary<string, (MemberInfo Member, IDbTypeMapper Mapper)>? m_propertiesByNormalizedFieldName;
 
 		private sealed class FieldNameSet(IReadOnlyList<string> names) : IEquatable<FieldNameSet>
 		{
@@ -585,6 +591,18 @@ public class DbDataMapper
 			record.GetBytes(index, fieldOffset: 0, buffer: bytes, bufferoffset: 0, length: byteCount);
 			return new MemoryStream(buffer: bytes, index: 0, count: byteCount, writable: false);
 		}
+	}
+
+	internal static IReadOnlyList<(MemberInfo Member, Type ValueType)> GetProperties<T>()
+	{
+		var type = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+		return type.GetRuntimeProperties().Where(IsPublicNonStaticProperty).Select(x => (Member: (MemberInfo) x, ValueType: x.PropertyType))
+			.Concat(type.GetRuntimeFields().Where(IsPublicNonStaticField).Select(x => (Member: (MemberInfo) x, ValueType: x.FieldType)))
+			.ToList();
+
+		static bool IsPublicNonStaticProperty(PropertyInfo info) => info.GetMethod is not null && info.GetMethod.IsPublic && !info.GetMethod.IsStatic;
+
+		static bool IsPublicNonStaticField(FieldInfo info) => info.IsPublic && !info.IsStatic;
 	}
 
 	private static readonly ConcurrentDictionary<Type, IDbTypeMapper> s_typeMappers = new();

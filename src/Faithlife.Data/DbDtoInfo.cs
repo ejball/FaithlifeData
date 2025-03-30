@@ -32,19 +32,19 @@ internal sealed class DbDtoInfo<T> : IDbDtoInfo
 
 	private DbDtoInfo()
 	{
-		var properties = DbConnectorReflection.Default.GetProperties<T>();
+		var properties = DbDataMapper.GetProperties<T>();
 		Dictionary<string, string>? columnAttributeNames = null;
 
 		foreach (var property in properties)
 		{
 			// use Name of ColumnAttribute if specified (any namespace)
-			var columnName = property.MemberInfo
+			var columnName = property.Member
 				.GetCustomAttributes()
 				.Where(x => x.GetType().Name == "ColumnAttribute")
 				.Select(x => DbConnectorReflection.Default.TryGetProperty(x.GetType(), "Name")?.GetValue(x) as string)
 				.FirstOrDefault(x => x is not null);
 			if (columnName is not null)
-				(columnAttributeNames ??= new Dictionary<string, string>()).Add(property.Name, columnName);
+				(columnAttributeNames ??= new Dictionary<string, string>()).Add(property.Member.Name, columnName);
 		}
 
 		m_columnAttributeNames = columnAttributeNames;
