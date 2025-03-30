@@ -145,26 +145,44 @@ public class DbDataMapper
 
 		protected override T MapCore(IDataRecord record, int index, int count)
 		{
-			var memberBindings = new List<MemberBinding>();
-
-			for (var i = index; i < index + count; i++)
-			{
-				if (!record.IsDBNull(i))
-				{
-					var name = record.GetName(i);
-					if (!m_propertiesByNormalizedFieldName!.TryGetValue(NormalizeFieldName(name), out var property))
-						throw new InvalidOperationException($"Type does not have a property for '{name}': {Type.FullName}");
-
-					memberBindings.Add(Expression.Bind(property.Dto.MemberInfo, Expression.Constant(property.Db.Map(record, i, 1))));
-				}
-			}
-
-			if (memberBindings.Count == 0)
+			if (count == 0)
 				return default!;
 
+			if (Enumerable.Range(index, count).All(record.IsDBNull))
+				return default!;
+
+			var fieldNames = Enumerable.Range(index, count).Select(record.GetName).ToList();
+			var func = m_funcsByFieldNameSet.GetOrAdd(new FieldNameSet(fieldNames), CreateFunc);
+			return func(record, index);
+		}
+
+		private Func<IDataRecord, int, T> CreateFunc(FieldNameSet fieldNames)
+		{
+			var recordParam = Expression.Parameter(typeof(IDataRecord), "record");
+			var indexParam = Expression.Parameter(typeof(int), "index");
+
+			var memberBindings = new List<MemberBinding>();
+
+			var count = fieldNames.Names.Count;
+			for (var i = 0; i < count; i++)
+			{
+				var name = fieldNames.Names[i];
+				if (!m_propertiesByNormalizedFieldName!.TryGetValue(NormalizeFieldName(name), out var property))
+					throw new InvalidOperationException($"Type does not have a property for '{name}': {Type.FullName}");
+
+				memberBindings.Add(
+					Expression.Bind(
+						property.Dto.MemberInfo,
+						Expression.Call(
+							Expression.Constant(property.Db),
+							property.Db.GetType().GetMethod("Map", [typeof(IDataRecord), typeof(int), typeof(int)])!,
+							recordParam,
+							Expression.Add(indexParam, Expression.Constant(i)),
+							Expression.Constant(1))));
+			}
+
 			var memberInit = Expression.MemberInit(Expression.New(typeof(T)), memberBindings);
-			var func = (Func<T>) Expression.Lambda(memberInit).Compile();
-			return func();
+			return (Func<IDataRecord, int, T>) Expression.Lambda(memberInit, recordParam, indexParam).Compile();
 		}
 
 #if !NETSTANDARD2_0
@@ -174,7 +192,19 @@ public class DbDataMapper
 #endif
 
 		private readonly IReadOnlyDictionary<string, (IDbDtoProperty<T> Dto, IDbTypeMapper Db)>? m_propertiesByNormalizedFieldName;
-		////private readonly DbConnectorReflection m_reflection;
+
+		private sealed class FieldNameSet(IReadOnlyList<string> names) : IEquatable<FieldNameSet>
+		{
+			public IReadOnlyList<string> Names { get; } = names;
+
+			public bool Equals(FieldNameSet? other) => other is not null && Names.SequenceEqual(other.Names, StringComparer.OrdinalIgnoreCase);
+
+			public override bool Equals(object? obj) => obj is FieldNameSet other && Equals(other);
+
+			public override int GetHashCode() => Names.Aggregate(0, (hash, name) => HashCode.Combine(hash, StringComparer.OrdinalIgnoreCase.GetHashCode(name)));
+		}
+
+		private readonly ConcurrentDictionary<FieldNameSet, Func<IDataRecord, int, T>> m_funcsByFieldNameSet = new();
 	}
 
 	private sealed class ObjectMapper : TypeMapper<object>
