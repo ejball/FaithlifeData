@@ -10,14 +10,14 @@ namespace Faithlife.Data;
 /// <summary>
 /// Maps from data record values to objects.
 /// </summary>
-public abstract class DbDataMapper
+public class DbDataMapper
 {
 	/// <summary>
 	/// The default data mapper allows the ADO.NET provider to convert values to the expected type.
 	/// </summary>
-	public static DbDataMapper Default { get; } = new DefaultDbDataMapper(DbConnectorReflection.Default);
+	public static DbDataMapper Default { get; } = new();
 
-	public abstract DbConnectorReflection Reflection { get; }
+	public virtual DbConnectorReflection Reflection => DbConnectorReflection.Default;
 
 	/// <summary>
 	/// Gets a type mapper for the specified type.
@@ -56,71 +56,66 @@ public abstract class DbDataMapper
 	/// </summary>
 	public T Map<T>(IDataRecord record) => GetTypeMapper<T>().Map(record);
 
-	protected abstract DbTypeMapper<T> CreateTypeMapper<T>();
-
-	private sealed class DefaultDbDataMapper(DbConnectorReflection reflection) : DbDataMapper
+	protected virtual DbTypeMapper<T>? TryCreateTypeMapper<T>()
 	{
-		public override DbConnectorReflection Reflection { get; } = reflection;
+		if (typeof(T) == typeof(string))
+			return (DbTypeMapper<T>) (object) new StringMapper();
 
-		protected override DbTypeMapper<T> CreateTypeMapper<T>()
+		if (typeof(T) == typeof(long))
+			return (DbTypeMapper<T>) (object) new Int64Mapper();
+
+		if (typeof(T) == typeof(int))
+			return (DbTypeMapper<T>) (object) new Int32Mapper();
+
+		if (typeof(T) == typeof(double))
+			return (DbTypeMapper<T>) (object) new DoubleMapper();
+
+		if (typeof(T) == typeof(byte[]))
+			return (DbTypeMapper<T>) (object) new ByteArrayMapper();
+
+		if (typeof(T) == typeof(object))
+			return (DbTypeMapper<T>) (object) new ObjectMapper();
+
+		if (typeof(T).IsEnum)
+			return (DbTypeMapper<T>) (Activator.CreateInstance(typeof(EnumMapper<>).MakeGenericType(typeof(T)), [])!);
+
+		if (typeof(T) == typeof(Dictionary<string, object?>))
+			return (DbTypeMapper<T>) (object) new DictionaryMapper<Dictionary<string, object?>>();
+		if (typeof(T) == typeof(IDictionary<string, object?>))
+			return (DbTypeMapper<T>) (object) new DictionaryMapper<IDictionary<string, object?>>();
+		if (typeof(T) == typeof(IReadOnlyDictionary<string, object?>))
+			return (DbTypeMapper<T>) (object) new DictionaryMapper<IReadOnlyDictionary<string, object?>>();
+		if (typeof(T) == typeof(IDictionary))
+			return (DbTypeMapper<T>) (object) new DictionaryMapper<IDictionary>();
+
+		if (typeof(T) == typeof(Stream))
+			return (DbTypeMapper<T>) (object) new StreamMapper();
+
+		if (Nullable.GetUnderlyingType(typeof(T)) is { } nonNullType)
+			return (DbTypeMapper<T>) (Activator.CreateInstance(typeof(NullableValueMapper<>).MakeGenericType(nonNullType), [GetTypeMapper(nonNullType)])!);
+
+		var typeName = typeof(T).FullName ?? "";
+		if (typeName.StartsWith("System.ValueTuple`", StringComparison.Ordinal))
 		{
-			if (typeof(T) == typeof(string))
-				return (DbTypeMapper<T>) (object) new StringMapper();
-
-			if (typeof(T) == typeof(long))
-				return (DbTypeMapper<T>) (object) new Int64Mapper();
-
-			if (typeof(T) == typeof(int))
-				return (DbTypeMapper<T>) (object) new Int32Mapper();
-
-			if (typeof(T) == typeof(double))
-				return (DbTypeMapper<T>) (object) new DoubleMapper();
-
-			if (typeof(T) == typeof(byte[]))
-				return (DbTypeMapper<T>) (object) new ByteArrayMapper();
-
-			if (typeof(T) == typeof(object))
-				return (DbTypeMapper<T>) (object) new ObjectMapper();
-
-			if (typeof(T).IsEnum)
-				return (DbTypeMapper<T>) (Activator.CreateInstance(typeof(EnumMapper<>).MakeGenericType(typeof(T)), [])!);
-
-			if (typeof(T) == typeof(Dictionary<string, object?>))
-				return (DbTypeMapper<T>) (object) new DictionaryMapper<Dictionary<string, object?>>();
-			if (typeof(T) == typeof(IDictionary<string, object?>))
-				return (DbTypeMapper<T>) (object) new DictionaryMapper<IDictionary<string, object?>>();
-			if (typeof(T) == typeof(IReadOnlyDictionary<string, object?>))
-				return (DbTypeMapper<T>) (object) new DictionaryMapper<IReadOnlyDictionary<string, object?>>();
-			if (typeof(T) == typeof(IDictionary))
-				return (DbTypeMapper<T>) (object) new DictionaryMapper<IDictionary>();
-
-			if (typeof(T) == typeof(Stream))
-				return (DbTypeMapper<T>) (object) new StreamMapper();
-
-			if (Nullable.GetUnderlyingType(typeof(T)) is { } nonNullType)
-				return (DbTypeMapper<T>) (Activator.CreateInstance(typeof(NullableValueMapper<>).MakeGenericType(nonNullType), [GetTypeMapper(nonNullType)])!);
-
-			var typeName = typeof(T).FullName ?? "";
-			if (typeName.StartsWith("System.ValueTuple`", StringComparison.Ordinal))
+			var tupleTypes = typeof(T).GetGenericArguments();
+			var tupleMapperType = tupleTypes.Length switch
 			{
-				var tupleTypes = typeof(T).GetGenericArguments();
-				var tupleMapperType = tupleTypes.Length switch
-				{
-					1 => typeof(ValueTupleMapper<>),
-					2 => typeof(ValueTupleMapper<,>),
-					3 => typeof(ValueTupleMapper<,,>),
-					4 => typeof(ValueTupleMapper<,,,>),
-					5 => typeof(ValueTupleMapper<,,,,>),
-					6 => typeof(ValueTupleMapper<,,,,,>),
-					7 => typeof(ValueTupleMapper<,,,,,,>),
-					_ => typeof(ValueTupleMapperRest<,,,,,,,>),
-				};
-				return (DbTypeMapper<T>) Activator.CreateInstance(tupleMapperType.MakeGenericType(tupleTypes), [.. tupleTypes.Select(GetTypeMapper)])!;
-			}
-
-			return new DtoMapper<T>(this);
+				1 => typeof(ValueTupleMapper<>),
+				2 => typeof(ValueTupleMapper<,>),
+				3 => typeof(ValueTupleMapper<,,>),
+				4 => typeof(ValueTupleMapper<,,,>),
+				5 => typeof(ValueTupleMapper<,,,,>),
+				6 => typeof(ValueTupleMapper<,,,,,>),
+				7 => typeof(ValueTupleMapper<,,,,,,>),
+				_ => typeof(ValueTupleMapperRest<,,,,,,,>),
+			};
+			return (DbTypeMapper<T>) Activator.CreateInstance(tupleMapperType.MakeGenericType(tupleTypes), [.. tupleTypes.Select(GetTypeMapper)])!;
 		}
+
+		return null;
 	}
+
+	private DbTypeMapper<T> CreateTypeMapper<T>() => TryCreateTypeMapper<T>() ?? new DtoMapper<T>(this);
 
 	private abstract class TypeMapper<T> : DbTypeMapper<T>
 	{
