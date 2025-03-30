@@ -57,7 +57,7 @@ internal sealed class SqliteTests
 	private readonly struct NameValue
 	{
 		public NameValue(string name, string value) => (Name, Value) = (name, value);
-		public string Name { get; }
-		public string Value { get; }
+		public string Name { get; init; }
+		public string Value { get; init; }
 	}
 }

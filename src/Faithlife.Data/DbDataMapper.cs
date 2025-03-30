@@ -3,12 +3,13 @@ using System.Collections.Concurrent;
 using System.Data;
 using System.Data.Common;
 using System.Dynamic;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace Faithlife.Data;
 
 /// <summary>
-/// Maps from data record values to objects.
+/// Maps data record values to objects.
 /// </summary>
 public class DbDataMapper
 {
@@ -44,7 +45,7 @@ public class DbDataMapper
 	/// <summary>
 	/// Maps the data record values to an instance of the specified type.
 	/// </summary>
-	public T Map<T>(IDataRecord record, int index, int count) => GetTypeMapper<T>().Map(record, index, count);
+	public T Map<T>(IDataRecord record) => GetTypeMapper<T>().Map(record);
 
 	/// <summary>
 	/// Maps the data record value to an instance of the specified type.
@@ -54,7 +55,7 @@ public class DbDataMapper
 	/// <summary>
 	/// Maps the data record values to an instance of the specified type.
 	/// </summary>
-	public T Map<T>(IDataRecord record) => GetTypeMapper<T>().Map(record);
+	public T Map<T>(IDataRecord record, int index, int count) => GetTypeMapper<T>().Map(record, index, count);
 
 	protected virtual DbTypeMapper<T>? TryCreateTypeMapper<T>()
 	{
@@ -130,7 +131,7 @@ public class DbDataMapper
 	{
 		public DtoMapper(DbDataMapper mapper)
 		{
-			m_reflection = mapper.Reflection;
+			////m_reflection = mapper.Reflection;
 			var properties = mapper.Reflection.GetProperties<T>();
 			var dbDtoInfo = DbDtoInfo.GetInfo<T>();
 
@@ -144,7 +145,8 @@ public class DbDataMapper
 
 		protected override T MapCore(IDataRecord record, int index, int count)
 		{
-			List<(IDbDtoProperty<T> Property, object? Value)>? propertyValues = null;
+			var memberBindings = new List<MemberBinding>();
+
 			for (var i = index; i < index + count; i++)
 			{
 				if (!record.IsDBNull(i))
@@ -153,11 +155,16 @@ public class DbDataMapper
 					if (!m_propertiesByNormalizedFieldName!.TryGetValue(NormalizeFieldName(name), out var property))
 						throw new InvalidOperationException($"Type does not have a property for '{name}': {Type.FullName}");
 
-					propertyValues ??= new List<(IDbDtoProperty<T> Property, object? Value)>(capacity: count);
-					propertyValues.Add((property.Dto, property.Db.Map(record, i, 1)));
+					memberBindings.Add(Expression.Bind(property.Dto.MemberInfo, Expression.Constant(property.Db.Map(record, i, 1))));
 				}
 			}
-			return propertyValues is not null ? m_reflection.CreateNew(propertyValues) : default!;
+
+			if (memberBindings.Count == 0)
+				return default!;
+
+			var memberInit = Expression.MemberInit(Expression.New(typeof(T)), memberBindings);
+			var func = (Func<T>) Expression.Lambda(memberInit).Compile();
+			return func();
 		}
 
 #if !NETSTANDARD2_0
@@ -167,7 +174,7 @@ public class DbDataMapper
 #endif
 
 		private readonly IReadOnlyDictionary<string, (IDbDtoProperty<T> Dto, IDbTypeMapper Db)>? m_propertiesByNormalizedFieldName;
-		private readonly DbConnectorReflection m_reflection;
+		////private readonly DbConnectorReflection m_reflection;
 	}
 
 	private sealed class ObjectMapper : TypeMapper<object>
