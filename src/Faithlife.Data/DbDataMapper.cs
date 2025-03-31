@@ -62,14 +62,38 @@ public class DbDataMapper
 		if (typeof(T) == typeof(string))
 			return (DbTypeMapper<T>) (object) new StringMapper();
 
-		if (typeof(T) == typeof(long))
-			return (DbTypeMapper<T>) (object) new Int64Mapper();
+		if (typeof(T) == typeof(bool))
+			return (DbTypeMapper<T>) (object) new BooleanMapper();
+
+		if (typeof(T) == typeof(byte))
+			return (DbTypeMapper<T>) (object) new ByteMapper();
+
+		if (typeof(T) == typeof(char))
+			return (DbTypeMapper<T>) (object) new CharMapper();
+
+		if (typeof(T) == typeof(Guid))
+			return (DbTypeMapper<T>) (object) new GuidMapper();
+
+		if (typeof(T) == typeof(short))
+			return (DbTypeMapper<T>) (object) new Int16Mapper();
 
 		if (typeof(T) == typeof(int))
 			return (DbTypeMapper<T>) (object) new Int32Mapper();
 
+		if (typeof(T) == typeof(long))
+			return (DbTypeMapper<T>) (object) new Int64Mapper();
+
+		if (typeof(T) == typeof(float))
+			return (DbTypeMapper<T>) (object) new FloatMapper();
+
 		if (typeof(T) == typeof(double))
 			return (DbTypeMapper<T>) (object) new DoubleMapper();
+
+		if (typeof(T) == typeof(decimal))
+			return (DbTypeMapper<T>) (object) new DecimalMapper();
+
+		if (typeof(T) == typeof(DateTime))
+			return (DbTypeMapper<T>) (object) new DateTimeMapper();
 
 		if (typeof(T) == typeof(byte[]))
 			return (DbTypeMapper<T>) (object) new ByteArrayMapper();
@@ -533,9 +557,29 @@ public class DbDataMapper
 		public override string MapNotNullField(IDataRecord record, int index) => record.GetString(index);
 	}
 
-	private sealed class Int64Mapper : NonNullableValueMapper<long>
+	private sealed class BooleanMapper : NonNullableValueMapper<bool>
 	{
-		public override long MapNotNullField(IDataRecord record, int index) => record.GetInt64(index);
+		public override bool MapNotNullField(IDataRecord record, int index) => record.GetBoolean(index);
+	}
+
+	private sealed class ByteMapper : NonNullableValueMapper<byte>
+	{
+		public override byte MapNotNullField(IDataRecord record, int index) => record.GetByte(index);
+	}
+
+	private sealed class CharMapper : NonNullableValueMapper<char>
+	{
+		public override char MapNotNullField(IDataRecord record, int index) => record.GetChar(index);
+	}
+
+	private sealed class GuidMapper : NonNullableValueMapper<Guid>
+	{
+		public override Guid MapNotNullField(IDataRecord record, int index) => record.GetGuid(index);
+	}
+
+	private sealed class Int16Mapper : NonNullableValueMapper<short>
+	{
+		public override short MapNotNullField(IDataRecord record, int index) => record.GetInt16(index);
 	}
 
 	private sealed class Int32Mapper : NonNullableValueMapper<int>
@@ -543,9 +587,29 @@ public class DbDataMapper
 		public override int MapNotNullField(IDataRecord record, int index) => record.GetInt32(index);
 	}
 
+	private sealed class Int64Mapper : NonNullableValueMapper<long>
+	{
+		public override long MapNotNullField(IDataRecord record, int index) => record.GetInt64(index);
+	}
+
+	private sealed class FloatMapper : NonNullableValueMapper<float>
+	{
+		public override float MapNotNullField(IDataRecord record, int index) => record.GetFloat(index);
+	}
+
 	private sealed class DoubleMapper : NonNullableValueMapper<double>
 	{
 		public override double MapNotNullField(IDataRecord record, int index) => record.GetDouble(index);
+	}
+
+	private sealed class DecimalMapper : NonNullableValueMapper<decimal>
+	{
+		public override decimal MapNotNullField(IDataRecord record, int index) => record.GetDecimal(index);
+	}
+
+	private sealed class DateTimeMapper : NonNullableValueMapper<DateTime>
+	{
+		public override DateTime MapNotNullField(IDataRecord record, int index) => record.GetDateTime(index);
 	}
 
 	private sealed class EnumMapper<T> : NonNullableValueMapper<T>
