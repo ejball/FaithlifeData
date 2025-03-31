@@ -32,7 +32,7 @@ internal sealed class DbDtoInfo<T> : IDbDtoInfo
 
 	private DbDtoInfo()
 	{
-		var properties = DbDataMapper.GetProperties<T>();
+		var properties = DbDataMapper.GetProperties(typeof(T));
 		Dictionary<string, string>? columnAttributeNames = null;
 
 		foreach (var property in properties)
@@ -41,7 +41,7 @@ internal sealed class DbDtoInfo<T> : IDbDtoInfo
 			var columnName = property.Member
 				.GetCustomAttributes()
 				.Where(x => x.GetType().Name == "ColumnAttribute")
-				.Select(x => DbConnectorReflection.Default.TryGetProperty(x.GetType(), "Name")?.GetValue(x) as string)
+				.Select(x => DbDataMapper.GetProperties(x.GetType()).Select(x => x.Member).OfType<PropertyInfo>().FirstOrDefault(p => string.Equals(p.Name, "Name", StringComparison.OrdinalIgnoreCase))?.GetValue(x) as string)
 				.FirstOrDefault(x => x is not null);
 			if (columnName is not null)
 				(columnAttributeNames ??= new Dictionary<string, string>()).Add(property.Member.Name, columnName);

@@ -18,8 +18,6 @@ public class DbDataMapper
 	/// </summary>
 	public static DbDataMapper Default { get; } = new();
 
-	public virtual DbConnectorReflection Reflection => DbConnectorReflection.Default;
-
 	/// <summary>
 	/// Gets a type mapper for the specified type.
 	/// </summary>
@@ -155,7 +153,7 @@ public class DbDataMapper
 	{
 		public DtoMapper(DbDataMapper mapper)
 		{
-			var properties = GetProperties<T>();
+			var properties = GetProperties(typeof(T));
 			var dbDtoInfo = DbDtoInfo.GetInfo<T>();
 
 			var propertiesByNormalizedFieldName = new Dictionary<string, (MemberInfo Member, IDbTypeMapper Mapper)>(capacity: properties.Count, StringComparer.OrdinalIgnoreCase);
@@ -666,9 +664,9 @@ public class DbDataMapper
 		}
 	}
 
-	internal static IReadOnlyList<(MemberInfo Member, Type ValueType)> GetProperties<T>()
+	internal static IReadOnlyList<(MemberInfo Member, Type ValueType)> GetProperties(Type type)
 	{
-		var type = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+		type = Nullable.GetUnderlyingType(type) ?? type;
 		return type.GetRuntimeProperties().Where(IsPublicNonStaticProperty).Select(x => (Member: (MemberInfo) x, ValueType: x.PropertyType))
 			.Concat(type.GetRuntimeFields().Where(IsPublicNonStaticField).Select(x => (Member: (MemberInfo) x, ValueType: x.FieldType)))
 			.ToList();

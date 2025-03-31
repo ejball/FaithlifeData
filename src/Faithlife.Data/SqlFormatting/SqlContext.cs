@@ -4,15 +4,12 @@ namespace Faithlife.Data.SqlFormatting;
 
 internal sealed class SqlContext
 {
-	public SqlContext(SqlSyntax syntax, DbConnectorReflection reflection)
+	public SqlContext(SqlSyntax syntax)
 	{
 		Syntax = syntax;
-		Reflection = reflection;
 	}
 
 	public SqlSyntax Syntax { get; }
-
-	public DbConnectorReflection Reflection { get; }
 
 	public DbParameters Parameters => m_parametersList ?? DbParameters.Empty;
 

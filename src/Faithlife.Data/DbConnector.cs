@@ -246,7 +246,7 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	/// <param name="sql">The parameterized SQL.</param>
 	public DbConnectorCommand Command(Sql sql)
 	{
-		var (sqlText, sqlParameters) = SqlSyntax.Render(sql, Reflection);
+		var (sqlText, sqlParameters) = SqlSyntax.Render(sql);
 		return Command(sqlText).WithParameters(sqlParameters);
 	}
 
@@ -349,8 +349,6 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	internal DbProviderMethods ProviderMethods { get; }
-
-	internal DbConnectorReflection Reflection => DataMapper.Reflection;
 
 	internal DbCommandCache CommandCache => m_commandCache ??= new();
 

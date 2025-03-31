@@ -76,9 +76,9 @@ public abstract class SqlSyntax
 	/// <summary>
 	/// Renders SQL as text and parameters.
 	/// </summary>
-	public (string Text, DbParameters Parameters) Render(Sql sql, DbConnectorReflection reflection)
+	public (string Text, DbParameters Parameters) Render(Sql sql)
 	{
-		var context = new SqlContext(this, reflection);
+		var context = new SqlContext(this);
 		var text = (sql ?? throw new ArgumentNullException(nameof(sql))).Render(context);
 		return (text, context.Parameters);
 	}
