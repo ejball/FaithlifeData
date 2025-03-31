@@ -41,8 +41,8 @@ internal sealed class SqlSyntaxTests
 	public void ParamSql()
 	{
 		var (text, parameters) = Render(Sql.Param("xyzzy"));
-		text.Should().Be("@fdp0");
-		parameters.Should().Equal(("fdp0", "xyzzy"));
+		text.Should().Be("@ado0");
+		parameters.Should().Equal(("ado0", "xyzzy"));
 	}
 
 	[Test]
@@ -55,8 +55,8 @@ internal sealed class SqlSyntaxTests
 	public void ListSql()
 	{
 		var (text, parameters) = Render(Sql.List(Sql.Param("one"), Sql.Param("two"), Sql.Raw("null")));
-		text.Should().Be("@fdp0, @fdp1, null");
-		parameters.Should().Equal(("fdp0", "one"), ("fdp1", "two"));
+		text.Should().Be("@ado0, @ado1, null");
+		parameters.Should().Equal(("ado0", "one"), ("ado1", "two"));
 	}
 
 	[Test]
@@ -70,8 +70,8 @@ internal sealed class SqlSyntaxTests
 	public void TupleSql()
 	{
 		var (text, parameters) = Render(Sql.Tuple(Sql.Param("one"), Sql.Param("two"), Sql.Raw("null")));
-		text.Should().Be("(@fdp0, @fdp1, null)");
-		parameters.Should().Equal(("fdp0", "one"), ("fdp1", "two"));
+		text.Should().Be("(@ado0, @ado1, null)");
+		parameters.Should().Equal(("ado0", "one"), ("ado1", "two"));
 	}
 
 	[Test]
@@ -85,32 +85,32 @@ internal sealed class SqlSyntaxTests
 	public void ParamListSqlStrings()
 	{
 		var (text, parameters) = Render(Sql.ParamList(["one", "two", "three"]));
-		text.Should().Be("@fdp0, @fdp1, @fdp2");
-		parameters.Should().Equal(("fdp0", "one"), ("fdp1", "two"), ("fdp2", "three"));
+		text.Should().Be("@ado0, @ado1, @ado2");
+		parameters.Should().Equal(("ado0", "one"), ("ado1", "two"), ("ado2", "three"));
 	}
 
 	[Test]
 	public void ParamListSqlNumbers()
 	{
 		var (text, parameters) = Render(Sql.ParamList(new[] { 1, 2 }));
-		text.Should().Be("@fdp0, @fdp1");
-		parameters.Should().Equal(("fdp0", 1), ("fdp1", 2));
+		text.Should().Be("@ado0, @ado1");
+		parameters.Should().Equal(("ado0", 1), ("ado1", 2));
 	}
 
 	[Test]
 	public void ParamListSqlMixedNumbers()
 	{
 		var (text, parameters) = Render(Sql.ParamList([1, 2L]));
-		text.Should().Be("@fdp0, @fdp1");
-		parameters.Should().Equal(("fdp0", 1), ("fdp1", 2L));
+		text.Should().Be("@ado0, @ado1");
+		parameters.Should().Equal(("ado0", 1), ("ado1", 2L));
 	}
 
 	[Test]
 	public void ParamListSqlMixedObjects()
 	{
 		var (text, parameters) = Render(Sql.ParamList(["one", 2, null]));
-		text.Should().Be("@fdp0, @fdp1, @fdp2");
-		parameters.Should().Equal(("fdp0", "one"), ("fdp1", 2), ("fdp2", null));
+		text.Should().Be("@ado0, @ado1, @ado2");
+		parameters.Should().Equal(("ado0", "one"), ("ado1", 2), ("ado2", null));
 	}
 
 	[Test]
@@ -123,32 +123,32 @@ internal sealed class SqlSyntaxTests
 	public void ParamTupleSqlStrings()
 	{
 		var (text, parameters) = Render(Sql.ParamTuple(["one", "two", "three"]));
-		text.Should().Be("(@fdp0, @fdp1, @fdp2)");
-		parameters.Should().Equal(("fdp0", "one"), ("fdp1", "two"), ("fdp2", "three"));
+		text.Should().Be("(@ado0, @ado1, @ado2)");
+		parameters.Should().Equal(("ado0", "one"), ("ado1", "two"), ("ado2", "three"));
 	}
 
 	[Test]
 	public void ParamTupleSqlNumbers()
 	{
 		var (text, parameters) = Render(Sql.ParamTuple(new[] { 1, 2 }));
-		text.Should().Be("(@fdp0, @fdp1)");
-		parameters.Should().Equal(("fdp0", 1), ("fdp1", 2));
+		text.Should().Be("(@ado0, @ado1)");
+		parameters.Should().Equal(("ado0", 1), ("ado1", 2));
 	}
 
 	[Test]
 	public void ParamTupleSqlMixedNumbers()
 	{
 		var (text, parameters) = Render(Sql.ParamTuple([1, 2L]));
-		text.Should().Be("(@fdp0, @fdp1)");
-		parameters.Should().Equal(("fdp0", 1), ("fdp1", 2L));
+		text.Should().Be("(@ado0, @ado1)");
+		parameters.Should().Equal(("ado0", 1), ("ado1", 2L));
 	}
 
 	[Test]
 	public void ParamTupleSqlMixedObjects()
 	{
 		var (text, parameters) = Render(Sql.ParamTuple(["one", 2, null]));
-		text.Should().Be("(@fdp0, @fdp1, @fdp2)");
-		parameters.Should().Equal(("fdp0", "one"), ("fdp1", 2), ("fdp2", null));
+		text.Should().Be("(@ado0, @ado1, @ado2)");
+		parameters.Should().Equal(("ado0", "one"), ("ado1", 2), ("ado2", null));
 	}
 
 	[Test]
@@ -177,8 +177,8 @@ internal sealed class SqlSyntaxTests
 	public void FormatImplicitParam()
 	{
 		var (text, parameters) = Render(Sql.Format($"select * from widgets where id in ({42}, {-42})"));
-		text.Should().Be("select * from widgets where id in (@fdp0, @fdp1)");
-		parameters.Should().Equal(("fdp0", 42), ("fdp1", -42));
+		text.Should().Be("select * from widgets where id in (@ado0, @ado1)");
+		parameters.Should().Equal(("ado0", 42), ("ado1", -42));
 	}
 
 	[TestCase(null)]
@@ -190,13 +190,13 @@ internal sealed class SqlSyntaxTests
 		var (text, parameters) = Render(Sql.Format($"select * from {Sql.Raw("widgets")} {whereSql} limit {limit}"));
 		if (id is null)
 		{
-			text.Should().Be("select * from widgets  limit @fdp0");
-			parameters.Should().Equal(("fdp0", limit));
+			text.Should().Be("select * from widgets  limit @ado0");
+			parameters.Should().Equal(("ado0", limit));
 		}
 		else
 		{
-			text.Should().Be("select * from widgets where id = @fdp0 limit @fdp1");
-			parameters.Should().Equal(("fdp0", id), ("fdp1", limit));
+			text.Should().Be("select * from widgets where id = @ado0 limit @ado1");
+			parameters.Should().Equal(("ado0", id), ("ado1", limit));
 		}
 	}
 
@@ -208,8 +208,8 @@ internal sealed class SqlSyntaxTests
 		var desc = "long description";
 		var descParam = Sql.Param(desc);
 		var (text, parameters) = Render(Sql.Format($"insert into widgets (Id, Name, Desc) values ({id}, {name}, {descParam}) on duplicate key update Name = {name}, Desc = {descParam}"));
-		text.Should().Be("insert into widgets (Id, Name, Desc) values (@fdp0, @fdp1, @fdp2) on duplicate key update Name = @fdp3, Desc = @fdp2");
-		parameters.Should().Equal(("fdp0", id), ("fdp1", name), ("fdp2", desc), ("fdp3", name));
+		text.Should().Be("insert into widgets (Id, Name, Desc) values (@ado0, @ado1, @ado2) on duplicate key update Name = @ado3, Desc = @ado2");
+		parameters.Should().Equal(("ado0", id), ("ado1", name), ("ado2", desc), ("ado3", name));
 	}
 
 #if false
@@ -225,15 +225,15 @@ internal sealed class SqlSyntaxTests
 	public void JoinParams()
 	{
 		var (text, parameters) = Render(Sql.Join(", ", Sql.Param(42), Sql.Param(-42)));
-		text.Should().Be("@fdp0, @fdp1");
-		parameters.Should().Equal(("fdp0", 42), ("fdp1", -42));
+		text.Should().Be("@ado0, @ado1");
+		parameters.Should().Equal(("ado0", 42), ("ado1", -42));
 	}
 
 	[Test]
 	public void JoinEnumerable()
 	{
-		Render(CreateSql(42, 24)).Text.Should().Be("select * from widgets where width = @fdp0 and height = @fdp1;");
-		Render(CreateSql(null, 24)).Text.Should().Be("select * from widgets where height = @fdp0;");
+		Render(CreateSql(42, 24)).Text.Should().Be("select * from widgets where width = @ado0 and height = @ado1;");
+		Render(CreateSql(null, 24)).Text.Should().Be("select * from widgets where height = @ado0;");
 		Render(CreateSql(null, null)).Text.Should().Be("select * from widgets ;");
 
 		Sql CreateSql(int? width, int? height)
@@ -260,32 +260,32 @@ internal sealed class SqlSyntaxTests
 	public void AddFragments()
 	{
 		var (text, parameters) = Render(Sql.Format($"select {1};") + Sql.Format($"select {2};"));
-		text.Should().Be("select @fdp0;select @fdp1;");
-		parameters.Should().Equal(("fdp0", 1), ("fdp1", 2));
+		text.Should().Be("select @ado0;select @ado1;");
+		parameters.Should().Equal(("ado0", 1), ("ado1", 2));
 	}
 
 	[Test]
 	public void ConcatParams()
 	{
 		var (text, parameters) = Render(Sql.Concat(Sql.Format($"select {1};"), Sql.Format($"select {2};")));
-		text.Should().Be("select @fdp0;select @fdp1;");
-		parameters.Should().Equal(("fdp0", 1), ("fdp1", 2));
+		text.Should().Be("select @ado0;select @ado1;");
+		parameters.Should().Equal(("ado0", 1), ("ado1", 2));
 	}
 
 	[Test]
 	public void ConcatEnumerable()
 	{
 		var (text, parameters) = Render(Sql.Concat(Enumerable.Range(1, 2).Select(x => Sql.Format($"select {x};"))));
-		text.Should().Be("select @fdp0;select @fdp1;");
-		parameters.Should().Equal(("fdp0", 1), ("fdp1", 2));
+		text.Should().Be("select @ado0;select @ado1;");
+		parameters.Should().Equal(("ado0", 1), ("ado1", 2));
 	}
 
 	[Test]
 	public void LikePrefixParamSql()
 	{
 		var (text, parameters) = Render(Sql.LikePrefixParam("xy_zy"));
-		text.Should().Be("@fdp0");
-		parameters.Should().Equal(("fdp0", "xy\\_zy%"));
+		text.Should().Be("@ado0");
+		parameters.Should().Equal(("ado0", "xy\\_zy%"));
 	}
 
 	[Test]
@@ -308,13 +308,13 @@ internal sealed class SqlSyntaxTests
 
 		var item = new ItemDto { Id = 3, DisplayName = "three" };
 		var (text, parameters) = syntax.Render(Sql.Format($"insert into Items ({Sql.ColumnNames(item.GetType())}) values ({Sql.ColumnParams(item)});"));
-		text.Should().Be("insert into Items (`ItemId`, `DisplayName`) values (@fdp0, @fdp1);");
-		parameters.Should().Equal(("fdp0", item.Id), ("fdp1", item.DisplayName));
+		text.Should().Be("insert into Items (`ItemId`, `DisplayName`) values (@ado0, @ado1);");
+		parameters.Should().Equal(("ado0", item.Id), ("ado1", item.DisplayName));
 
 		var anon = new { item.Id, item.DisplayName };
 		(text, parameters) = syntax.Render(Sql.Format($"insert into Items ({Sql.ColumnNames(anon.GetType())}) values ({Sql.ColumnParams(anon)});"));
-		text.Should().Be("insert into Items (`Id`, `DisplayName`) values (@fdp0, @fdp1);");
-		parameters.Should().Equal(("fdp0", anon.Id), ("fdp1", anon.DisplayName));
+		text.Should().Be("insert into Items (`Id`, `DisplayName`) values (@ado0, @ado1);");
+		parameters.Should().Equal(("ado0", anon.Id), ("ado1", anon.DisplayName));
 	}
 
 	[Test]
@@ -357,8 +357,8 @@ internal sealed class SqlSyntaxTests
 				values ({Sql.ColumnParamsWhere(item, x => x is not nameof(ItemDto.Id))});"));
 		text.Should().Be(@"
 				insert into Items (`DisplayName`)
-				values (@fdp0);");
-		parameters.Should().Equal(("fdp0", item.DisplayName));
+				values (@ado0);");
+		parameters.Should().Equal(("ado0", item.DisplayName));
 	}
 
 	[Test]
@@ -374,8 +374,8 @@ internal sealed class SqlSyntaxTests
 				values ({Sql.ColumnParamsWhere(item, x => x is not nameof(ItemDto.Id))});"));
 		text.Should().Be(@"
 				insert into Items (`t`.`DisplayName`)
-				values (@fdp0);");
-		parameters.Should().Equal(("fdp0", item.DisplayName));
+				values (@ado0);");
+		parameters.Should().Equal(("ado0", item.DisplayName));
 	}
 
 	[Test]
