@@ -1,11 +1,13 @@
+using Faithlife.Data.BulkInsert;
+using FluentAssertions;
 using NUnit.Framework;
+using static FluentAssertions.FluentActions;
 
 namespace Faithlife.Data.Tests.BulkInsert;
 
 [TestFixture]
 internal sealed class BulkInsertUtilityTests
 {
-#if false
 	[Test]
 	public void EmptySql_Throws()
 	{
@@ -236,5 +238,4 @@ internal sealed class BulkInsertUtilityTests
 				{ "a_2", 3 },
 			});
 	}
-#endif
 }

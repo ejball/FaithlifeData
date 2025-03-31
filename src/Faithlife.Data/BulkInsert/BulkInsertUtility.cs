@@ -70,27 +70,28 @@ public static class BulkInsertUtility
 		if (maxRowsPerBatch < 1)
 			throw new ArgumentException($"{nameof(settings.MaxRowsPerBatch)} setting must be positive.");
 
-#if false
 		var batchSqls = new List<string>();
 		Dictionary<string, object?>? batchParameters = null;
 		var rowParts = new string[tupleParts.Length];
 		string GetBatchSql() => sqlPrefix + string.Join(", ", batchSqls) + sqlSuffix;
+		static Dictionary<string, object?> ToDictionary(DbParameters parameters) =>
+			parameters.Enumerate().ToDictionary(x => x.Name ?? throw new InvalidOperationException("Parameters must be named."), x => x.Value);
 
 		foreach (var rowParameters in rows)
 		{
-			batchParameters ??= commonParameters.ToDictionary();
+			batchParameters ??= ToDictionary(commonParameters);
 
 			var recordIndex = batchSqls.Count;
 			Array.Copy(tupleParts, rowParts, tupleParts.Length);
 
-			foreach (var rowParameter in rowParameters)
+			foreach (var (rowParameterName, rowParameterValue) in ToDictionary(rowParameters))
 			{
-				if (tupleParameters.TryGetValue(rowParameter.Name, out var indices))
+				if (tupleParameters.TryGetValue(rowParameterName, out var indices))
 				{
 					foreach (var index in indices)
 					{
 						rowParts[index] = $"{rowParts[index]}_{recordIndex}";
-						batchParameters[$"{rowParameter.Name}_{recordIndex}"] = rowParameter.Value;
+						batchParameters[$"{rowParameterName}_{recordIndex}"] = rowParameterValue;
 					}
 				}
 			}
@@ -107,7 +108,6 @@ public static class BulkInsertUtility
 
 		if (batchSqls.Count != 0)
 			yield return (GetBatchSql(), DbParameters.Create(batchParameters!));
-#endif
 
 		yield break;
 	}
