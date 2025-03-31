@@ -8,7 +8,7 @@ internal sealed class OneDbParameter<T>(string name, T value) : DbParameters
 
 	public override void Apply(IDbCommand command)
 	{
-		if (!(value is IDbDataParameter dbParameter))
+		if (value is not IDbDataParameter dbParameter)
 		{
 			dbParameter = command.CreateParameter();
 			dbParameter.Value = value is null ? DBNull.Value : value;
@@ -38,7 +38,7 @@ internal sealed class OneDbParameter<T>(string name, T value) : DbParameters
 		dbParameter.Value = value is IDataParameter ddp ? ddp.Value : value;
 	}
 
-	public override IEnumerable<(string? Name, object? Value)> Enumerate()
+	public override IEnumerable<(string Name, object? Value)> Enumerate()
 	{
 		yield return (name, value);
 	}

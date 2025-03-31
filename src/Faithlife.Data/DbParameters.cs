@@ -14,7 +14,7 @@ public abstract class DbParameters
 
 	public abstract void Reapply(IDbCommand command, int startIndex);
 
-	public abstract IEnumerable<(string? Name, object? Value)> Enumerate();
+	public abstract IEnumerable<(string Name, object? Value)> Enumerate();
 
 	/// <summary>
 	/// An empty list of parameters.
@@ -219,7 +219,7 @@ public abstract class DbParameters
 		{
 		}
 
-		public override IEnumerable<(string? Name, object? Value)> Enumerate() => [];
+		public override IEnumerable<(string Name, object? Value)> Enumerate() => [];
 
 		public override int Count => 0;
 	}

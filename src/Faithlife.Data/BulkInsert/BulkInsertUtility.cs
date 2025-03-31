@@ -74,17 +74,15 @@ public static class BulkInsertUtility
 		Dictionary<string, object?>? batchParameters = null;
 		var rowParts = new string[tupleParts.Length];
 		string GetBatchSql() => sqlPrefix + string.Join(", ", batchSqls) + sqlSuffix;
-		static Dictionary<string, object?> ToDictionary(DbParameters parameters) =>
-			parameters.Enumerate().ToDictionary(x => x.Name ?? throw new InvalidOperationException("Parameters must be named."), x => x.Value);
 
 		foreach (var rowParameters in rows)
 		{
-			batchParameters ??= ToDictionary(commonParameters);
+			batchParameters ??= commonParameters.Enumerate().ToDictionary(x => x.Name, x => x.Value);
 
 			var recordIndex = batchSqls.Count;
 			Array.Copy(tupleParts, rowParts, tupleParts.Length);
 
-			foreach (var (rowParameterName, rowParameterValue) in ToDictionary(rowParameters))
+			foreach (var (rowParameterName, rowParameterValue) in rowParameters.Enumerate().ToDictionary(x => x.Name, x => x.Value))
 			{
 				if (tupleParameters.TryGetValue(rowParameterName, out var indices))
 				{
@@ -108,8 +106,6 @@ public static class BulkInsertUtility
 
 		if (batchSqls.Count != 0)
 			yield return (GetBatchSql(), DbParameters.Create(batchParameters!));
-
-		yield break;
 	}
 
 	private static DbConnectorCommand CreateBatchCommand(DbConnectorCommand command, string sql, DbParameters parameters)

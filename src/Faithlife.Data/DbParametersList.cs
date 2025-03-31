@@ -13,7 +13,15 @@ public sealed class DbParametersList : DbParameters
 
 	public override int Count => m_parametersList.Sum(x => x.Count);
 
-	public bool IsReadOnly { get; private set; }
+	public bool IsReadOnly
+	{
+		get => m_isReadOnly;
+		set
+		{
+			VerifyNotReadOnly();
+			m_isReadOnly = value;
+		}
+	}
 
 	public void Add(DbParameters item)
 	{
@@ -23,14 +31,14 @@ public sealed class DbParametersList : DbParameters
 
 	public override void Apply(IDbCommand command)
 	{
-		IsReadOnly = true;
+		m_isReadOnly = true;
 		foreach (var parameters in m_parametersList)
 			parameters.Apply(command);
 	}
 
 	public override void Reapply(IDbCommand command, int startIndex)
 	{
-		IsReadOnly = true;
+		m_isReadOnly = true;
 		foreach (var parameters in m_parametersList)
 		{
 			parameters.Reapply(command, startIndex);
@@ -38,14 +46,15 @@ public sealed class DbParametersList : DbParameters
 		}
 	}
 
-	public override IEnumerable<(string? Name, object? Value)> Enumerate() =>
+	public override IEnumerable<(string Name, object? Value)> Enumerate() =>
 		m_parametersList.SelectMany(x => x.Enumerate());
 
 	private void VerifyNotReadOnly()
 	{
-		if (IsReadOnly)
-			throw new NotSupportedException("The list becomes read-only after it has been applied to a command.");
+		if (m_isReadOnly)
+			throw new NotSupportedException("This instance is read-only.");
 	}
 
 	private readonly List<DbParameters> m_parametersList;
+	private bool m_isReadOnly;
 }
