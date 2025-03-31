@@ -4,13 +4,17 @@ using System.Diagnostics.CodeAnalysis;
 namespace Faithlife.Data;
 
 /// <summary>
-/// An immutable list of parameters.
+/// A set of database parameters.
 /// </summary>
 public abstract class DbParameters
 {
+	public abstract int Count { get; }
+
 	public abstract void Apply(IDbCommand command);
 
 	public abstract void Reapply(IDbCommand command, int startIndex);
+
+	public abstract IEnumerable<(string? Name, object? Value)> Enumerate();
 
 	/// <summary>
 	/// An empty list of parameters.
@@ -24,31 +28,31 @@ public abstract class DbParameters
 	public static DbParameters Create<T>(string name, T value) =>
 		new OneDbParameter<T>(name, value);
 
-#if false
-	/// <summary>
-	/// Creates a list of parameters from tuples.
-	/// </summary>
-	public static DbParameters Create(params (string Name, object? Value)[] parameters) =>
-		new StandardDbParameters(parameters ?? throw new ArgumentNullException(nameof(parameters)));
+	/////// <summary>
+	/////// Creates a list of parameters from tuples.
+	/////// </summary>
+	////public static DbParameters Create(params IEnumerable<(string Name, object? Value)> parameters) =>
+	////	Create<object?>(parameters ?? throw new ArgumentNullException(nameof(parameters)));
+
+	/////// <summary>
+	/////// Creates a list of parameters from a sequence of tuples.
+	/////// </summary>
+	////public static DbParameters Create(IEnumerable<(string Name, object? Value)> parameters) =>
+	////	new DbParametersList((parameters ?? throw new ArgumentNullException(nameof(parameters))).Select(x => DbParameters.Create(x.Name, x.Value)));
 
 	/// <summary>
 	/// Creates a list of parameters from a sequence of tuples.
 	/// </summary>
-	public static DbParameters Create(IEnumerable<(string Name, object? Value)> parameters) =>
-		new StandardDbParameters(parameters ?? throw new ArgumentNullException(nameof(parameters)));
-
-	/// <summary>
-	/// Creates a list of parameters from a sequence of tuples.
-	/// </summary>
-	public static DbParameters Create<T>(IEnumerable<(string Name, T Value)> parameters) =>
-		new StandardDbParameters((parameters ?? throw new ArgumentNullException(nameof(parameters))).Select(x => (x.Name, (object?) x.Value)));
+	public static DbParameters Create<T>(params IEnumerable<(string Name, T Value)> parameters) =>
+		new DbParametersList((parameters ?? throw new ArgumentNullException(nameof(parameters))).Select(x => Create(x.Name, x.Value)));
 
 	/// <summary>
 	/// Creates a list of parameters from a dictionary.
 	/// </summary>
 	public static DbParameters Create<T>(IEnumerable<KeyValuePair<string, T>> parameters) =>
-		new StandardDbParameters((parameters ?? throw new ArgumentNullException(nameof(parameters))).Select(x => (x.Key, (object?) x.Value)));
+		Create((parameters ?? throw new ArgumentNullException(nameof(parameters))).Select(x => (x.Key, x.Value)));
 
+#if false
 	/// <summary>
 	/// Creates a list of parameters from a single name and a collection of values.
 	/// </summary>
@@ -81,14 +85,16 @@ public abstract class DbParameters
 			parameters.Add((name(index++), value));
 		return new StandardDbParameters(parameters);
 	}
+#endif
 
 	/// <summary>
 	/// Creates a list of parameters from the properties of a DTO.
 	/// </summary>
 	/// <remarks>The name of each parameter is the name of the corresponding DTO property.</remarks>
-	public static DbParameters FromDto(object dto) =>
-		new StandardDbParameters(DbConnectorReflection.Default.GetProperties((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Select(x => (x.Name, x.GetValue(dto))));
+	public static DbParameters FromDto(object dto) => throw new NotImplementedException();
+	////new StandardDbParameters(DbConnectorReflection.Default.GetProperties((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Select(x => (x.Name, x.GetValue(dto))));
 
+#if false
 	/// <summary>
 	/// Creates a list of parameters from the properties of a DTO.
 	/// </summary>
@@ -204,11 +210,6 @@ public abstract class DbParameters
 	}
 #endif
 
-	/// <summary>
-	/// The number of parameters.
-	/// </summary>
-	public abstract int Count { get; }
-
 	private sealed class EmptyDbParameters : DbParameters
 	{
 		public override void Apply(IDbCommand command)
@@ -218,6 +219,8 @@ public abstract class DbParameters
 		public override void Reapply(IDbCommand command, int startIndex)
 		{
 		}
+
+		public override IEnumerable<(string? Name, object? Value)> Enumerate() => [];
 
 		public override int Count => 0;
 	}

@@ -11,6 +11,10 @@ public sealed class DbParametersList : DbParameters
 
 	public DbParametersList(params IEnumerable<DbParameters> parametersList) => m_parametersList = [.. parametersList];
 
+	public override int Count => m_parametersList.Sum(x => x.Count);
+
+	public bool IsReadOnly { get; private set; }
+
 	public void Add(DbParameters item)
 	{
 		VerifyNotReadOnly();
@@ -34,9 +38,8 @@ public sealed class DbParametersList : DbParameters
 		}
 	}
 
-	public override int Count => m_parametersList.Sum(x => x.Count);
-
-	public bool IsReadOnly { get; private set; }
+	public override IEnumerable<(string? Name, object? Value)> Enumerate() =>
+		m_parametersList.SelectMany(x => x.Enumerate());
 
 	private void VerifyNotReadOnly()
 	{

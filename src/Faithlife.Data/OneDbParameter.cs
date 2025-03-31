@@ -4,6 +4,8 @@ namespace Faithlife.Data;
 
 internal sealed class OneDbParameter<T>(string name, T value) : DbParameters
 {
+	public override int Count => 1;
+
 	public override void Apply(IDbCommand command)
 	{
 		if (!(value is IDbDataParameter dbParameter))
@@ -36,5 +38,8 @@ internal sealed class OneDbParameter<T>(string name, T value) : DbParameters
 		dbParameter.Value = value is IDataParameter ddp ? ddp.Value : value;
 	}
 
-	public override int Count => 1;
+	public override IEnumerable<(string? Name, object? Value)> Enumerate()
+	{
+		yield return (name, value);
+	}
 }
