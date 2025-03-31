@@ -144,22 +144,29 @@ public class DbDataMapper
 
 		protected override T MapCore(IDataRecord record, int index, int count, DbRecordState? state)
 		{
-			if (count == 0)
+			if (IsAllNull(record, index, count))
 				return default!;
 
-			var fieldNames = new string[count];
-			var allNull = true;
-			for (var i = 0; i < count; i++)
+			if (state?.Get(this, index, count) is not Func<IDataRecord, int, DbRecordState?, T> func)
 			{
-				fieldNames[i] = record.GetName(index + i);
-				if (allNull && !record.IsDBNull(index + i))
-					allNull = false;
+				var fieldNames = new string[count];
+				for (var i = 0; i < count; i++)
+					fieldNames[i] = record.GetName(index + i);
+				func = m_funcsByFieldNameSet.GetOrAdd(new FieldNameSet(fieldNames), CreateFunc);
+				state?.Set(this, index, count, func);
 			}
 
-			if (allNull)
-				return default!;
+			return func(record, index, state);
+		}
 
-			return m_funcsByFieldNameSet.GetOrAdd(new FieldNameSet(fieldNames), CreateFunc)(record, index, state);
+		private static bool IsAllNull(IDataRecord record, int index, int count)
+		{
+			for (var i = 0; i < count; i++)
+			{
+				if (!record.IsDBNull(index + i))
+					return false;
+			}
+			return true;
 		}
 
 		private Func<IDataRecord, int, DbRecordState?, T> CreateFunc(FieldNameSet fieldNameSet)
