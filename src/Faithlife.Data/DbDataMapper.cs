@@ -45,17 +45,17 @@ public class DbDataMapper
 	/// <summary>
 	/// Maps the data record values to an instance of the specified type.
 	/// </summary>
-	public T Map<T>(IDataRecord record) => GetTypeMapper<T>().Map(record);
+	public T Map<T>(IDataRecord record, DbRecordState? state) => GetTypeMapper<T>().Map(record, state);
 
 	/// <summary>
 	/// Maps the data record value to an instance of the specified type.
 	/// </summary>
-	public T Map<T>(IDataRecord record, int index) => GetTypeMapper<T>().Map(record, index);
+	public T Map<T>(IDataRecord record, int index, DbRecordState? state) => GetTypeMapper<T>().Map(record, index, state);
 
 	/// <summary>
 	/// Maps the data record values to an instance of the specified type.
 	/// </summary>
-	public T Map<T>(IDataRecord record, int index, int count) => GetTypeMapper<T>().Map(record, index, count);
+	public T Map<T>(IDataRecord record, int index, int count, DbRecordState? state) => GetTypeMapper<T>().Map(record, index, count, state);
 
 	protected virtual DbTypeMapper<T>? TryCreateTypeMapper<T>()
 	{
@@ -142,7 +142,7 @@ public class DbDataMapper
 
 		public override int? FieldCount => null;
 
-		protected override T MapCore(IDataRecord record, int index, int count)
+		protected override T MapCore(IDataRecord record, int index, int count, DbRecordState? state)
 		{
 			if (count == 0)
 				return default!;
@@ -159,13 +159,14 @@ public class DbDataMapper
 			if (allNull)
 				return default!;
 
-			return m_funcsByFieldNameSet.GetOrAdd(new FieldNameSet(fieldNames), CreateFunc)(record, index);
+			return m_funcsByFieldNameSet.GetOrAdd(new FieldNameSet(fieldNames), CreateFunc)(record, index, state);
 		}
 
-		private Func<IDataRecord, int, T> CreateFunc(FieldNameSet fieldNameSet)
+		private Func<IDataRecord, int, DbRecordState?, T> CreateFunc(FieldNameSet fieldNameSet)
 		{
 			var recordParam = Expression.Parameter(typeof(IDataRecord), "record");
 			var indexParam = Expression.Parameter(typeof(int), "index");
+			var stateParam = Expression.Parameter(typeof(DbRecordState), "state");
 
 			var count = fieldNameSet.Names.Count;
 			var memberBindings = new MemberBinding[count];
@@ -181,14 +182,15 @@ public class DbDataMapper
 						property.Member,
 						Expression.Call(
 							Expression.Constant(property.Mapper),
-							property.Mapper.GetType().GetMethod("Map", [typeof(IDataRecord), typeof(int), typeof(int)])!,
+							property.Mapper.GetType().GetMethod("Map", [typeof(IDataRecord), typeof(int), typeof(int), typeof(DbRecordState)])!,
 							recordParam,
 							Expression.Add(indexParam, Expression.Constant(index)),
-							Expression.Constant(1)));
+							Expression.Constant(1),
+							stateParam));
 			}
 
 			var memberInit = Expression.MemberInit(Expression.New(typeof(T)), memberBindings);
-			return (Func<IDataRecord, int, T>) Expression.Lambda(memberInit, recordParam, indexParam).Compile();
+			return (Func<IDataRecord, int, DbRecordState?, T>) Expression.Lambda(memberInit, recordParam, indexParam, stateParam).Compile();
 		}
 
 #if !NETSTANDARD2_0
@@ -210,14 +212,14 @@ public class DbDataMapper
 			public override int GetHashCode() => Names.Aggregate(0, (hash, name) => HashCode.Combine(hash, StringComparer.OrdinalIgnoreCase.GetHashCode(name)));
 		}
 
-		private readonly ConcurrentDictionary<FieldNameSet, Func<IDataRecord, int, T>> m_funcsByFieldNameSet = new();
+		private readonly ConcurrentDictionary<FieldNameSet, Func<IDataRecord, int, DbRecordState?, T>> m_funcsByFieldNameSet = new();
 	}
 
 	private sealed class ObjectMapper : TypeMapper<object>
 	{
 		public override int? FieldCount => null;
 
-		protected override object MapCore(IDataRecord record, int index, int count)
+		protected override object MapCore(IDataRecord record, int index, int count, DbRecordState? state)
 		{
 			if (count == 1)
 			{
@@ -250,7 +252,7 @@ public class DbDataMapper
 	{
 		public override int? FieldCount => null;
 
-		protected override T MapCore(IDataRecord record, int index, int count)
+		protected override T MapCore(IDataRecord record, int index, int count, DbRecordState? state)
 		{
 			var dictionary = new Dictionary<string, object?>();
 			var notNull = false;
@@ -363,104 +365,104 @@ public class DbDataMapper
 	private sealed class ValueTupleMapper<T1>(DbTypeMapper<T1> mapper1)
 		: ValueTupleMapperBase<ValueTuple<T1>>([mapper1])
 	{
-		protected override ValueTuple<T1> MapCore(IDataRecord record, int index, int count)
+		protected override ValueTuple<T1> MapCore(IDataRecord record, int index, int count, DbRecordState? state)
 		{
 			Span<(int Index, int Count)> valueRanges = stackalloc (int Index, int Count)[1];
 			GetValueRanges(record, index, count, valueRanges);
-			return new ValueTuple<T1>(mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count));
+			return new ValueTuple<T1>(mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count, state));
 		}
 	}
 
 	private sealed class ValueTupleMapper<T1, T2>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2)
 		: ValueTupleMapperBase<(T1, T2)>([mapper1, mapper2])
 	{
-		protected override (T1, T2) MapCore(IDataRecord record, int index, int count)
+		protected override (T1, T2) MapCore(IDataRecord record, int index, int count, DbRecordState? state)
 		{
 			Span<(int Index, int Count)> valueRanges = stackalloc (int Index, int Count)[2];
 			GetValueRanges(record, index, count, valueRanges);
 			return (
-				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count),
-				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count));
+				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count, state),
+				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count, state));
 		}
 	}
 
 	private sealed class ValueTupleMapper<T1, T2, T3>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2, DbTypeMapper<T3> mapper3)
 		: ValueTupleMapperBase<(T1, T2, T3)>([mapper1, mapper2, mapper3])
 	{
-		protected override (T1, T2, T3) MapCore(IDataRecord record, int index, int count)
+		protected override (T1, T2, T3) MapCore(IDataRecord record, int index, int count, DbRecordState? state)
 		{
 			Span<(int Index, int Count)> valueRanges = stackalloc (int Index, int Count)[3];
 			GetValueRanges(record, index, count, valueRanges);
 			return (
-				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count),
-				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count),
-				mapper3.Map(record, valueRanges[2].Index, valueRanges[2].Count));
+				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count, state),
+				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count, state),
+				mapper3.Map(record, valueRanges[2].Index, valueRanges[2].Count, state));
 		}
 	}
 
 	private sealed class ValueTupleMapper<T1, T2, T3, T4>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2, DbTypeMapper<T3> mapper3, DbTypeMapper<T4> mapper4)
 		: ValueTupleMapperBase<(T1, T2, T3, T4)>([mapper1, mapper2, mapper3, mapper4])
 	{
-		protected override (T1, T2, T3, T4) MapCore(IDataRecord record, int index, int count)
+		protected override (T1, T2, T3, T4) MapCore(IDataRecord record, int index, int count, DbRecordState? state)
 		{
 			Span<(int Index, int Count)> valueRanges = stackalloc (int Index, int Count)[4];
 			GetValueRanges(record, index, count, valueRanges);
 			return (
-				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count),
-				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count),
-				mapper3.Map(record, valueRanges[2].Index, valueRanges[2].Count),
-				mapper4.Map(record, valueRanges[3].Index, valueRanges[3].Count));
+				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count, state),
+				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count, state),
+				mapper3.Map(record, valueRanges[2].Index, valueRanges[2].Count, state),
+				mapper4.Map(record, valueRanges[3].Index, valueRanges[3].Count, state));
 		}
 	}
 
 	private sealed class ValueTupleMapper<T1, T2, T3, T4, T5>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2, DbTypeMapper<T3> mapper3, DbTypeMapper<T4> mapper4, DbTypeMapper<T5> mapper5)
 		: ValueTupleMapperBase<(T1, T2, T3, T4, T5)>([mapper1, mapper2, mapper3, mapper4, mapper5])
 	{
-		protected override (T1, T2, T3, T4, T5) MapCore(IDataRecord record, int index, int count)
+		protected override (T1, T2, T3, T4, T5) MapCore(IDataRecord record, int index, int count, DbRecordState? state)
 		{
 			Span<(int Index, int Count)> valueRanges = stackalloc (int Index, int Count)[5];
 			GetValueRanges(record, index, count, valueRanges);
 			return (
-				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count),
-				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count),
-				mapper3.Map(record, valueRanges[2].Index, valueRanges[2].Count),
-				mapper4.Map(record, valueRanges[3].Index, valueRanges[3].Count),
-				mapper5.Map(record, valueRanges[4].Index, valueRanges[4].Count));
+				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count, state),
+				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count, state),
+				mapper3.Map(record, valueRanges[2].Index, valueRanges[2].Count, state),
+				mapper4.Map(record, valueRanges[3].Index, valueRanges[3].Count, state),
+				mapper5.Map(record, valueRanges[4].Index, valueRanges[4].Count, state));
 		}
 	}
 
 	private sealed class ValueTupleMapper<T1, T2, T3, T4, T5, T6>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2, DbTypeMapper<T3> mapper3, DbTypeMapper<T4> mapper4, DbTypeMapper<T5> mapper5, DbTypeMapper<T6> mapper6)
 		: ValueTupleMapperBase<(T1, T2, T3, T4, T5, T6)>([mapper1, mapper2, mapper3, mapper4, mapper5, mapper6])
 	{
-		protected override (T1, T2, T3, T4, T5, T6) MapCore(IDataRecord record, int index, int count)
+		protected override (T1, T2, T3, T4, T5, T6) MapCore(IDataRecord record, int index, int count, DbRecordState? state)
 		{
 			Span<(int Index, int Count)> valueRanges = stackalloc (int Index, int Count)[6];
 			GetValueRanges(record, index, count, valueRanges);
 			return (
-				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count),
-				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count),
-				mapper3.Map(record, valueRanges[2].Index, valueRanges[2].Count),
-				mapper4.Map(record, valueRanges[3].Index, valueRanges[3].Count),
-				mapper5.Map(record, valueRanges[4].Index, valueRanges[4].Count),
-				mapper6.Map(record, valueRanges[5].Index, valueRanges[5].Count));
+				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count, state),
+				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count, state),
+				mapper3.Map(record, valueRanges[2].Index, valueRanges[2].Count, state),
+				mapper4.Map(record, valueRanges[3].Index, valueRanges[3].Count, state),
+				mapper5.Map(record, valueRanges[4].Index, valueRanges[4].Count, state),
+				mapper6.Map(record, valueRanges[5].Index, valueRanges[5].Count, state));
 		}
 	}
 
 	private sealed class ValueTupleMapper<T1, T2, T3, T4, T5, T6, T7>(DbTypeMapper<T1> mapper1, DbTypeMapper<T2> mapper2, DbTypeMapper<T3> mapper3, DbTypeMapper<T4> mapper4, DbTypeMapper<T5> mapper5, DbTypeMapper<T6> mapper6, DbTypeMapper<T7> mapper7)
 		: ValueTupleMapperBase<(T1, T2, T3, T4, T5, T6, T7)>([mapper1, mapper2, mapper3, mapper4, mapper5, mapper6, mapper7])
 	{
-		protected override (T1, T2, T3, T4, T5, T6, T7) MapCore(IDataRecord record, int index, int count)
+		protected override (T1, T2, T3, T4, T5, T6, T7) MapCore(IDataRecord record, int index, int count, DbRecordState? state)
 		{
 			Span<(int Index, int Count)> valueRanges = stackalloc (int Index, int Count)[7];
 			GetValueRanges(record, index, count, valueRanges);
 			return (
-				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count),
-				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count),
-				mapper3.Map(record, valueRanges[2].Index, valueRanges[2].Count),
-				mapper4.Map(record, valueRanges[3].Index, valueRanges[3].Count),
-				mapper5.Map(record, valueRanges[4].Index, valueRanges[4].Count),
-				mapper6.Map(record, valueRanges[5].Index, valueRanges[5].Count),
-				mapper7.Map(record, valueRanges[6].Index, valueRanges[6].Count));
+				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count, state),
+				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count, state),
+				mapper3.Map(record, valueRanges[2].Index, valueRanges[2].Count, state),
+				mapper4.Map(record, valueRanges[3].Index, valueRanges[3].Count, state),
+				mapper5.Map(record, valueRanges[4].Index, valueRanges[4].Count, state),
+				mapper6.Map(record, valueRanges[5].Index, valueRanges[5].Count, state),
+				mapper7.Map(record, valueRanges[6].Index, valueRanges[6].Count, state));
 		}
 	}
 
@@ -468,19 +470,19 @@ public class DbDataMapper
 		: ValueTupleMapperBase<ValueTuple<T1, T2, T3, T4, T5, T6, T7, TRest>>([mapper1, mapper2, mapper3, mapper4, mapper5, mapper6, mapper7, mapperRest])
 		where TRest : struct
 	{
-		protected override ValueTuple<T1, T2, T3, T4, T5, T6, T7, TRest> MapCore(IDataRecord record, int index, int count)
+		protected override ValueTuple<T1, T2, T3, T4, T5, T6, T7, TRest> MapCore(IDataRecord record, int index, int count, DbRecordState? state)
 		{
 			Span<(int Index, int Count)> valueRanges = stackalloc (int Index, int Count)[8];
 			GetValueRanges(record, index, count, valueRanges);
 			return new ValueTuple<T1, T2, T3, T4, T5, T6, T7, TRest>(
-				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count),
-				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count),
-				mapper3.Map(record, valueRanges[2].Index, valueRanges[2].Count),
-				mapper4.Map(record, valueRanges[3].Index, valueRanges[3].Count),
-				mapper5.Map(record, valueRanges[4].Index, valueRanges[4].Count),
-				mapper6.Map(record, valueRanges[5].Index, valueRanges[5].Count),
-				mapper7.Map(record, valueRanges[6].Index, valueRanges[6].Count),
-				mapperRest.Map(record, valueRanges[7].Index, valueRanges[7].Count));
+				mapper1.Map(record, valueRanges[0].Index, valueRanges[0].Count, state),
+				mapper2.Map(record, valueRanges[1].Index, valueRanges[1].Count, state),
+				mapper3.Map(record, valueRanges[2].Index, valueRanges[2].Count, state),
+				mapper4.Map(record, valueRanges[3].Index, valueRanges[3].Count, state),
+				mapper5.Map(record, valueRanges[4].Index, valueRanges[4].Count, state),
+				mapper6.Map(record, valueRanges[5].Index, valueRanges[5].Count, state),
+				mapper7.Map(record, valueRanges[6].Index, valueRanges[6].Count, state),
+				mapperRest.Map(record, valueRanges[7].Index, valueRanges[7].Count, state));
 		}
 	}
 
@@ -488,7 +490,7 @@ public class DbDataMapper
 	{
 		public override int? FieldCount => 1;
 
-		protected sealed override T MapCore(IDataRecord record, int index, int count) =>
+		protected sealed override T MapCore(IDataRecord record, int index, int count, DbRecordState? state) =>
 			count == 1 ? MapField(record, index) : throw BadFieldCount(count);
 
 		protected abstract T MapField(IDataRecord record, int index);

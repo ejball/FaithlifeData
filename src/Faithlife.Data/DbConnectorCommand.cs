@@ -492,7 +492,7 @@ public sealed class DbConnectorCommand
 	{
 		using var command = Create();
 		using var reader = command.ExecuteReader();
-		var record = new DbRecord(reader, Connector.DataMapper);
+		var record = new DbRecord(reader, Connector.DataMapper, new DbRecordState());
 
 		var list = new List<T>();
 
@@ -514,7 +514,7 @@ public sealed class DbConnectorCommand
 		await using var commandScope = new AsyncScope(command).ConfigureAwait(false);
 		var reader = await methods.ExecuteReaderAsync(CachedCommand.Unwrap(command), cancellationToken).ConfigureAwait(false);
 		await using var readerScope = new AsyncScope(reader).ConfigureAwait(false);
-		var record = new DbRecord(reader, Connector.DataMapper);
+		var record = new DbRecord(reader, Connector.DataMapper, new DbRecordState());
 
 		var list = new List<T>();
 
@@ -539,7 +539,7 @@ public sealed class DbConnectorCommand
 				return orDefault ? default(T)! : throw new InvalidOperationException("No records were found; use 'OrDefault' to permit this.");
 		}
 
-		var record = new DbRecord(reader, Connector.DataMapper);
+		var record = new DbRecord(reader, Connector.DataMapper, state: null);
 		var value = map is not null ? map(record) : record.Get<T>();
 
 		if (single && reader.Read())
@@ -566,7 +566,7 @@ public sealed class DbConnectorCommand
 				return orDefault ? default(T)! : throw CreateNoRecordsException();
 		}
 
-		var record = new DbRecord(reader, Connector.DataMapper);
+		var record = new DbRecord(reader, Connector.DataMapper, state: null);
 		var value = map is not null ? map(record) : record.Get<T>();
 
 		if (single && await methods.ReadAsync(reader, cancellationToken).ConfigureAwait(false))
@@ -586,7 +586,7 @@ public sealed class DbConnectorCommand
 	{
 		using var command = Create();
 		using var reader = command.ExecuteReader();
-		var record = new DbRecord(reader, Connector.DataMapper);
+		var record = new DbRecord(reader, Connector.DataMapper, new DbRecordState());
 
 		do
 		{
@@ -604,7 +604,7 @@ public sealed class DbConnectorCommand
 		await using var commandScope = new AsyncScope(command).ConfigureAwait(false);
 		var reader = await methods.ExecuteReaderAsync(CachedCommand.Unwrap(command), cancellationToken).ConfigureAwait(false);
 		await using var readerScope = new AsyncScope(reader).ConfigureAwait(false);
-		var record = new DbRecord(reader, Connector.DataMapper);
+		var record = new DbRecord(reader, Connector.DataMapper, new DbRecordState());
 
 		do
 		{

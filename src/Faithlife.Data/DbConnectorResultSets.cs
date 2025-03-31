@@ -99,7 +99,7 @@ public sealed class DbConnectorResultSets : IDisposable, IAsyncDisposable
 		m_next = true;
 
 		var list = new List<T>();
-		var record = new DbRecord(m_reader, m_mapper);
+		var record = new DbRecord(m_reader, m_mapper, new DbRecordState());
 		while (m_reader.Read())
 			list.Add(map is not null ? map(record) : record.Get<T>());
 		return list;
@@ -112,7 +112,7 @@ public sealed class DbConnectorResultSets : IDisposable, IAsyncDisposable
 		m_next = true;
 
 		var list = new List<T>();
-		var record = new DbRecord(m_reader, m_mapper);
+		var record = new DbRecord(m_reader, m_mapper, new DbRecordState());
 		while (await m_methods.ReadAsync(m_reader, cancellationToken).ConfigureAwait(false))
 			list.Add(map is not null ? map(record) : record.Get<T>());
 		return list;
@@ -124,7 +124,7 @@ public sealed class DbConnectorResultSets : IDisposable, IAsyncDisposable
 			throw CreateNoMoreResultsException();
 		m_next = true;
 
-		var record = new DbRecord(m_reader, m_mapper);
+		var record = new DbRecord(m_reader, m_mapper, new DbRecordState());
 		while (m_reader.Read())
 			yield return map is not null ? map(record) : record.Get<T>();
 	}
@@ -135,7 +135,7 @@ public sealed class DbConnectorResultSets : IDisposable, IAsyncDisposable
 			throw CreateNoMoreResultsException();
 		m_next = true;
 
-		var record = new DbRecord(m_reader, m_mapper);
+		var record = new DbRecord(m_reader, m_mapper, new DbRecordState());
 		while (await m_methods.ReadAsync(m_reader, cancellationToken).ConfigureAwait(false))
 			yield return map is not null ? map(record) : record.Get<T>();
 	}

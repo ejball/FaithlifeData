@@ -20,5 +20,5 @@ public interface IDbTypeMapper
 	/// <summary>
 	/// Maps the data record values to an instance of the specified type.
 	/// </summary>
-	object? Map(IDataRecord record, int index, int count);
+	object? Map(IDataRecord record, int index, int count, DbRecordState? state);
 }

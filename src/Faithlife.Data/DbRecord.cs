@@ -5,32 +5,32 @@ namespace Faithlife.Data;
 /// <summary>
 /// Converts the fields of a data record.
 /// </summary>
-public readonly struct DbRecord
+public sealed class DbRecord
 {
 	/// <summary>
 	/// Converts the record to the specified type.
 	/// </summary>
-	public T Get<T>() => m_mapper.Map<T>(m_record);
+	public T Get<T>() => m_mapper.Map<T>(m_record, m_state);
 
 	/// <summary>
 	/// Converts the specified record field to the specified type.
 	/// </summary>
-	public T Get<T>(int index) => m_mapper.Map<T>(m_record, index);
+	public T Get<T>(int index) => m_mapper.Map<T>(m_record, index, m_state);
 
 	/// <summary>
 	/// Converts the specified record fields to the specified type.
 	/// </summary>
-	public T Get<T>(int index, int count) => m_mapper.Map<T>(m_record, index, count);
+	public T Get<T>(int index, int count) => m_mapper.Map<T>(m_record, index, count, m_state);
 
 	/// <summary>
 	/// Converts the specified record field to the specified type.
 	/// </summary>
-	public T Get<T>(string name) => m_mapper.Map<T>(m_record, m_record.GetOrdinal(name), 1);
+	public T Get<T>(string name) => m_mapper.Map<T>(m_record, m_record.GetOrdinal(name), 1, m_state);
 
 	/// <summary>
 	/// Converts the specified record fields to the specified type.
 	/// </summary>
-	public T Get<T>(string name, int count) => m_mapper.Map<T>(m_record, m_record.GetOrdinal(name), count);
+	public T Get<T>(string name, int count) => m_mapper.Map<T>(m_record, m_record.GetOrdinal(name), count, m_state);
 
 	/// <summary>
 	/// Converts the specified record fields to the specified type.
@@ -39,13 +39,13 @@ public readonly struct DbRecord
 	{
 		var fromIndex = m_record.GetOrdinal(fromName);
 		var toIndex = m_record.GetOrdinal(toName);
-		return m_mapper.Map<T>(m_record, fromIndex, toIndex - fromIndex + 1);
+		return m_mapper.Map<T>(m_record, fromIndex, toIndex - fromIndex + 1, m_state);
 	}
 
 	/// <summary>
 	/// Converts the specified record field to the specified type.
 	/// </summary>
-	public T Get<T>(Index index) => m_mapper.Map<T>(m_record, index.GetOffset(m_record.FieldCount), 1);
+	public T Get<T>(Index index) => m_mapper.Map<T>(m_record, index.GetOffset(m_record.FieldCount), 1, m_state);
 
 	/// <summary>
 	/// Converts the specified record fields to the specified type.
@@ -53,15 +53,17 @@ public readonly struct DbRecord
 	public T Get<T>(Range range)
 	{
 		var (index, count) = range.GetOffsetAndLength(m_record.FieldCount);
-		return m_mapper.Map<T>(m_record, index, count);
+		return m_mapper.Map<T>(m_record, index, count, m_state);
 	}
 
-	internal DbRecord(IDataRecord record, DbDataMapper mapper)
+	internal DbRecord(IDataRecord record, DbDataMapper mapper, DbRecordState? state)
 	{
 		m_record = record;
 		m_mapper = mapper;
+		m_state = state;
 	}
 
 	private readonly IDataRecord m_record;
 	private readonly DbDataMapper m_mapper;
+	private readonly DbRecordState? m_state;
 }
