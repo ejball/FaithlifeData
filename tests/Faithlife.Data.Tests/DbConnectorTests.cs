@@ -1,5 +1,6 @@
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
+using Faithlife.Data.BulkInsert;
 using Faithlife.Data.SqlFormatting;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
@@ -118,7 +119,6 @@ internal sealed class DbConnectorTests
 		(await connector.Command("select Name from Items where Name like @like;").WithParameters(DbParameters.Create("like", "t%")).QueryFirstAsync<string>()).Should().Be("two");
 	}
 
-#if false
 	[Test]
 	public void ParametersFromDtoTests()
 	{
@@ -129,7 +129,6 @@ internal sealed class DbConnectorTests
 		connector.Command("insert into Items (Name) values (@item1); insert into Items (Name) values (@item2);").WithParameters(DbParameters.FromDto(new { item1, item2 })).Execute().Should().Be(2);
 		connector.Command("select Name from Items order by ItemId;").Query<string>().Should().Equal(item1, item2);
 	}
-#endif
 
 	[Test]
 	public void ParametersFromSqlTests()
@@ -347,7 +346,6 @@ internal sealed class DbConnectorTests
 		}
 	}
 
-#if false
 	[Test]
 	public void BulkInsertTests()
 	{
@@ -367,25 +365,30 @@ internal sealed class DbConnectorTests
 			.BulkInsertAsync(Enumerable.Range(1, 100).Select(x => DbParameters.Create("name", $"item{x}")));
 		(await connector.Command("select count(*) from Items;").QuerySingleAsync<long>()).Should().Be(100);
 	}
-#endif
 
-#if false
 	[Test]
 	public void ParameterCollectionTests()
 	{
 		using var connector = CreateConnector();
 		connector.Command("create table Items (ItemId integer primary key, Name text not null);").Execute().Should().Be(0);
 		connector.Command("insert into Items (Name) values ('one'), ('two'), ('three');").Execute().Should().Be(3);
-		var resultSets = connector.Command(@"
+		var resultSets = connector
+			.Command("""
 				select Name from Items where Name in (@names...);
 				select Name from Items where Name not in (@names...);
 				select @before + @after;
-				", ("before", 1), ("names", new[] { "one", "three", "five" }), ("ignore", new[] { 0 }), ("after", 2)).QueryMultiple();
+				""")
+			.WithParameter("before", 1)
+			.WithParameter("names", new[] { "one", "three", "five" })
+			.WithParameter("ignore", new[] { 0 })
+			.WithParameter("after", 2)
+			.QueryMultiple();
 		resultSets.Read<string>().Should().BeEquivalentTo("one", "three");
 		resultSets.Read<string>().Should().BeEquivalentTo("two");
-		resultSets.Read<long>().Should().BeEquivalentTo(new[] { 3L });
+		resultSets.Read<long>().Should().BeEquivalentTo([3L]);
 	}
 
+#if false
 	[Test]
 	public void BadParameterCollectionTests()
 	{

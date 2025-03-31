@@ -1,5 +1,7 @@
+using System.Collections;
 using System.Data;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 
 namespace Faithlife.Data;
 
@@ -374,13 +376,13 @@ public sealed class DbConnectorCommand
 		var timeout = Timeout;
 
 		var parameters = Parameters;
+		var nameValuePairs = Parameters.Enumerate().ToList();
 
-#if false
 		var index = 0;
-		while (index < parameters.Count)
+		while (index < nameValuePairs.Count)
 		{
 			// look for @name... in SQL for collection parameters
-			var (name, value) = parameters[index];
+			var (name, value) = nameValuePairs[index];
 			if (!string.IsNullOrEmpty(name) && !(value is string) && !(value is byte[]) && value is IEnumerable list)
 			{
 				var itemCount = -1;
@@ -411,9 +413,8 @@ public sealed class DbConnectorCommand
 				// if special syntax wasn't found, leave the parameter alone, for databases that support collections directly
 				if (itemCount != -1)
 				{
-					throw new NotImplementedException();
-					////parameters = DbParameters.Create(parameters.Take(index).Concat(replacements).Concat(parameters.Skip(index + 1)));
-					////index += replacements.Count;
+					parameters = DbParameters.Create(nameValuePairs.Take(index).Concat(replacements).Concat(nameValuePairs.Skip(index + 1)));
+					index += replacements.Count;
 				}
 				else
 				{
@@ -425,7 +426,6 @@ public sealed class DbConnectorCommand
 				index += 1;
 			}
 		}
-#endif
 
 		IDbCommand? command;
 		var transaction = Connector.CurrentTransaction;

@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
@@ -281,21 +280,7 @@ public abstract class Sql
 	/// </summary>
 	/// <remarks>Empty SQL fragments are ignored. Since it would otherwise result in a confusing SQL syntax error, an <see cref="InvalidOperationException" />
 	/// is thrown if the collection of values is empty. Use <c>Sql.Join(", ", values.Select(Sql.Param))")</c> to allow an empty collection.</remarks>
-	public static Sql ParamList(IEnumerable values) => ParamList(values.Cast<object?>());
-
-	/// <summary>
-	/// Creates SQL for a comma-delimted list of arbitrarily-named parameters with the specified values.
-	/// </summary>
-	/// <remarks>Empty SQL fragments are ignored. Since it would otherwise result in a confusing SQL syntax error, an <see cref="InvalidOperationException" />
-	/// is thrown if the collection of values is empty. Use <c>Sql.Join(", ", values.Select(Sql.Param))")</c> to allow an empty collection.</remarks>
 	public static Sql ParamList<T>(IEnumerable<T> values) => JoinOrThrow(", ", values.Select(Param), "Sql.ParamList was empty.");
-
-	/// <summary>
-	/// Creates SQL for a comma-delimted list of arbitrarily-named parameters with the specified values, surrounded by parentheses.
-	/// </summary>
-	/// <remarks>Empty SQL fragments are ignored. Since it would otherwise result in a confusing SQL syntax error, an <see cref="InvalidOperationException" />
-	/// is thrown if the collection of values is empty. Use <c>Sql.Format($"({Sql.Join(", ", values.Select(Sql.Param))})")</c> to permit an empty tuple.</remarks>
-	public static Sql ParamTuple(IEnumerable values) => ParamTuple(values.Cast<object?>());
 
 	/// <summary>
 	/// Creates SQL for a comma-delimted list of arbitrarily-named parameters with the specified values, surrounded by parentheses.
@@ -350,7 +335,7 @@ public abstract class Sql
 				.Where(x => x.RawSql.Length != 0)
 				.Select(x => x.NeedsParens ? $"({x.RawSql})" : x.RawSql)
 				.ToList();
-			return string.Join(context.Syntax.UseLowercaseKeywords ? lowercase : uppercase, rawSqls);
+			return string.Join(context.Syntax.LowerCaseKeywords ? lowercase : uppercase, rawSqls);
 		}
 	}
 
@@ -377,11 +362,10 @@ public abstract class Sql
 			if (properties.Count == 0)
 				throw new InvalidOperationException($"The specified type has no columns: {type.FullName}");
 
-			var dbInfo = DbDtoInfo.GetInfo(type);
 			var syntax = context.Syntax;
 			var tableName = GetTableName(index);
 			var tablePrefix = tableName.Length == 0 ? "" : syntax.QuoteName(tableName) + ".";
-			var useSnakeCase = syntax.UseSnakeCase;
+			var useSnakeCase = syntax.SnakeCaseColumnNames;
 
 			var filteredProperties = properties.AsEnumerable();
 			if (m_filter is not null)
@@ -489,7 +473,7 @@ public abstract class Sql
 		internal override string Render(SqlContext context)
 		{
 			var rawSql = sql.Render(context);
-			return rawSql.Length == 0 ? "" : (context.Syntax.UseLowercaseKeywords ? lowercase : uppercase) + rawSql;
+			return rawSql.Length == 0 ? "" : (context.Syntax.LowerCaseKeywords ? lowercase : uppercase) + rawSql;
 		}
 	}
 
