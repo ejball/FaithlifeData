@@ -153,12 +153,11 @@ public class DbDataMapper
 	{
 		public DtoMapper(DbDataMapper mapper)
 		{
-			var properties = GetProperties(typeof(T));
-			var dbDtoInfo = DbDtoInfo.GetInfo<T>();
+			var properties = DbDtoInfo.GetInfo<T>().Properties;
 
 			var propertiesByNormalizedFieldName = new Dictionary<string, (MemberInfo Member, IDbTypeMapper Mapper)>(capacity: properties.Count, StringComparer.OrdinalIgnoreCase);
 			foreach (var property in properties)
-				propertiesByNormalizedFieldName.Add(NormalizeFieldName(dbDtoInfo.GetColumnAttributeName(property.Member.Name) ?? property.Member.Name), (property.Member, mapper.GetTypeMapper(property.ValueType)));
+				propertiesByNormalizedFieldName.Add(NormalizeFieldName(property.ColumnName ?? property.Name), (property.MemberInfo, mapper.GetTypeMapper(property.ValueType)));
 			m_propertiesByNormalizedFieldName = propertiesByNormalizedFieldName;
 		}
 
@@ -662,18 +661,6 @@ public class DbDataMapper
 			record.GetBytes(index, fieldOffset: 0, buffer: bytes, bufferoffset: 0, length: byteCount);
 			return new MemoryStream(buffer: bytes, index: 0, count: byteCount, writable: false);
 		}
-	}
-
-	internal static IReadOnlyList<(MemberInfo Member, Type ValueType)> GetProperties(Type type)
-	{
-		type = Nullable.GetUnderlyingType(type) ?? type;
-		return type.GetRuntimeProperties().Where(IsPublicNonStaticProperty).Select(x => (Member: (MemberInfo) x, ValueType: x.PropertyType))
-			.Concat(type.GetRuntimeFields().Where(IsPublicNonStaticField).Select(x => (Member: (MemberInfo) x, ValueType: x.FieldType)))
-			.ToList();
-
-		static bool IsPublicNonStaticProperty(PropertyInfo info) => info.GetMethod is not null && info.GetMethod.IsPublic && !info.GetMethod.IsStatic;
-
-		static bool IsPublicNonStaticField(FieldInfo info) => info.IsPublic && !info.IsStatic;
 	}
 
 	private static readonly ConcurrentDictionary<Type, IDbTypeMapper> s_typeMappers = new();

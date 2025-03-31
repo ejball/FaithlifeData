@@ -4,5 +4,5 @@ internal interface IDbDtoInfo
 {
 	Type Type { get; }
 
-	string? GetColumnAttributeName(string propertyName);
+	IReadOnlyList<IDbDtoProperty> Properties { get; }
 }

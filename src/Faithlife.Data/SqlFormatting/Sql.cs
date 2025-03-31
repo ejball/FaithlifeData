@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace Faithlife.Data.SqlFormatting;
@@ -374,7 +373,7 @@ public abstract class Sql
 
 		private string RenderDto(Type type, int index, SqlContext context)
 		{
-			var properties = DbDataMapper.GetProperties(type);
+			var properties = DbDtoInfo.GetInfo(type).Properties;
 			if (properties.Count == 0)
 				throw new InvalidOperationException($"The specified type has no columns: {type.FullName}");
 
@@ -386,12 +385,12 @@ public abstract class Sql
 
 			var filteredProperties = properties.AsEnumerable();
 			if (m_filter is not null)
-				filteredProperties = filteredProperties.Where(x => m_filter(x.Member.Name));
+				filteredProperties = filteredProperties.Where(x => m_filter(x.Name));
 
 			var text = string.Join(", ",
 				filteredProperties.Select(x => tablePrefix + syntax.QuoteName(
-					dbInfo.GetColumnAttributeName(x.Member.Name) ??
-					(useSnakeCase ? s_snakeCaseCache.GetOrAdd(x.Member.Name, ToSnakeCase) : x.Member.Name))));
+					x.ColumnName ??
+					(useSnakeCase ? s_snakeCaseCache.GetOrAdd(x.Name, ToSnakeCase) : x.Name))));
 			if (text.Length == 0)
 				throw new InvalidOperationException($"The specified type has no remaining columns: {type.FullName}");
 			return text;
@@ -413,27 +412,18 @@ public abstract class Sql
 		internal override string Render(SqlContext context)
 		{
 			var type = dto.GetType();
-			var properties = DbDataMapper.GetProperties(type);
+			var properties = DbDtoInfo.GetInfo(type).Properties;
 			if (properties.Count == 0)
 				throw new InvalidOperationException($"The specified type has no columns: {type.FullName}");
 
 			var filteredProperties = properties.AsEnumerable();
 			if (filter is not null)
-				filteredProperties = filteredProperties.Where(x => filter(x.Member.Name));
+				filteredProperties = filteredProperties.Where(x => filter(x.Name));
 
-			var text = string.Join(", ", filteredProperties.Select(x => context.RenderParam(key: null, value: GetPropertyValue(dto, x.Member))));
+			var text = string.Join(", ", filteredProperties.Select(x => context.RenderParam(key: null, value: x.GetValue(dto))));
 			if (text.Length == 0)
 				throw new InvalidOperationException($"The specified type has no remaining columns: {type.FullName}");
 			return text;
-
-			object? GetPropertyValue(object obj, MemberInfo member)
-			{
-				if (member is PropertyInfo property)
-					return property.GetValue(obj);
-				if (member is FieldInfo field)
-					return field.GetValue(obj);
-				throw new InvalidOperationException($"Member is not a property or field: {member.Name}");
-			}
 		}
 	}
 
@@ -445,15 +435,15 @@ public abstract class Sql
 
 		internal override string Render(SqlContext context)
 		{
-			var properties = DbDataMapper.GetProperties(m_type);
+			var properties = DbDtoInfo.GetInfo(m_type).Properties;
 			if (properties.Count == 0)
 				throw new InvalidOperationException($"The specified type has no columns: {m_type.FullName}");
 
 			var filteredProperties = properties.AsEnumerable();
 			if (m_filter is not null)
-				filteredProperties = filteredProperties.Where(x => m_filter(x.Member.Name));
+				filteredProperties = filteredProperties.Where(x => m_filter(x.Name));
 
-			var text = string.Join(", ", filteredProperties.Select(x => context.Syntax.ParameterPrefix + GetName(x.Member.Name)));
+			var text = string.Join(", ", filteredProperties.Select(x => context.Syntax.ParameterPrefix + GetName(x.Name)));
 			if (text.Length == 0)
 				throw new InvalidOperationException($"The specified type has no remaining columns: {m_type.FullName}");
 			return text;

@@ -4,12 +4,14 @@ namespace Faithlife.Data;
 
 public interface IDbDtoProperty
 {
+	MemberInfo MemberInfo { get; }
 	string Name { get; }
 	Type ValueType { get; }
-	MemberInfo MemberInfo { get; }
+	string? ColumnName { get; }
 	object? GetValue(object source);
 }
 
-public interface IDbDtoProperty<T> : IDbDtoProperty
+public interface IDbDtoProperty<in T> : IDbDtoProperty
 {
+	object? GetValue(T source);
 }

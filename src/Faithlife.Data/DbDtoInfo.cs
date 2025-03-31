@@ -21,34 +21,57 @@ internal sealed class DbDtoInfo<T> : IDbDtoInfo
 {
 	public Type Type => typeof(T);
 
-	public string? GetColumnAttributeName(string propertyName)
-	{
-		string? columnAttributeName = null;
-		m_columnAttributeNames?.TryGetValue(propertyName, out columnAttributeName);
-		return columnAttributeName;
-	}
-
 	internal static readonly DbDtoInfo<T> Instance = new();
 
 	private DbDtoInfo()
 	{
-		var properties = DbDataMapper.GetProperties(typeof(T));
-		Dictionary<string, string>? columnAttributeNames = null;
+		var properties = new List<IDbDtoProperty<T>>();
 
-		foreach (var property in properties)
+		var type = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+		foreach (var memberInfo in type.GetRuntimeProperties().Where(IsPublicNonStaticProperty).AsEnumerable<MemberInfo>().Concat(type.GetRuntimeFields().Where(IsPublicNonStaticField)))
 		{
 			// use Name of ColumnAttribute if specified (any namespace)
-			var columnName = property.Member
+			var columnName = memberInfo
 				.GetCustomAttributes()
 				.Where(x => x.GetType().Name == "ColumnAttribute")
-				.Select(x => DbDataMapper.GetProperties(x.GetType()).Select(x => x.Member).OfType<PropertyInfo>().FirstOrDefault(p => string.Equals(p.Name, "Name", StringComparison.OrdinalIgnoreCase))?.GetValue(x) as string)
+				.Select(x => x.GetType().GetRuntimeProperties().FirstOrDefault(p => string.Equals(p.Name, "Name", StringComparison.OrdinalIgnoreCase))?.GetValue(x) as string)
 				.FirstOrDefault(x => x is not null);
-			if (columnName is not null)
-				(columnAttributeNames ??= new Dictionary<string, string>()).Add(property.Member.Name, columnName);
+
+			properties.Add(new DbDtoProperty(memberInfo, columnName));
 		}
 
-		m_columnAttributeNames = columnAttributeNames;
+		properties.TrimExcess();
+		Properties = properties;
+
+		static bool IsPublicNonStaticProperty(PropertyInfo info) => info.GetMethod is { IsPublic: true, IsStatic: false };
+
+		static bool IsPublicNonStaticField(FieldInfo info) => info is { IsPublic: true, IsStatic: false };
 	}
 
-	private readonly IReadOnlyDictionary<string, string>? m_columnAttributeNames;
+	public IReadOnlyList<IDbDtoProperty<T>> Properties { get; }
+
+	IReadOnlyList<IDbDtoProperty> IDbDtoInfo.Properties => Properties;
+
+	internal sealed class DbDtoProperty : IDbDtoProperty<T>
+	{
+		public DbDtoProperty(MemberInfo memberInfo, string? columnName)
+		{
+			MemberInfo = memberInfo;
+			Name = memberInfo.Name;
+			ValueType = memberInfo is PropertyInfo propertyInfo ? propertyInfo.PropertyType : ((FieldInfo) memberInfo).FieldType;
+			ColumnName = columnName;
+		}
+
+		public MemberInfo MemberInfo { get; }
+
+		public string Name { get; }
+
+		public Type ValueType { get; }
+
+		public string? ColumnName { get; }
+
+		public object? GetValue(T source) => MemberInfo is PropertyInfo propertyInfo ? propertyInfo.GetValue(source) : ((FieldInfo) MemberInfo).GetValue(source);
+
+		object? IDbDtoProperty.GetValue(object source) => MemberInfo is PropertyInfo propertyInfo ? propertyInfo.GetValue(source) : ((FieldInfo) MemberInfo).GetValue(source);
+	}
 }
