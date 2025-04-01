@@ -388,17 +388,15 @@ internal sealed class DbConnectorTests
 		resultSets.Read<long>().Should().BeEquivalentTo([3L]);
 	}
 
-#if false
 	[Test]
 	public void BadParameterCollectionTests()
 	{
 		using var connector = CreateConnector();
 		connector.Command("create table Items (ItemId integer primary key, Name text not null);").Execute().Should().Be(0);
 		connector.Command("insert into Items (Name) values ('one'), ('two'), ('three');").Execute().Should().Be(3);
-		Invoking(() => connector.Command("select Name from Items where Name in (@names...);", ("names", Array.Empty<string>()))
+		Invoking(() => connector.Command("select Name from Items where Name in (@names...);").WithParameter("names", Array.Empty<string>())
 			.Query<string>()).Should().Throw<InvalidOperationException>();
 	}
-#endif
 
 	[Test]
 	public void CacheTests()

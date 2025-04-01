@@ -62,124 +62,51 @@ public abstract class DbParameters
 	/// Creates a list of parameters from the properties of a DTO.
 	/// </summary>
 	/// <remarks>The name of each parameter is the name of the corresponding DTO property.</remarks>
-	public static DbParameters FromDto<T>(T dto) =>
-		Create(DbDtoInfo.GetInfo<T>().Properties.Select(x => x.CreateParameter(dto, x.Name)));
-
-#if false
-	/// <summary>
-	/// Creates a list of parameters from the properties of a DTO.
-	/// </summary>
-	/// <remarks>The name of each parameter is <c>name_prop</c>, where <c>name</c> is as specified and <c>prop</c> is the
-	/// name of the corresponding DTO property.</remarks>
-	public static DbParameters FromDto(string name, object dto)
+	public static DbParameters FromDto<T>(T dto)
 	{
-		if (name is null)
-			throw new ArgumentNullException(nameof(name));
-
-		return new StandardDbParameters(DbConnectorReflection.Default.GetProperties((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Select(x => ($"{name}_{x.Name}", x.GetValue(dto))));
+		if (dto is null)
+			throw new ArgumentNullException(nameof(dto));
+		return Create(DbDtoInfo.GetInfo<T>().Properties.Select(x => x.CreateParameter(dto, x.Name)));
 	}
 
 	/// <summary>
 	/// Creates a list of parameters from the properties of a DTO.
 	/// </summary>
 	/// <remarks>The name of each parameter is determined by calling the function with the name of the corresponding DTO property.</remarks>
-	public static DbParameters FromDto(Func<string, string> name, object dto)
+	public static DbParameters FromDto<T>(Func<string, string> name, T dto)
 	{
-		if (name is null)
-			throw new ArgumentNullException(nameof(name));
-
-		return new StandardDbParameters(DbConnectorReflection.Default.GetProperties((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Select(x => (name(x.Name), x.GetValue(dto))));
+		if (dto is null)
+			throw new ArgumentNullException(nameof(dto));
+		return Create(DbDtoInfo.GetInfo<T>().Properties.Select(x => x.CreateParameter(dto, name(x.Name))));
 	}
 
 	/// <summary>
 	/// Creates a list of parameters from the properties of a DTO whose names match the specified filter.
 	/// </summary>
 	/// <remarks>The name of each parameter is the name of the corresponding DTO property.</remarks>
-	public static DbParameters FromDtoWhere(object dto, Func<string, bool> filter) =>
-		new StandardDbParameters(DbConnectorReflection.Default.GetProperties((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Where(x => filter(x.Name)).Select(x => (x.Name, x.GetValue(dto))));
-
-	/// <summary>
-	/// Creates a list of parameters from the properties of a DTO whose names match the specified filter.
-	/// </summary>
-	/// <remarks>The name of each parameter is <c>name_prop</c>, where <c>name</c> is as specified and <c>prop</c> is the
-	/// name of the corresponding DTO property.</remarks>
-	public static DbParameters FromDtoWhere(string name, object dto, Func<string, bool> filter)
+	public static DbParameters FromDtoWhere<T>(T dto, Func<string, bool> filter)
 	{
-		if (name is null)
-			throw new ArgumentNullException(nameof(name));
-
-		return new StandardDbParameters(DbConnectorReflection.Default.GetProperties((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Where(x => filter(x.Name)).Select(x => ($"{name}_{x.Name}", x.GetValue(dto))));
+		if (dto is null)
+			throw new ArgumentNullException(nameof(dto));
+		if (filter is null)
+			throw new ArgumentNullException(nameof(filter));
+		return Create(DbDtoInfo.GetInfo<T>().Properties.Where(x => filter(x.Name)).Select(x => x.CreateParameter(dto, x.Name)));
 	}
 
 	/// <summary>
 	/// Creates a list of parameters from the properties of a DTO whose names match the specified filter.
 	/// </summary>
 	/// <remarks>The name of each parameter is determined by calling the function with the name of the corresponding DTO property.</remarks>
-	public static DbParameters FromDtoWhere(Func<string, string> name, object dto, Func<string, bool> filter)
+	public static DbParameters FromDtoWhere<T>(Func<string, string> name, T dto, Func<string, bool> filter)
 	{
 		if (name is null)
 			throw new ArgumentNullException(nameof(name));
-
-		return new StandardDbParameters(DbConnectorReflection.Default.GetProperties((dto ?? throw new ArgumentNullException(nameof(dto))).GetType()).Where(x => filter(x.Name)).Select(x => (name(x.Name), x.GetValue(dto))));
+		if (dto is null)
+			throw new ArgumentNullException(nameof(dto));
+		if (filter is null)
+			throw new ArgumentNullException(nameof(filter));
+		return Create(DbDtoInfo.GetInfo<T>().Properties.Where(x => filter(x.Name)).Select(x => x.CreateParameter(dto, name(x.Name))));
 	}
-
-	/// <summary>
-	/// Creates a list of parameters from the collective properties of a sequence of DTOs.
-	/// </summary>
-	/// <remarks>The name of each parameter is <c>prop_index</c>, where <c>prop</c> is the name of the corresponding DTO property
-	/// and <c>index</c> is the zero-based index of the DTO.</remarks>
-	public static DbParameters FromDtos(IEnumerable dtos)
-	{
-		var index = 0;
-		var parameters = new List<(string, object?)>();
-		foreach (var dto in dtos ?? throw new ArgumentNullException(nameof(dtos)))
-		{
-			parameters.AddRange(DbConnectorReflection.Default.GetProperties((dto ?? throw new ArgumentException("DTO is null.", nameof(dtos))).GetType()).Select(x => ($"{x.Name}_{index}", x.GetValue(dto))));
-			index++;
-		}
-		return new StandardDbParameters(parameters);
-	}
-
-	/// <summary>
-	/// Creates a list of parameters from the collective properties of a sequence of DTOs.
-	/// </summary>
-	/// <remarks>The name of each parameter is <c>name_prop_index</c>, where <c>name</c> is as specified and <c>prop</c> is the name
-	/// of the corresponding DTO property and <c>index</c> is the zero-based index of the DTO.</remarks>
-	public static DbParameters FromDtos(string name, IEnumerable dtos)
-	{
-		if (name is null)
-			throw new ArgumentNullException(nameof(name));
-
-		var index = 0;
-		var parameters = new List<(string, object?)>();
-		foreach (var dto in dtos ?? throw new ArgumentNullException(nameof(dtos)))
-		{
-			parameters.AddRange(DbConnectorReflection.Default.GetProperties((dto ?? throw new ArgumentException("DTO is null.", nameof(dtos))).GetType()).Select(x => ($"{name}_{x.Name}_{index}", x.GetValue(dto))));
-			index++;
-		}
-		return new StandardDbParameters(parameters);
-	}
-
-	/// <summary>
-	/// Creates a list of parameters from the collective properties of a sequence of DTOs.
-	/// </summary>
-	/// <remarks>The name of each parameter is determined by calling the specified function with the name of the corresponding DTO property
-	/// and the zero-based index of the DTO.</remarks>
-	public static DbParameters FromDtos(Func<string, int, string> name, IEnumerable dtos)
-	{
-		if (name is null)
-			throw new ArgumentNullException(nameof(name));
-
-		var index = 0;
-		var parameters = new List<(string, object?)>();
-		foreach (var dto in dtos ?? throw new ArgumentNullException(nameof(dtos)))
-		{
-			parameters.AddRange(DbConnectorReflection.Default.GetProperties((dto ?? throw new ArgumentException("DTO is null.", nameof(dtos))).GetType()).Select(x => (name(x.Name, index), x.GetValue(dto))));
-			index++;
-		}
-		return new StandardDbParameters(parameters);
-	}
-#endif
 
 	private sealed class EmptyDbParameters : DbParameters
 	{

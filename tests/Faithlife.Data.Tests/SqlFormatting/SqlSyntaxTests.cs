@@ -220,14 +220,14 @@ internal sealed class SqlSyntaxTests
 		parameters.Enumerate().Should().Equal(("ado0", id), ("ado1", name), ("ado2", desc), ("ado3", name));
 	}
 
-#if false
 	[Test]
 	public void FormatBadFormat()
 	{
+#if NETSTANDARD2_0
 		var tableName = "widgets";
 		Invoking(() => Render(Sql.Format($"select * from {tableName:xyzzy}"))).Should().Throw<FormatException>();
-	}
 #endif
+	}
 
 	[Test]
 	public void JoinParams()
