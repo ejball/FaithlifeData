@@ -39,33 +39,15 @@ public abstract class Sql
 	/// Returns a comma-delimited list of column names for a DTO of the specified type.
 	/// </summary>
 	/// <remarks>This overload is used with SELECT statements when the table name (or alias)
-	/// needs to be specified with each column name. If a tuple of DTOs is specified, a NULL column
-	/// will separate the DTOs.</remarks>
+	/// needs to be specified with each column name.</remarks>
 	public static Sql ColumnNames<T>(string tableName) => new ColumnNamesSql(typeof(T), tableName);
 
 	/// <summary>
 	/// Returns a comma-delimited list of column names for a DTO of the specified type.
 	/// </summary>
 	/// <remarks>This overload is used with SELECT statements when the table name (or alias)
-	/// needs to be specified with each column name. If a tuple of DTOs is specified, a NULL column
-	/// will separate the DTOs.</remarks>
+	/// needs to be specified with each column name.</remarks>
 	public static Sql ColumnNames(Type type, string tableName) => new ColumnNamesSql(type ?? throw new ArgumentNullException(nameof(type)), tableName);
-
-	/// <summary>
-	/// Returns a comma-delimited list of column names for a DTO of the specified type.
-	/// </summary>
-	/// <remarks>This overload is used with SELECT statements when the table name (or alias)
-	/// needs to be specified with each column name. If a tuple of DTOs is specified, a NULL column
-	/// will separate the DTOs.</remarks>
-	public static Sql ColumnNames<T>(params IEnumerable<string> tableNames) => new ColumnNamesSql(typeof(T), AsReadOnlyList(tableNames));
-
-	/// <summary>
-	/// Returns a comma-delimited list of column names for a DTO of the specified type.
-	/// </summary>
-	/// <remarks>This overload is used with SELECT statements when the table name (or alias)
-	/// needs to be specified with each column name. If a tuple of DTOs is specified, a NULL column
-	/// will separate the DTOs.</remarks>
-	public static Sql ColumnNames(Type type, params IEnumerable<string> tableNames) => new ColumnNamesSql(type ?? throw new ArgumentNullException(nameof(type)), AsReadOnlyList(tableNames));
 
 	/// <summary>
 	/// Returns a comma-delimited list of column names for a DTO of the specified type
@@ -84,8 +66,7 @@ public abstract class Sql
 	/// for the properties whose names match the specified filter.
 	/// </summary>
 	/// <remarks>This overload is used with SELECT statements when the table name (or alias)
-	/// needs to be specified with each column name. If a tuple of DTOs is specified, a NULL column
-	/// will separate the DTOs.</remarks>
+	/// needs to be specified with each column name.</remarks>
 	public static Sql ColumnNamesWhere<T>(Func<string, bool> filter, string tableName) => new ColumnNamesSql(typeof(T), tableName, filter);
 
 	/// <summary>
@@ -93,27 +74,8 @@ public abstract class Sql
 	/// for the properties whose names match the specified filter.
 	/// </summary>
 	/// <remarks>This overload is used with SELECT statements when the table name (or alias)
-	/// needs to be specified with each column name. If a tuple of DTOs is specified, a NULL column
-	/// will separate the DTOs.</remarks>
+	/// needs to be specified with each column name.</remarks>
 	public static Sql ColumnNamesWhere(Type type, Func<string, bool> filter, string tableName) => new ColumnNamesSql(type ?? throw new ArgumentNullException(nameof(type)), tableName, filter);
-
-	/// <summary>
-	/// Returns a comma-delimited list of column names for a DTO of the specified type
-	/// for the properties whose names match the specified filter.
-	/// </summary>
-	/// <remarks>This overload is used with SELECT statements when the table name (or alias)
-	/// needs to be specified with each column name. If a tuple of DTOs is specified, a NULL column
-	/// will separate the DTOs.</remarks>
-	public static Sql ColumnNamesWhere<T>(Func<string, bool> filter, params IEnumerable<string> tableNames) => new ColumnNamesSql(typeof(T), AsReadOnlyList(tableNames), filter);
-
-	/// <summary>
-	/// Returns a comma-delimited list of column names for a DTO of the specified type
-	/// for the properties whose names match the specified filter.
-	/// </summary>
-	/// <remarks>This overload is used with SELECT statements when the table name (or alias)
-	/// needs to be specified with each column name. If a tuple of DTOs is specified, a NULL column
-	/// will separate the DTOs.</remarks>
-	public static Sql ColumnNamesWhere(Type type, Func<string, bool> filter, params IEnumerable<string> tableNames) => new ColumnNamesSql(type ?? throw new ArgumentNullException(nameof(type)), AsReadOnlyList(tableNames), filter);
 
 	/// <summary>
 	/// Returns a comma-delimited list of arbitrarily-named parameters for the column values of the specified DTO.
@@ -276,6 +238,16 @@ public abstract class Sql
 	}
 
 	/// <summary>
+	/// Creates SQL for a named parameter with the specified value.
+	/// </summary>
+	public static Sql Param<T>(string name, T value)
+	{
+		if (value is Sql)
+			throw new ArgumentException("Param may not be used with Sql instances.", nameof(value));
+		return new NamedParamSql<T>(name, value);
+	}
+
+	/// <summary>
 	/// Creates SQL for a comma-delimted list of arbitrarily-named parameters with the specified values.
 	/// </summary>
 	/// <remarks>Empty SQL fragments are ignored. Since it would otherwise result in a confusing SQL syntax error, an <see cref="InvalidOperationException" />
@@ -407,7 +379,7 @@ public abstract class Sql
 			if (filter is not null)
 				filteredProperties = filteredProperties.Where(x => filter(x.Name));
 
-			var text = string.Join(", ", filteredProperties.Select(x => context.RenderParam(key: null, value: x.GetValue(dto))));
+			var text = string.Join(", ", filteredProperties.Select(x => context.RenderParameter(key: null, value: x.GetValue(dto))));
 			if (text.Length == 0)
 				throw new InvalidOperationException($"The specified type has no remaining columns: {type.FullName}");
 			return text;
@@ -463,7 +435,7 @@ public abstract class Sql
 
 	private sealed class LikePrefixParamSql(string prefix) : Sql
 	{
-		internal override string Render(SqlContext context) => context.RenderParam(key: this, value: context.Syntax.EscapeLikeFragment(prefix) + "%");
+		internal override string Render(SqlContext context) => context.RenderParameter(key: this, value: context.Syntax.EscapeLikeFragment(prefix) + "%");
 	}
 
 	private sealed class NameSql(string identifier) : Sql
@@ -482,7 +454,16 @@ public abstract class Sql
 
 	private sealed class ParamSql<T>(T value) : Sql
 	{
-		internal override string Render(SqlContext context) => context.RenderParam(key: this, value: value);
+		internal override string Render(SqlContext context) => context.RenderParameter(key: this, value: value);
+	}
+
+	private sealed class NamedParamSql<T>(string name, T value) : Sql
+	{
+		internal override string Render(SqlContext context)
+		{
+			context.AddParameters(DbParameters.Create(name, value));
+			return context.Syntax.ParameterStart + name;
+		}
 	}
 
 	private sealed class RawSql(string text) : Sql

@@ -13,7 +13,9 @@ internal sealed class SqlContext
 
 	public DbParameters Parameters => m_parametersList ?? DbParameters.Empty;
 
-	public string RenderParam<T>(object? key, T value)
+	public void AddParameters(DbParameters parameters) => (m_parametersList ??= new()).Add(parameters);
+
+	public string RenderParameter<T>(object? key, T value)
 	{
 		if (key is not null && m_renderedParams is not null && m_renderedParams.TryGetValue(key, out var rendered))
 			return rendered;
