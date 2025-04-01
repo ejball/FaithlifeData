@@ -53,13 +53,13 @@ public abstract class Sql
 	/// Returns a comma-delimited list of column names for a DTO of the specified type
 	/// for the properties whose names match the specified filter.
 	/// </summary>
-	public static Sql ColumnNamesWhere<T>(Func<string, bool> filter) => new ColumnNamesSql(typeof(T), filter);
+	public static Sql ColumnNamesWhere<T>(Func<string, bool> filter) => new ColumnNamesSql(typeof(T), filter: filter);
 
 	/// <summary>
 	/// Returns a comma-delimited list of column names for a DTO of the specified type
 	/// for the properties whose names match the specified filter.
 	/// </summary>
-	public static Sql ColumnNamesWhere(Type type, Func<string, bool> filter) => new ColumnNamesSql(type ?? throw new ArgumentNullException(nameof(type)), filter);
+	public static Sql ColumnNamesWhere(Type type, Func<string, bool> filter) => new ColumnNamesSql(type ?? throw new ArgumentNullException(nameof(type)), filter: filter);
 
 	/// <summary>
 	/// Returns a comma-delimited list of column names for a DTO of the specified type
@@ -316,30 +316,16 @@ public abstract class Sql
 
 	private sealed class ColumnNamesSql : Sql
 	{
-		public ColumnNamesSql(Type type, Func<string, bool>? filter = null) => (m_type, m_filter) = (type, filter);
-		public ColumnNamesSql(Type type, string? tableName, Func<string, bool>? filter = null) => (m_type, m_tableName, m_filter) = (type, tableName, filter);
-		public ColumnNamesSql(Type type, IReadOnlyList<string> tableNames, Func<string, bool>? filter = null) => (m_type, m_tableNames, m_filter) = (type, tableNames, filter);
+		public ColumnNamesSql(Type type, string tableName = "", Func<string, bool>? filter = null) => (m_type, m_tableName, m_filter) = (type, tableName, filter);
 
 		internal override string Render(SqlContext context)
 		{
-			////if (context.Reflection.IsTupleType(m_type))
-			////	return string.Join(", NULL, ", context.Reflection.GetTupleItemTypes(m_type).Select((x, i) => RenderDto(x, i, context)));
-
-			return RenderDto(m_type, 0, context);
-		}
-
-		private string GetTableName(int index) =>
-			(m_tableNames is not null ? m_tableNames.ElementAtOrDefault(index) : index == 0 ? m_tableName : null) ?? "";
-
-		private string RenderDto(Type type, int index, SqlContext context)
-		{
-			var properties = DbDtoInfo.GetInfo(type).Properties;
+			var properties = DbDtoInfo.GetInfo(m_type).Properties;
 			if (properties.Count == 0)
-				throw new InvalidOperationException($"The specified type has no columns: {type.FullName}");
+				throw new InvalidOperationException($"The specified type has no columns: {m_type.FullName}");
 
 			var syntax = context.Syntax;
-			var tableName = GetTableName(index);
-			var tablePrefix = tableName.Length == 0 ? "" : syntax.QuoteName(tableName) + ".";
+			var tablePrefix = m_tableName.Length == 0 ? "" : syntax.QuoteName(m_tableName) + ".";
 			var useSnakeCase = syntax.SnakeCaseColumnNames;
 
 			var filteredProperties = properties.AsEnumerable();
@@ -351,7 +337,7 @@ public abstract class Sql
 					x.ColumnName ??
 					(useSnakeCase ? s_snakeCaseCache.GetOrAdd(x.Name, ToSnakeCase) : x.Name))));
 			if (text.Length == 0)
-				throw new InvalidOperationException($"The specified type has no remaining columns: {type.FullName}");
+				throw new InvalidOperationException($"The specified type has no remaining columns: {m_type.FullName}");
 			return text;
 		}
 
@@ -361,8 +347,7 @@ public abstract class Sql
 		private static readonly ConcurrentDictionary<string, string> s_snakeCaseCache = new();
 
 		private readonly Type m_type;
-		private readonly string? m_tableName;
-		private readonly IReadOnlyList<string>? m_tableNames;
+		private readonly string m_tableName;
 		private readonly Func<string, bool>? m_filter;
 	}
 
