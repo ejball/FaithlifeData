@@ -34,6 +34,25 @@ internal sealed class SqlContext
 		return rendered;
 	}
 
+	public string RenderParameter<T>(object? key, T source, IDbDtoProperty<T> property)
+	{
+		if (key is not null && m_renderedParams is not null && m_renderedParams.TryGetValue(key, out var rendered))
+			return rendered;
+
+		m_parametersList ??= new();
+		var name = Invariant($"{Syntax.UnnamedParameterPrefix}{m_parametersList.Count}");
+		m_parametersList.Add(property.CreateParameter(source, name));
+		rendered = Syntax.ParameterStart + name;
+
+		if (key is not null)
+		{
+			m_renderedParams ??= new();
+			m_renderedParams.Add(key, rendered);
+		}
+
+		return rendered;
+	}
+
 	private DbParametersList? m_parametersList;
 	private Dictionary<object, string>? m_renderedParams;
 }

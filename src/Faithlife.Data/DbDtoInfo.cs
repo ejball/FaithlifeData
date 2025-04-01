@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
@@ -7,20 +6,11 @@ namespace Faithlife.Data;
 internal static class DbDtoInfo
 {
 	public static DbDtoInfo<T> GetInfo<T>() => DbDtoInfo<T>.Instance;
-
-	public static IDbDtoInfo GetInfo(Type type) => s_infos.GetOrAdd(type, CreateInfo);
-
-	private static IDbDtoInfo CreateInfo(Type type) =>
-		(IDbDtoInfo) typeof(DbDtoInfo<>).MakeGenericType(type).GetTypeInfo().GetDeclaredField("Instance")!.GetValue(null)!;
-
-	private static readonly ConcurrentDictionary<Type, IDbDtoInfo> s_infos = new();
 }
 
 [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1402:File may only contain a single type", Justification = "Both types have the same name.")]
-internal sealed class DbDtoInfo<T> : IDbDtoInfo
+internal sealed class DbDtoInfo<T>
 {
-	public Type Type => typeof(T);
-
 	internal static readonly DbDtoInfo<T> Instance = new();
 
 	private DbDtoInfo()
@@ -50,8 +40,6 @@ internal sealed class DbDtoInfo<T> : IDbDtoInfo
 
 	public IReadOnlyList<IDbDtoProperty<T>> Properties { get; }
 
-	IReadOnlyList<IDbDtoProperty> IDbDtoInfo.Properties => Properties;
-
 	internal sealed class DbDtoProperty : IDbDtoProperty<T>
 	{
 		public DbDtoProperty(MemberInfo memberInfo, string? columnName)
@@ -70,8 +58,8 @@ internal sealed class DbDtoInfo<T> : IDbDtoInfo
 
 		public string? ColumnName { get; }
 
-		public object? GetValue(T source) => MemberInfo is PropertyInfo propertyInfo ? propertyInfo.GetValue(source) : ((FieldInfo) MemberInfo).GetValue(source);
+		public DbParameters CreateParameter(T source, string name) => DbParameters.Create(name, GetValue(source));
 
-		object? IDbDtoProperty.GetValue(object source) => MemberInfo is PropertyInfo propertyInfo ? propertyInfo.GetValue(source) : ((FieldInfo) MemberInfo).GetValue(source);
+		private object? GetValue(T source) => MemberInfo is PropertyInfo propertyInfo ? propertyInfo.GetValue(source) : ((FieldInfo) MemberInfo).GetValue(source);
 	}
 }

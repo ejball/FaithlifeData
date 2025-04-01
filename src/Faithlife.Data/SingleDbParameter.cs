@@ -2,7 +2,7 @@ using System.Data;
 
 namespace Faithlife.Data;
 
-internal sealed class OneDbParameter<T>(string name, T value) : DbParameters
+internal sealed class SingleDbParameter<T>(string name, T value) : DbParameters
 {
 	public override int Count => 1;
 

@@ -8,12 +8,24 @@ namespace Faithlife.Data;
 /// </summary>
 public abstract class DbParameters
 {
+	/// <summary>
+	/// The number of parameters.
+	/// </summary>
 	public abstract int Count { get; }
 
+	/// <summary>
+	/// Applies the parameters to the specified command.
+	/// </summary>
 	public abstract void Apply(IDbCommand command, DbProviderMethods providerMethods);
 
+	/// <summary>
+	/// Reapplies the parameters to the specified command.
+	/// </summary>
 	public abstract void Reapply(IDbCommand command, int startIndex, DbProviderMethods providerMethods);
 
+	/// <summary>
+	/// Enumerates the names and values of the parameters.
+	/// </summary>
 	public abstract IEnumerable<(string Name, object? Value)> Enumerate();
 
 	/// <summary>
@@ -23,76 +35,35 @@ public abstract class DbParameters
 	public static readonly DbParameters Empty = new EmptyDbParameters();
 
 	/// <summary>
-	/// Creates a list of parameters with one parameter.
+	/// Creates one parameter.
 	/// </summary>
 	public static DbParameters Create<T>(string name, T value) =>
-		new OneDbParameter<T>(name, value);
-
-	/////// <summary>
-	/////// Creates a list of parameters from tuples.
-	/////// </summary>
-	////public static DbParameters Create(params IEnumerable<(string Name, object? Value)> parameters) =>
-	////	Create<object?>(parameters ?? throw new ArgumentNullException(nameof(parameters)));
-
-	/////// <summary>
-	/////// Creates a list of parameters from a sequence of tuples.
-	/////// </summary>
-	////public static DbParameters Create(IEnumerable<(string Name, object? Value)> parameters) =>
-	////	new DbParametersList((parameters ?? throw new ArgumentNullException(nameof(parameters))).Select(x => DbParameters.Create(x.Name, x.Value)));
+		new SingleDbParameter<T>(name, value);
 
 	/// <summary>
-	/// Creates a list of parameters from a sequence of tuples.
+	/// Creates parameters from a sequence of parameters.
+	/// </summary>
+	public static DbParameters Create(params IEnumerable<DbParameters> parameters) =>
+		new DbParametersList(parameters ?? throw new ArgumentNullException(nameof(parameters))) { IsReadOnly = true };
+
+	/// <summary>
+	/// Creates parameters from a sequence of name/value pairs.
 	/// </summary>
 	public static DbParameters Create<T>(params IEnumerable<(string Name, T Value)> parameters) =>
-		new DbParametersList((parameters ?? throw new ArgumentNullException(nameof(parameters))).Select(x => Create(x.Name, x.Value)));
+		Create((parameters ?? throw new ArgumentNullException(nameof(parameters))).Select(x => Create(x.Name, x.Value)));
 
 	/// <summary>
-	/// Creates a list of parameters from a dictionary.
+	/// Creates parameters from a dictionary.
 	/// </summary>
 	public static DbParameters Create<T>(IEnumerable<KeyValuePair<string, T>> parameters) =>
-		Create((parameters ?? throw new ArgumentNullException(nameof(parameters))).Select(x => (x.Key, x.Value)));
-
-#if false
-	/// <summary>
-	/// Creates a list of parameters from a single name and a collection of values.
-	/// </summary>
-	/// <remarks>The name of each parameter is <c>name_index</c>, where <c>name</c> is as specified and <c>index</c>
-	/// is the zero-based index of the value.</remarks>
-	public static DbParameters FromMany(string name, IEnumerable values)
-	{
-		if (name is null)
-			throw new ArgumentNullException(nameof(name));
-
-		var index = 0;
-		var parameters = new List<(string, object?)>();
-		foreach (var value in values ?? throw new ArgumentNullException(nameof(values)))
-			parameters.Add(($"{name}_{index++}", value));
-		return new StandardDbParameters(parameters);
-	}
-
-	/// <summary>
-	/// Creates a list of parameters from a collection of values.
-	/// </summary>
-	/// <remarks>The name of each parameter is determined by calling the specified function with the zero-based index of the value.</remarks>
-	public static DbParameters FromMany(Func<int, string> name, IEnumerable values)
-	{
-		if (name is null)
-			throw new ArgumentNullException(nameof(name));
-
-		var index = 0;
-		var parameters = new List<(string, object?)>();
-		foreach (var value in values ?? throw new ArgumentNullException(nameof(values)))
-			parameters.Add((name(index++), value));
-		return new StandardDbParameters(parameters);
-	}
-#endif
+		Create((parameters ?? throw new ArgumentNullException(nameof(parameters))).Select(x => Create(x.Key, x.Value)));
 
 	/// <summary>
 	/// Creates a list of parameters from the properties of a DTO.
 	/// </summary>
 	/// <remarks>The name of each parameter is the name of the corresponding DTO property.</remarks>
-	public static DbParameters FromDto(object dto) =>
-		new DbParametersList(DbDtoInfo.GetInfo(dto.GetType()).Properties.Select(x => Create(x.Name, x.GetValue(dto))));
+	public static DbParameters FromDto<T>(T dto) =>
+		Create(DbDtoInfo.GetInfo<T>().Properties.Select(x => x.CreateParameter(dto, x.Name)));
 
 #if false
 	/// <summary>

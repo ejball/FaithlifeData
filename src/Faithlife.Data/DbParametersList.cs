@@ -3,14 +3,21 @@ using System.Data;
 namespace Faithlife.Data;
 
 /// <summary>
-/// A list of parameters.
+/// A list of sets of parameters.
 /// </summary>
 public sealed class DbParametersList : DbParameters
 {
+	/// <summary>
+	/// Creates an empty list.
+	/// </summary>
 	public DbParametersList() => m_parametersList = [];
 
-	public DbParametersList(params IEnumerable<DbParameters> parametersList) => m_parametersList = [.. parametersList];
+	/// <summary>
+	/// Creates a list from the specified sets of parameters.
+	/// </summary>
+	public DbParametersList(params IEnumerable<DbParameters> items) => m_parametersList = [.. items];
 
+	/// <inheritdoc />
 	public override int Count => m_parametersList.Sum(x => x.Count);
 
 	public bool IsReadOnly

@@ -28,38 +28,20 @@ public abstract class Sql
 	/// <summary>
 	/// Returns a comma-delimited list of column names for a DTO of the specified type.
 	/// </summary>
-	public static Sql ColumnNames<T>() => new ColumnNamesSql(typeof(T));
-
-	/// <summary>
-	/// Returns a comma-delimited list of column names for a DTO of the specified type.
-	/// </summary>
-	public static Sql ColumnNames(Type type) => new ColumnNamesSql(type ?? throw new ArgumentNullException(nameof(type)));
+	public static Sql ColumnNames<T>() => new ColumnNamesSql<T>();
 
 	/// <summary>
 	/// Returns a comma-delimited list of column names for a DTO of the specified type.
 	/// </summary>
 	/// <remarks>This overload is used with SELECT statements when the table name (or alias)
 	/// needs to be specified with each column name.</remarks>
-	public static Sql ColumnNames<T>(string tableName) => new ColumnNamesSql(typeof(T), tableName);
-
-	/// <summary>
-	/// Returns a comma-delimited list of column names for a DTO of the specified type.
-	/// </summary>
-	/// <remarks>This overload is used with SELECT statements when the table name (or alias)
-	/// needs to be specified with each column name.</remarks>
-	public static Sql ColumnNames(Type type, string tableName) => new ColumnNamesSql(type ?? throw new ArgumentNullException(nameof(type)), tableName);
+	public static Sql ColumnNames<T>(string tableName) => new ColumnNamesSql<T>(tableName);
 
 	/// <summary>
 	/// Returns a comma-delimited list of column names for a DTO of the specified type
 	/// for the properties whose names match the specified filter.
 	/// </summary>
-	public static Sql ColumnNamesWhere<T>(Func<string, bool> filter) => new ColumnNamesSql(typeof(T), filter: filter);
-
-	/// <summary>
-	/// Returns a comma-delimited list of column names for a DTO of the specified type
-	/// for the properties whose names match the specified filter.
-	/// </summary>
-	public static Sql ColumnNamesWhere(Type type, Func<string, bool> filter) => new ColumnNamesSql(type ?? throw new ArgumentNullException(nameof(type)), filter: filter);
+	public static Sql ColumnNamesWhere<T>(Func<string, bool> filter) => new ColumnNamesSql<T>(filter: filter);
 
 	/// <summary>
 	/// Returns a comma-delimited list of column names for a DTO of the specified type
@@ -67,15 +49,7 @@ public abstract class Sql
 	/// </summary>
 	/// <remarks>This overload is used with SELECT statements when the table name (or alias)
 	/// needs to be specified with each column name.</remarks>
-	public static Sql ColumnNamesWhere<T>(Func<string, bool> filter, string tableName) => new ColumnNamesSql(typeof(T), tableName, filter);
-
-	/// <summary>
-	/// Returns a comma-delimited list of column names for a DTO of the specified type
-	/// for the properties whose names match the specified filter.
-	/// </summary>
-	/// <remarks>This overload is used with SELECT statements when the table name (or alias)
-	/// needs to be specified with each column name.</remarks>
-	public static Sql ColumnNamesWhere(Type type, Func<string, bool> filter, string tableName) => new ColumnNamesSql(type ?? throw new ArgumentNullException(nameof(type)), tableName, filter);
+	public static Sql ColumnNamesWhere<T>(Func<string, bool> filter, string tableName) => new ColumnNamesSql<T>(tableName, filter);
 
 	/// <summary>
 	/// Returns a comma-delimited list of arbitrarily-named parameters for the column values of the specified DTO.
@@ -99,82 +73,40 @@ public abstract class Sql
 	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO.
 	/// </summary>
 	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
-	public static Sql DtoParamNames<T>() => DtoParamNames(typeof(T));
+	public static Sql DtoParamNames<T>() => new DtoParamNamesSql<T>();
 
 	/// <summary>
 	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO.
 	/// </summary>
 	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
-	public static Sql DtoParamNames(Type type) => new DtoParamNamesSql(type ?? throw new ArgumentNullException(nameof(type)));
+	public static Sql DtoParamNames<T>(string name) => new DtoParamNamesSql<T>(name: name);
 
 	/// <summary>
 	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO.
 	/// </summary>
 	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
-	public static Sql DtoParamNames<T>(string name) => DtoParamNames(typeof(T), name);
-
-	/// <summary>
-	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO.
-	/// </summary>
-	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
-	public static Sql DtoParamNames(Type type, string name) => new DtoParamNamesSql(type ?? throw new ArgumentNullException(nameof(type)), name ?? throw new ArgumentNullException(nameof(name)));
-
-	/// <summary>
-	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO.
-	/// </summary>
-	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
-	public static Sql DtoParamNames<T>(Func<string, string> name) => DtoParamNames(typeof(T), name);
-
-	/// <summary>
-	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO.
-	/// </summary>
-	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
-	public static Sql DtoParamNames(Type type, Func<string, string> name) => new DtoParamNamesSql(type ?? throw new ArgumentNullException(nameof(type)), name ?? throw new ArgumentNullException(nameof(name)));
+	public static Sql DtoParamNames<T>(Func<string, string> name) => new DtoParamNamesSql<T>(getName: name);
 
 	/// <summary>
 	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO
 	/// whose names match the specified filter.
 	/// </summary>
 	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
-	public static Sql DtoParamNamesWhere<T>(Func<string, bool> filter) => DtoParamNamesWhere(typeof(T), filter);
+	public static Sql DtoParamNamesWhere<T>(Func<string, bool> filter) => new DtoParamNamesSql<T>(filter: filter);
 
 	/// <summary>
 	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO
 	/// whose names match the specified filter.
 	/// </summary>
 	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
-	public static Sql DtoParamNamesWhere(Type type, Func<string, bool> filter) =>
-		new DtoParamNamesSql(type ?? throw new ArgumentNullException(nameof(type)), filter ?? throw new ArgumentNullException(nameof(filter)));
+	public static Sql DtoParamNamesWhere<T>(string name, Func<string, bool> filter) => new DtoParamNamesSql<T>(name: name, filter: filter);
 
 	/// <summary>
 	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO
 	/// whose names match the specified filter.
 	/// </summary>
 	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
-	public static Sql DtoParamNamesWhere<T>(string name, Func<string, bool> filter) => DtoParamNamesWhere(typeof(T), name, filter);
-
-	/// <summary>
-	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO
-	/// whose names match the specified filter.
-	/// </summary>
-	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
-	public static Sql DtoParamNamesWhere(Type type, string name, Func<string, bool> filter) =>
-		new DtoParamNamesSql(type ?? throw new ArgumentNullException(nameof(type)), name ?? throw new ArgumentNullException(nameof(name)), filter ?? throw new ArgumentNullException(nameof(filter)));
-
-	/// <summary>
-	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO
-	/// whose names match the specified filter.
-	/// </summary>
-	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
-	public static Sql DtoParamNamesWhere<T>(Func<string, string> name, Func<string, bool> filter) => DtoParamNamesWhere(typeof(T), name, filter);
-
-	/// <summary>
-	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO
-	/// whose names match the specified filter.
-	/// </summary>
-	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
-	public static Sql DtoParamNamesWhere(Type type, Func<string, string> name, Func<string, bool> filter) =>
-		new DtoParamNamesSql(type ?? throw new ArgumentNullException(nameof(type)), name ?? throw new ArgumentNullException(nameof(name)), filter ?? throw new ArgumentNullException(nameof(filter)));
+	public static Sql DtoParamNamesWhere<T>(Func<string, string> name, Func<string, bool> filter) => new DtoParamNamesSql<T>(getName: name, filter: filter);
 
 	/// <summary>
 	/// Creates SQL from a formatted string.
@@ -314,15 +246,19 @@ public abstract class Sql
 		}
 	}
 
-	private sealed class ColumnNamesSql : Sql
+	private sealed class ColumnNamesSql<T> : Sql
 	{
-		public ColumnNamesSql(Type type, string tableName = "", Func<string, bool>? filter = null) => (m_type, m_tableName, m_filter) = (type, tableName, filter);
+		public ColumnNamesSql(string tableName = "", Func<string, bool>? filter = null)
+		{
+			m_tableName = tableName;
+			m_filter = filter;
+		}
 
 		internal override string Render(SqlContext context)
 		{
-			var properties = DbDtoInfo.GetInfo(m_type).Properties;
+			var properties = DbDtoInfo.GetInfo<T>().Properties;
 			if (properties.Count == 0)
-				throw new InvalidOperationException($"The specified type has no columns: {m_type.FullName}");
+				throw new InvalidOperationException($"The specified type has no columns: {typeof(T).FullName}");
 
 			var syntax = context.Syntax;
 			var tablePrefix = m_tableName.Length == 0 ? "" : syntax.QuoteName(m_tableName) + ".";
@@ -337,16 +273,14 @@ public abstract class Sql
 					x.ColumnName ??
 					(useSnakeCase ? s_snakeCaseCache.GetOrAdd(x.Name, ToSnakeCase) : x.Name))));
 			if (text.Length == 0)
-				throw new InvalidOperationException($"The specified type has no remaining columns: {m_type.FullName}");
+				throw new InvalidOperationException($"The specified type has no remaining columns: {typeof(T).FullName}");
 			return text;
 		}
 
 		private static string ToSnakeCase(string value) => string.Join("_", s_word.Matches(value).Cast<Match>().Select(x => x.Value.ToLowerInvariant()));
 
 		private static readonly Regex s_word = new Regex("[A-Z]([A-Z]*(?![a-z])|[a-z]*)|[a-z]+|[0-9]+", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture);
-		private static readonly ConcurrentDictionary<string, string> s_snakeCaseCache = new();
 
-		private readonly Type m_type;
 		private readonly string m_tableName;
 		private readonly Func<string, bool>? m_filter;
 	}
@@ -363,24 +297,27 @@ public abstract class Sql
 			if (filter is not null)
 				filteredProperties = filteredProperties.Where(x => filter(x.Name));
 
-			var text = string.Join(", ", filteredProperties.Select(x => context.RenderParameter(key: null, value: x.GetValue(dto))));
+			var text = string.Join(", ", filteredProperties.Select(x => context.RenderParameter(key: null, source: dto, property: x)));
 			if (text.Length == 0)
 				throw new InvalidOperationException($"The specified type has no remaining columns: {typeof(T).FullName}");
 			return text;
 		}
 	}
 
-	private sealed class DtoParamNamesSql : Sql
+	private sealed class DtoParamNamesSql<T> : Sql
 	{
-		public DtoParamNamesSql(Type type, Func<string, bool>? filter = null) => (m_type, m_filter) = (type, filter);
-		public DtoParamNamesSql(Type type, string name, Func<string, bool>? filter = null) => (m_type, m_name, m_filter) = (type, name, filter);
-		public DtoParamNamesSql(Type type, Func<string, string> name, Func<string, bool>? filter = null) => (m_type, m_getName, m_filter) = (type, name, filter);
+		public DtoParamNamesSql(string? name = null, Func<string, string>? getName = null, Func<string, bool>? filter = null)
+		{
+			m_name = name;
+			m_getName = getName;
+			m_filter = filter;
+		}
 
 		internal override string Render(SqlContext context)
 		{
-			var properties = DbDtoInfo.GetInfo(m_type).Properties;
+			var properties = DbDtoInfo.GetInfo<T>().Properties;
 			if (properties.Count == 0)
-				throw new InvalidOperationException($"The specified type has no columns: {m_type.FullName}");
+				throw new InvalidOperationException($"The specified type has no columns: {typeof(T).FullName}");
 
 			var filteredProperties = properties.AsEnumerable();
 			if (m_filter is not null)
@@ -388,17 +325,16 @@ public abstract class Sql
 
 			var text = string.Join(", ", filteredProperties.Select(x => context.Syntax.ParameterStart + GetName(x.Name)));
 			if (text.Length == 0)
-				throw new InvalidOperationException($"The specified type has no remaining columns: {m_type.FullName}");
+				throw new InvalidOperationException($"The specified type has no remaining columns: {typeof(T).FullName}");
 			return text;
 		}
 
 		private string GetName(string name) =>
 			m_name is not null ? $"{m_name}_{name}" : m_getName is not null ? m_getName(name) : name;
 
-		private readonly Type m_type;
-		private readonly Func<string, bool>? m_filter;
 		private readonly string? m_name;
 		private readonly Func<string, string>? m_getName;
+		private readonly Func<string, bool>? m_filter;
 	}
 
 	private sealed class ConcatSql(IReadOnlyList<Sql> sqls) : Sql
@@ -454,4 +390,6 @@ public abstract class Sql
 	{
 		internal override string Render(SqlContext context) => text;
 	}
+
+	private static readonly ConcurrentDictionary<string, string> s_snakeCaseCache = new();
 }

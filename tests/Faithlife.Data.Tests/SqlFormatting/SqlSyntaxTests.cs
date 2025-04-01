@@ -312,44 +312,25 @@ internal sealed class SqlSyntaxTests
 		var syntax = SqlSyntax.MySql;
 
 		syntax.Render(Sql.ColumnNames<ItemDto>()).Text.Should().Be("`ItemId`, `DisplayName`");
-		syntax.Render(Sql.ColumnNames(typeof(ItemDto))).Text.Should().Be("`ItemId`, `DisplayName`");
 
 		var item = new ItemDto { Id = 3, DisplayName = "three" };
-		var (text, parameters) = syntax.Render(Sql.Format($"insert into Items ({Sql.ColumnNames(item.GetType())}) values ({Sql.ColumnParams(item)});"));
+		var (text, parameters) = syntax.Render(Sql.Format($"insert into Items ({Sql.ColumnNames<ItemDto>()}) values ({Sql.ColumnParams(item)});"));
 		text.Should().Be("insert into Items (`ItemId`, `DisplayName`) values (@ado0, @ado1);");
 		parameters.Enumerate().Should().Equal(("ado0", item.Id), ("ado1", item.DisplayName));
-
-		var anon = new { item.Id, item.DisplayName };
-		(text, parameters) = syntax.Render(Sql.Format($"insert into Items ({Sql.ColumnNames(anon.GetType())}) values ({Sql.ColumnParams(anon)});"));
-		text.Should().Be("insert into Items (`Id`, `DisplayName`) values (@ado0, @ado1);");
-		parameters.Enumerate().Should().Equal(("ado0", anon.Id), ("ado1", anon.DisplayName));
 	}
 
 	[Test]
 	public void TableColumnNamesAndValuesSql()
 	{
 		var syntax = SqlSyntax.MySql;
-
 		syntax.Render(Sql.ColumnNames<ItemDto>("t")).Text.Should().Be("`t`.`ItemId`, `t`.`DisplayName`");
-		syntax.Render(Sql.ColumnNames(typeof(ItemDto), "t")).Text.Should().Be("`t`.`ItemId`, `t`.`DisplayName`");
-
-		var item = new ItemDto { Id = 3, DisplayName = "three" };
-		syntax.Render(Sql.ColumnNames(item.GetType(), "t")).Text.Should().Be("`t`.`ItemId`, `t`.`DisplayName`");
 	}
 
 	[Test]
 	public void SnakeCaseNamesAndValuesSql()
 	{
 		var syntax = SqlSyntax.MySql.WithSnakeCaseColumnNames();
-
 		syntax.Render(Sql.ColumnNames<ItemDto>("t")).Text.Should().Be("`t`.`ItemId`, `t`.`display_name`");
-		syntax.Render(Sql.ColumnNames(typeof(ItemDto), "t")).Text.Should().Be("`t`.`ItemId`, `t`.`display_name`");
-
-		var item = new ItemDto { Id = 3, DisplayName = "three" };
-		syntax.Render(Sql.ColumnNames(item.GetType(), "t")).Text.Should().Be("`t`.`ItemId`, `t`.`display_name`");
-
-		var anon = new { item.Id, item.DisplayName };
-		syntax.Render(Sql.ColumnNames(anon.GetType(), "t")).Text.Should().Be("`t`.`id`, `t`.`display_name`");
 	}
 
 	[Test]
@@ -361,7 +342,7 @@ internal sealed class SqlSyntaxTests
 
 		var item = new ItemDto { Id = 3, DisplayName = "three" };
 		var (text, parameters) = syntax.Render(Sql.Format($@"
-				insert into Items ({Sql.ColumnNamesWhere(item.GetType(), x => x is not nameof(ItemDto.Id))})
+				insert into Items ({Sql.ColumnNamesWhere<ItemDto>(x => x is not nameof(ItemDto.Id))})
 				values ({Sql.ColumnParamsWhere(item, x => x is not nameof(ItemDto.Id))});"));
 		text.Should().Be(@"
 				insert into Items (`DisplayName`)
@@ -378,7 +359,7 @@ internal sealed class SqlSyntaxTests
 
 		var item = new ItemDto { Id = 3, DisplayName = "three" };
 		var (text, parameters) = syntax.Render(Sql.Format($@"
-				insert into Items ({Sql.ColumnNamesWhere(item.GetType(), x => x is not nameof(ItemDto.Id), "t")})
+				insert into Items ({Sql.ColumnNamesWhere<ItemDto>(x => x is not nameof(ItemDto.Id), "t")})
 				values ({Sql.ColumnParamsWhere(item, x => x is not nameof(ItemDto.Id))});"));
 		text.Should().Be(@"
 				insert into Items (`t`.`DisplayName`)
@@ -394,25 +375,6 @@ internal sealed class SqlSyntaxTests
 		Invoking(() => syntax.Render(Sql.ColumnNamesWhere<ItemDto>(_ => false))).Should().Throw<InvalidOperationException>();
 		Invoking(() => syntax.Render(Sql.ColumnParamsWhere(new ItemDto(), _ => false))).Should().Throw<InvalidOperationException>();
 	}
-
-#if false
-	[Test]
-	public void TupleColumnNamesSql()
-	{
-		var syntax = SqlSyntax.MySql;
-
-		syntax.Render(Sql.ColumnNames<(ItemDto, ItemDto)>()).Text.Should().Be("`ItemId`, `DisplayName`, NULL, `ItemId`, `DisplayName`");
-		syntax.Render(Sql.ColumnNames(typeof((ItemDto, ItemDto)), "t1")).Text.Should().Be("`t1`.`ItemId`, `t1`.`DisplayName`, NULL, `ItemId`, `DisplayName`");
-		syntax.Render(Sql.ColumnNames<(ItemDto, ItemDto)>("t1", "t2")).Text.Should().Be("`t1`.`ItemId`, `t1`.`DisplayName`, NULL, `t2`.`ItemId`, `t2`.`DisplayName`");
-		syntax.Render(Sql.ColumnNames(typeof((ItemDto, ItemDto)), "", "t2")).Text.Should().Be("`ItemId`, `DisplayName`, NULL, `t2`.`ItemId`, `t2`.`DisplayName`");
-
-		static bool NotId(string propertyName) => propertyName != nameof(ItemDto.Id);
-		syntax.Render(Sql.ColumnNamesWhere<(ItemDto, ItemDto)>(NotId)).Text.Should().Be("`DisplayName`, NULL, `DisplayName`");
-		syntax.Render(Sql.ColumnNamesWhere(typeof((ItemDto, ItemDto)), NotId, "t1")).Text.Should().Be("`t1`.`DisplayName`, NULL, `DisplayName`");
-		syntax.Render(Sql.ColumnNamesWhere<(ItemDto, ItemDto)>(NotId, "t1", "t2")).Text.Should().Be("`t1`.`DisplayName`, NULL, `t2`.`DisplayName`");
-		syntax.Render(Sql.ColumnNamesWhere(typeof((ItemDto, ItemDto)), NotId, "", "t2")).Text.Should().Be("`DisplayName`, NULL, `t2`.`DisplayName`");
-	}
-#endif
 
 	[Test]
 	public void DtoParamNamesSql()

@@ -16,13 +16,8 @@ public abstract class DbTypeMapper<T> : IDbTypeMapper
 	/// <summary>
 	/// Maps the data record values to an instance of the specified type.
 	/// </summary>
-	public T Map(IDataRecord record, int index, int count, DbRecordState? state)
-	{
-		var fieldCount = (record ?? throw new ArgumentNullException(nameof(record))).FieldCount;
-		if (index < 0 || count < 0 || index > fieldCount - count)
-			throw new ArgumentException($"Index {index} and count {count} are out of range for {fieldCount} fields.");
-		return MapCore(record, index, count, state);
-	}
+	public T Map(IDataRecord record, DbRecordState? state) =>
+		MapCore(record, index: 0, count: (record ?? throw new ArgumentNullException(nameof(record))).FieldCount, state);
 
 	/// <summary>
 	/// Maps the data record value to an instance of the specified type.
@@ -38,8 +33,13 @@ public abstract class DbTypeMapper<T> : IDbTypeMapper
 	/// <summary>
 	/// Maps the data record values to an instance of the specified type.
 	/// </summary>
-	public T Map(IDataRecord record, DbRecordState? state) =>
-		MapCore(record, index: 0, count: (record ?? throw new ArgumentNullException(nameof(record))).FieldCount, state);
+	public T Map(IDataRecord record, int index, int count, DbRecordState? state)
+	{
+		var fieldCount = (record ?? throw new ArgumentNullException(nameof(record))).FieldCount;
+		if (index < 0 || count < 0 || index > fieldCount - count)
+			throw new ArgumentException($"Index {index} and count {count} are out of range for {fieldCount} fields.");
+		return MapCore(record, index, count, state);
+	}
 
 	/// <summary>
 	/// Maps the data record values to an instance of the specified type.
