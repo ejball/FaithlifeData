@@ -312,6 +312,9 @@ public abstract class Sql
 	[SuppressMessage("Usage", "CA2225:Operator overloads have named alternates", Justification = "Use Concat.")]
 	public static Sql operator +(Sql a, Sql b) => new AddSql(a, b);
 
+	/// <inheritdoc />
+	public override string ToString() => SqlSyntax.Ansi.Render(this).Text;
+
 	internal abstract string Render(SqlContext context);
 
 	private static Sql JoinOrThrow(string separator, IEnumerable<Sql> sqls, string throwMessageIfEmpty) =>
@@ -427,7 +430,7 @@ public abstract class Sql
 			if (m_filter is not null)
 				filteredProperties = filteredProperties.Where(x => m_filter(x.Name));
 
-			var text = string.Join(", ", filteredProperties.Select(x => context.Syntax.ParameterPrefix + GetName(x.Name)));
+			var text = string.Join(", ", filteredProperties.Select(x => context.Syntax.ParameterStart + GetName(x.Name)));
 			if (text.Length == 0)
 				throw new InvalidOperationException($"The specified type has no remaining columns: {m_type.FullName}");
 			return text;

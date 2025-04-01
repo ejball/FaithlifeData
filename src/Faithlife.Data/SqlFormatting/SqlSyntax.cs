@@ -12,7 +12,7 @@ public sealed class SqlSyntax
 	/// </summary>
 	/// <remarks>The default syntax does not support quoted identifiers, since the syntax
 	/// is highly dependent on the type of database and its settings.</remarks>
-	public static SqlSyntax Default { get; } = new(identifierQuoting: SqlIdentifierQuoting.Throw, parameterPrefix: '@', snakeCaseColumnNames: false, lowerCaseKeywords: false);
+	public static SqlSyntax Default { get; } = new();
 
 	/// <summary>
 	/// The syntax for ANSI SQL.
@@ -42,46 +42,52 @@ public sealed class SqlSyntax
 	/// <summary>
 	/// Indicates how identifiers should be quoted.
 	/// </summary>
-	public SqlIdentifierQuoting IdentifierQuoting { get; }
+	public SqlIdentifierQuoting IdentifierQuoting { get; private init; }
 
 	/// <summary>
 	/// Creates a new syntax with the specified identifier quoting.
 	/// </summary>
-	public SqlSyntax WithIdentifierQuoting(SqlIdentifierQuoting identifierQuoting) =>
-		new(identifierQuoting: identifierQuoting, parameterPrefix: ParameterPrefix, snakeCaseColumnNames: SnakeCaseColumnNames, lowerCaseKeywords: LowerCaseKeywords);
-
-	/// <summary>
-	/// The prefix for named parameters.
-	/// </summary>
-	public char ParameterPrefix { get; }
-
-	/// <summary>
-	/// Creates a new syntax with the specified parameter prefix.
-	/// </summary>
-	public SqlSyntax WithParameterPrefix(char parameterPrefix) =>
-		new(identifierQuoting: IdentifierQuoting, parameterPrefix: parameterPrefix, snakeCaseColumnNames: SnakeCaseColumnNames, lowerCaseKeywords: LowerCaseKeywords);
+	public SqlSyntax WithIdentifierQuoting(SqlIdentifierQuoting value) => new(this) { IdentifierQuoting = value };
 
 	/// <summary>
 	/// True if snake case should be used when generating column names.
 	/// </summary>
-	public bool SnakeCaseColumnNames { get; }
+	public bool SnakeCaseColumnNames { get; private init; }
 
 	/// <summary>
 	/// Creates a new syntax with the specified snake case column names setting.
 	/// </summary>
-	public SqlSyntax WithSnakeCaseColumnNames(bool snakeCaseColumnNames = true) =>
-		new(identifierQuoting: IdentifierQuoting, parameterPrefix: ParameterPrefix, snakeCaseColumnNames: snakeCaseColumnNames, lowerCaseKeywords: LowerCaseKeywords);
+	public SqlSyntax WithSnakeCaseColumnNames(bool value = true) => new(this) { SnakeCaseColumnNames = value };
 
 	/// <summary>
 	/// True if lowercase should be used when generating SQL keywords.
 	/// </summary>
-	public bool LowerCaseKeywords { get; }
+	public bool LowerCaseKeywords { get; private init; }
 
 	/// <summary>
 	/// Creates a new syntax with the specified lowercase keywords setting.
 	/// </summary>
-	public SqlSyntax WithLowerCaseKeywords(bool lowerCaseKeywords = true) =>
-		new(identifierQuoting: IdentifierQuoting, parameterPrefix: ParameterPrefix, snakeCaseColumnNames: SnakeCaseColumnNames, lowerCaseKeywords: lowerCaseKeywords);
+	public SqlSyntax WithLowerCaseKeywords(bool value = true) => new(this) { LowerCaseKeywords = value };
+
+	/// <summary>
+	/// The start character used to indicate a parameter.
+	/// </summary>
+	public char ParameterStart { get; private init; }
+
+	/// <summary>
+	/// Creates a new syntax with the specified parameter start character.
+	/// </summary>
+	public SqlSyntax WithParameterStart(char value) => new(this) { ParameterStart = value };
+
+	/// <summary>
+	/// The prefix for unnamed parameters.
+	/// </summary>
+	public string UnnamedParameterPrefix { get; private init; }
+
+	/// <summary>
+	/// Creates a new syntax with the specified prefix for unnamed parameters.
+	/// </summary>
+	public SqlSyntax WithUnnamedParameterPrefix(string value) => new(this) { UnnamedParameterPrefix = value };
 
 	/// <summary>
 	/// Escapes a fragment of a LIKE pattern.
@@ -122,14 +128,28 @@ public sealed class SqlSyntax
 		return (text, context.Parameters);
 	}
 
-	private SqlSyntax(SqlIdentifierQuoting identifierQuoting, char parameterPrefix, bool snakeCaseColumnNames, bool lowerCaseKeywords)
+	private SqlSyntax()
 	{
-		IdentifierQuoting = identifierQuoting;
-		ParameterPrefix = parameterPrefix;
-		SnakeCaseColumnNames = snakeCaseColumnNames;
-		LowerCaseKeywords = lowerCaseKeywords;
+		IdentifierQuoting = SqlIdentifierQuoting.Throw;
+		ParameterStart = '@';
+		SnakeCaseColumnNames = false;
+		LowerCaseKeywords = false;
+		UnnamedParameterPrefix = "ado";
+	}
+
+	private SqlSyntax(SqlSyntax source)
+	{
+		IdentifierQuoting = source.IdentifierQuoting;
+		SnakeCaseColumnNames = source.SnakeCaseColumnNames;
+		LowerCaseKeywords = source.LowerCaseKeywords;
+		ParameterStart = source.ParameterStart;
+		UnnamedParameterPrefix = source.UnnamedParameterPrefix;
 	}
 
 	private static string QuoteName(string name, char nameQuoteStart, char nameQuoteEnd) =>
-		nameQuoteStart + name.Replace(new string(nameQuoteEnd, 1), new string(nameQuoteEnd, 2), StringComparison.Ordinal) + nameQuoteEnd;
+		nameQuoteStart +
+		(name.Contains(nameQuoteEnd, StringComparison.Ordinal)
+			? name.Replace(new string(nameQuoteEnd, 1), new string(nameQuoteEnd, 2), StringComparison.Ordinal)
+			: name) +
+		nameQuoteEnd;
 }

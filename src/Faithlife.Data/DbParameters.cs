@@ -91,7 +91,8 @@ public abstract class DbParameters
 	/// Creates a list of parameters from the properties of a DTO.
 	/// </summary>
 	/// <remarks>The name of each parameter is the name of the corresponding DTO property.</remarks>
-	public static DbParameters FromDto(object dto) => new DbParametersList(DbDtoInfo.GetInfo(dto.GetType()).Properties.Select(x => Create(x.Name, x.GetValue(dto))));
+	public static DbParameters FromDto(object dto) =>
+		new DbParametersList(DbDtoInfo.GetInfo(dto.GetType()).Properties.Select(x => Create(x.Name, x.GetValue(dto))));
 
 #if false
 	/// <summary>

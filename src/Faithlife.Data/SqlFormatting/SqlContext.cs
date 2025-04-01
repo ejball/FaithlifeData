@@ -19,9 +19,9 @@ internal sealed class SqlContext
 			return rendered;
 
 		m_parametersList ??= new();
-		var name = Invariant($"ado{m_parametersList.Count}");
+		var name = Invariant($"{Syntax.UnnamedParameterPrefix}{m_parametersList.Count}");
 		m_parametersList.Add(DbParameters.Create(name, value));
-		rendered = Syntax.ParameterPrefix + name;
+		rendered = Syntax.ParameterStart + name;
 
 		if (key is not null)
 		{
