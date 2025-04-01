@@ -374,56 +374,58 @@ public sealed class DbConnectorCommand
 		var commandText = Text;
 		var commandType = CommandType;
 		var timeout = Timeout;
-
 		var parameters = Parameters;
-		var nameValuePairs = Parameters.Enumerate().ToList();
 
-		var index = 0;
-		while (index < nameValuePairs.Count)
+		if (commandText.Contains("...", StringComparison.Ordinal))
 		{
-			// look for @name... in SQL for collection parameters
-			var (name, value) = nameValuePairs[index];
-			if (!string.IsNullOrEmpty(name) && !(value is string) && !(value is byte[]) && value is IEnumerable list)
+			var nameValuePairs = Parameters.Enumerate().ToList();
+			var index = 0;
+			while (index < nameValuePairs.Count)
 			{
-				var itemCount = -1;
-				var replacements = new List<(string Name, object? Value)>();
-
-				string Replacement(Match match)
+				// look for @name... in SQL for collection parameters
+				var (name, value) = nameValuePairs[index];
+				if (!string.IsNullOrEmpty(name) && !(value is string) && !(value is byte[]) && value is IEnumerable list)
 				{
-					if (itemCount == -1)
-					{
-						itemCount = 0;
+					var itemCount = -1;
+					var replacements = new List<(string Name, object? Value)>();
 
-						foreach (var item in list)
+					string Replacement(Match match)
+					{
+						if (itemCount == -1)
 						{
-							replacements.Add(($"{name}_{itemCount}", item));
-							itemCount++;
+							itemCount = 0;
+
+							foreach (var item in list)
+							{
+								replacements.Add(($"{name}_{itemCount}", item));
+								itemCount++;
+							}
+
+							if (itemCount == 0)
+								throw new InvalidOperationException($"Collection parameter '{name}' must not be empty.");
 						}
 
-						if (itemCount == 0)
-							throw new InvalidOperationException($"Collection parameter '{name}' must not be empty.");
+						return string.Join(",", Enumerable.Range(0, itemCount).Select(x => $"{match.Groups[1]}_{x}"));
 					}
 
-					return string.Join(",", Enumerable.Range(0, itemCount).Select(x => $"{match.Groups[1]}_{x}"));
-				}
+					commandText = Regex.Replace(commandText, $@"([?@:]{Regex.Escape(name)})\.\.\.",
+						Replacement, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-				commandText = Regex.Replace(commandText, $@"([?@:]{Regex.Escape(name)})\.\.\.",
-					Replacement, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
-				// if special syntax wasn't found, leave the parameter alone, for databases that support collections directly
-				if (itemCount != -1)
-				{
-					parameters = DbParameters.Create(nameValuePairs.Take(index).Concat(replacements).Concat(nameValuePairs.Skip(index + 1)));
-					index += replacements.Count;
+					// if special syntax wasn't found, leave the parameter alone, for databases that support collections directly
+					if (itemCount != -1)
+					{
+						parameters = DbParameters.Create(nameValuePairs.Take(index).Concat(replacements).Concat(nameValuePairs.Skip(index + 1)));
+						index += replacements.Count;
+					}
+					else
+					{
+						index += 1;
+					}
 				}
 				else
 				{
 					index += 1;
 				}
-			}
-			else
-			{
-				index += 1;
 			}
 		}
 
