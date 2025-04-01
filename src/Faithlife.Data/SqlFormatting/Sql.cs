@@ -80,14 +80,14 @@ public abstract class Sql
 	/// <summary>
 	/// Returns a comma-delimited list of arbitrarily-named parameters for the column values of the specified DTO.
 	/// </summary>
-	public static Sql ColumnParams(object dto) => new ColumnParamsSql(dto ?? throw new ArgumentNullException(nameof(dto)));
+	public static Sql ColumnParams<T>(T dto) => new ColumnParamsSql<T>(dto ?? throw new ArgumentNullException(nameof(dto)));
 
 	/// <summary>
 	/// Returns a comma-delimited list of arbitrarily-named parameters for the column values of the specified DTO
 	/// for the properties whose names match the specified filter.
 	/// </summary>
-	public static Sql ColumnParamsWhere(object dto, Func<string, bool> filter) =>
-		new ColumnParamsSql(dto ?? throw new ArgumentNullException(nameof(dto)), filter ?? throw new ArgumentNullException(nameof(filter)));
+	public static Sql ColumnParamsWhere<T>(T dto, Func<string, bool> filter) =>
+		new ColumnParamsSql<T>(dto ?? throw new ArgumentNullException(nameof(dto)), filter ?? throw new ArgumentNullException(nameof(filter)));
 
 	/// <summary>
 	/// Concatenates SQL fragments.
@@ -351,14 +351,13 @@ public abstract class Sql
 		private readonly Func<string, bool>? m_filter;
 	}
 
-	private sealed class ColumnParamsSql(object dto, Func<string, bool>? filter = null) : Sql
+	private sealed class ColumnParamsSql<T>(T dto, Func<string, bool>? filter = null) : Sql
 	{
 		internal override string Render(SqlContext context)
 		{
-			var type = dto.GetType();
-			var properties = DbDtoInfo.GetInfo(type).Properties;
+			var properties = DbDtoInfo.GetInfo<T>().Properties;
 			if (properties.Count == 0)
-				throw new InvalidOperationException($"The specified type has no columns: {type.FullName}");
+				throw new InvalidOperationException($"The specified type has no columns: {typeof(T).FullName}");
 
 			var filteredProperties = properties.AsEnumerable();
 			if (filter is not null)
@@ -366,7 +365,7 @@ public abstract class Sql
 
 			var text = string.Join(", ", filteredProperties.Select(x => context.RenderParameter(key: null, value: x.GetValue(dto))));
 			if (text.Length == 0)
-				throw new InvalidOperationException($"The specified type has no remaining columns: {type.FullName}");
+				throw new InvalidOperationException($"The specified type has no remaining columns: {typeof(T).FullName}");
 			return text;
 		}
 	}

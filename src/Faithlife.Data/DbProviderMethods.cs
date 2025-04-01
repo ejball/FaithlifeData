@@ -203,6 +203,25 @@ public class DbProviderMethods
 	}
 
 	/// <summary>
+	/// Creates a parameter with the specified name and value.
+	/// </summary>
+	public virtual IDataParameter CreateParameter<T>(IDbCommand command, string name, T value)
+	{
+		var parameter = command.CreateParameter();
+		parameter.ParameterName = name;
+		parameter.Value = value is null ? DBNull.Value : value;
+		return parameter;
+	}
+
+	/// <summary>
+	/// Updates the parameter value of a parameter.
+	/// </summary>
+	public virtual void SetParameterValue<T>(IDataParameter parameter, T value)
+	{
+		parameter.Value = value is null ? DBNull.Value : value;
+	}
+
+	/// <summary>
 	/// Reads the next record asynchronously.
 	/// </summary>
 	public virtual ValueTask<bool> ReadAsync(IDataReader reader, CancellationToken cancellationToken)

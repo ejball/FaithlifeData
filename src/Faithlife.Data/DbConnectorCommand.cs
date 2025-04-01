@@ -459,13 +459,13 @@ public sealed class DbConnectorCommand
 			if (command.Parameters.Count != parameterCount)
 				throw new InvalidOperationException($"Cached commands must always be executed with the same number of parameters (was {command.Parameters.Count}, now {parameters.Count}).");
 
-			parameters.Reapply(command, startIndex: 0);
+			parameters.Reapply(command, startIndex: 0, Connector.ProviderMethods);
 
 			needsPrepare = false;
 		}
 		else
 		{
-			parameters.Apply(command);
+			parameters.Apply(command, Connector.ProviderMethods);
 
 			needsPrepare = IsPrepared;
 		}

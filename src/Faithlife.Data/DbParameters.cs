@@ -10,9 +10,9 @@ public abstract class DbParameters
 {
 	public abstract int Count { get; }
 
-	public abstract void Apply(IDbCommand command);
+	public abstract void Apply(IDbCommand command, DbProviderMethods providerMethods);
 
-	public abstract void Reapply(IDbCommand command, int startIndex);
+	public abstract void Reapply(IDbCommand command, int startIndex, DbProviderMethods providerMethods);
 
 	public abstract IEnumerable<(string Name, object? Value)> Enumerate();
 
@@ -212,11 +212,11 @@ public abstract class DbParameters
 
 	private sealed class EmptyDbParameters : DbParameters
 	{
-		public override void Apply(IDbCommand command)
+		public override void Apply(IDbCommand command, DbProviderMethods providerMethods)
 		{
 		}
 
-		public override void Reapply(IDbCommand command, int startIndex)
+		public override void Reapply(IDbCommand command, int startIndex, DbProviderMethods providerMethods)
 		{
 		}
 

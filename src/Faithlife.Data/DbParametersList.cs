@@ -29,19 +29,19 @@ public sealed class DbParametersList : DbParameters
 		m_parametersList.Add(item);
 	}
 
-	public override void Apply(IDbCommand command)
+	public override void Apply(IDbCommand command, DbProviderMethods providerMethods)
 	{
 		m_isReadOnly = true;
 		foreach (var parameters in m_parametersList)
-			parameters.Apply(command);
+			parameters.Apply(command, providerMethods);
 	}
 
-	public override void Reapply(IDbCommand command, int startIndex)
+	public override void Reapply(IDbCommand command, int startIndex, DbProviderMethods providerMethods)
 	{
 		m_isReadOnly = true;
 		foreach (var parameters in m_parametersList)
 		{
-			parameters.Reapply(command, startIndex);
+			parameters.Reapply(command, startIndex, providerMethods);
 			startIndex += parameters.Count;
 		}
 	}

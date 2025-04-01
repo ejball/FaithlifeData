@@ -6,20 +6,17 @@ internal sealed class OneDbParameter<T>(string name, T value) : DbParameters
 {
 	public override int Count => 1;
 
-	public override void Apply(IDbCommand command)
+	public override void Apply(IDbCommand command, DbProviderMethods providerMethods)
 	{
-		if (value is not IDbDataParameter dbParameter)
-		{
-			dbParameter = command.CreateParameter();
-			dbParameter.Value = value is null ? DBNull.Value : value;
-		}
-
-		dbParameter.ParameterName = name;
+		if (value is IDataParameter dbParameter)
+			dbParameter.ParameterName = name;
+		else
+			dbParameter = providerMethods.CreateParameter(command, name, value);
 
 		command.Parameters.Add(dbParameter);
 	}
 
-	public override void Reapply(IDbCommand command, int startIndex)
+	public override void Reapply(IDbCommand command, int startIndex, DbProviderMethods providerMethods)
 	{
 		var dbParameter = command.Parameters[startIndex] as IDataParameter;
 		if (dbParameter is null || dbParameter.ParameterName != name)
@@ -35,7 +32,8 @@ internal sealed class OneDbParameter<T>(string name, T value) : DbParameters
 			if (dbParameter is null)
 				throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{name}').");
 		}
-		dbParameter.Value = value is IDataParameter ddp ? ddp.Value : value;
+
+		providerMethods.SetParameterValue(dbParameter, value);
 	}
 
 	public override IEnumerable<(string Name, object? Value)> Enumerate()
