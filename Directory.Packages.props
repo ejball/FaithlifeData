@@ -4,7 +4,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
-    <PackageVersion Include="Faithlife.Reflection" Version="1.2.3" />
     <PackageVersion Include="FluentAssertions" Version="7.0.0" />
     <PackageVersion Include="IndexRange" Version="1.0.3" />
     <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.0" />

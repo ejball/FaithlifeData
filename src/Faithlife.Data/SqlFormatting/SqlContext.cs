@@ -34,7 +34,7 @@ internal sealed class SqlContext
 		return rendered;
 	}
 
-	public string RenderParameter<T>(object? key, T source, IDbDtoProperty<T> property)
+	public string RenderParameter<T>(object? key, T source, DbDtoProperty<T> property)
 	{
 		if (key is not null && m_renderedParams is not null && m_renderedParams.TryGetValue(key, out var rendered))
 			return rendered;

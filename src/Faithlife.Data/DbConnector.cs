@@ -14,12 +14,23 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	/// <param name="connection">The database connection.</param>
 	/// <param name="settings">The settings.</param>
 	public DbConnector(IDbConnection connection, DbConnectorSettings? settings = null)
+		: this(connection, transaction: null, settings)
+	{
+	}
+
+	/// <summary>
+	/// Creates a new DbConnector.
+	/// </summary>
+	/// <param name="connection">The database connection.</param>
+	/// <param name="transaction">The current transaction.</param>
+	/// <param name="settings">The settings.</param>
+	public DbConnector(IDbConnection connection, IDbTransaction? transaction, DbConnectorSettings? settings = null)
 	{
 		settings ??= s_defaultSettings;
 		m_connection = connection ?? throw new ArgumentNullException(nameof(connection));
 		m_isConnectionOpen = m_connection.State == ConnectionState.Open;
 		m_noCloseConnection = m_isConnectionOpen;
-		m_transaction = settings.CurrentTransaction;
+		m_transaction = transaction;
 		m_noDisposeTransaction = m_transaction is not null;
 		m_noDisposeConnection = m_noDisposeTransaction || settings.NoDispose;
 		m_whenDisposed = settings.WhenDisposed;
@@ -45,11 +56,6 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	/// The SQL syntax used when formatting SQL.
 	/// </summary>
 	public SqlSyntax SqlSyntax { get; }
-
-	/// <summary>
-	/// Maps data record values to objects.
-	/// </summary>
-	public DbDataMapper DataMapper { get; }
 
 	/// <summary>
 	/// Returns the database connection, opened if necessary.
@@ -91,7 +97,10 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	/// <summary>
 	/// Opens the connection.
 	/// </summary>
-	/// <returns>An <see cref="IDisposable" /> that should be disposed when the connection should be closed.</returns>
+	/// <returns>An <see cref="IDisposable" /> that should be disposed when the connection should be closed.
+	/// If the connection was already open, disposing the return value does nothing.</returns>
+	/// <remarks>This method is not typically needed, since all operations automatically open
+	/// the connection as needed.</remarks>
 	/// <seealso cref="OpenConnectionAsync" />
 	public DbConnectionCloser OpenConnection()
 	{
@@ -108,7 +117,8 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	/// Opens the connection.
 	/// </summary>
 	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <returns>An <see cref="IDisposable" /> that should be disposed when the connection should be closed.</returns>
+	/// <returns>An <see cref="IDisposable" /> that should be disposed when the connection should be closed.
+	/// If the connection was already open, disposing the return value does nothing.</returns>
 	/// <seealso cref="OpenConnection" />
 	public ValueTask<DbConnectionCloser> OpenConnectionAsync(CancellationToken cancellationToken = default)
 	{
@@ -347,6 +357,8 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 			m_isDisposed = true;
 		}
 	}
+
+	internal DbDataMapper DataMapper { get; }
 
 	internal DbProviderMethods ProviderMethods { get; }
 

@@ -14,11 +14,6 @@ public class DbConnectorSettings
 	public bool NoDispose { get; set; }
 
 	/// <summary>
-	/// The current transaction of the connection.
-	/// </summary>
-	public IDbTransaction? CurrentTransaction { get; set; }
-
-	/// <summary>
 	/// Called when the connector is disposed.
 	/// </summary>
 	public Action? WhenDisposed { get; set; }
