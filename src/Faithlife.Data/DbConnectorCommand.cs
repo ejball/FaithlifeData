@@ -312,18 +312,18 @@ public sealed class DbConnectorCommand
 	/// <summary>
 	/// Caches the command.
 	/// </summary>
-	public DbConnectorCommand Cache()
+	public DbConnectorCommand Cache(bool cache = true)
 	{
-		IsCached = true;
+		IsCached = cache;
 		return this;
 	}
 
 	/// <summary>
 	/// Prepares the command.
 	/// </summary>
-	public DbConnectorCommand Prepare()
+	public DbConnectorCommand Prepare(bool prepare = true)
 	{
-		IsPrepared = true;
+		IsPrepared = prepare;
 		return this;
 	}
 
@@ -360,7 +360,7 @@ public sealed class DbConnectorCommand
 		Connector = connector;
 		Text = text;
 		CommandType = commandType;
-		m_parameters = new();
+		m_parameters = new DbParametersList();
 	}
 
 	private void Validate()
@@ -384,7 +384,7 @@ public sealed class DbConnectorCommand
 			{
 				// look for @name... in SQL for collection parameters
 				var (name, value) = nameValuePairs[index];
-				if (!string.IsNullOrEmpty(name) && !(value is string) && !(value is byte[]) && value is IEnumerable list)
+				if (!string.IsNullOrEmpty(name) && value is not string && value is not byte[] && value is IEnumerable list)
 				{
 					var itemCount = -1;
 					var replacements = new List<(string Name, object? Value)>();
