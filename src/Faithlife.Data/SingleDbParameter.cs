@@ -12,36 +12,38 @@ internal sealed class SingleDbParameter<T>(string name, T value) : DbParameters
 			yield return (name, value);
 	}
 
-	internal override void ApplyCore(IDbCommand command, DbProviderMethods providerMethods, Func<string, bool>? filterName)
+	internal override void ApplyCore(IDbCommand command, DbProviderMethods providerMethods, Func<string, bool>? filterName, Func<string, string>? transformName)
 	{
 		if (filterName is null || filterName(name))
 		{
+			var parameterName = transformName is null ? name : transformName(name);
 			if (value is IDataParameter dbParameter)
-				dbParameter.ParameterName = name;
+				dbParameter.ParameterName = parameterName;
 			else
-				dbParameter = providerMethods.CreateParameter(command, name, value);
+				dbParameter = providerMethods.CreateParameter(command, parameterName, value);
 
 			command.Parameters.Add(dbParameter);
 		}
 	}
 
-	internal override void ReapplyCore(IDbCommand command, int startIndex, DbProviderMethods providerMethods, Func<string, bool>? filterName)
+	internal override void ReapplyCore(IDbCommand command, int startIndex, DbProviderMethods providerMethods, Func<string, bool>? filterName, Func<string, string>? transformName)
 	{
 		if (filterName is null || filterName(name))
 		{
+			var parameterName = transformName is null ? name : transformName(name);
 			var dbParameter = command.Parameters[startIndex] as IDataParameter;
-			if (dbParameter is null || dbParameter.ParameterName != name)
+			if (dbParameter is null || dbParameter.ParameterName != parameterName)
 			{
 				try
 				{
-					dbParameter = command.Parameters[name] as IDataParameter;
+					dbParameter = command.Parameters[parameterName] as IDataParameter;
 				}
 				catch (Exception exception)
 				{
-					throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{name}').", exception);
+					throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{parameterName}').", exception);
 				}
 				if (dbParameter is null)
-					throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{name}').");
+					throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{parameterName}').");
 			}
 
 			providerMethods.SetParameterValue(dbParameter, value);

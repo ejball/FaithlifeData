@@ -39,19 +39,19 @@ public sealed class DbParametersList : DbParameters
 	internal override IEnumerable<(string Name, object? Value)> EnumerateCore(Func<string, bool>? filterName) =>
 		m_parametersList.SelectMany(x => x.EnumerateCore(filterName));
 
-	internal override void ApplyCore(IDbCommand command, DbProviderMethods providerMethods, Func<string, bool>? filterName)
+	internal override void ApplyCore(IDbCommand command, DbProviderMethods providerMethods, Func<string, bool>? filterName, Func<string, string>? transformName)
 	{
 		m_isReadOnly = true;
 		foreach (var parameters in m_parametersList)
-			parameters.ApplyCore(command, providerMethods, filterName);
+			parameters.ApplyCore(command, providerMethods, filterName, transformName);
 	}
 
-	internal override void ReapplyCore(IDbCommand command, int startIndex, DbProviderMethods providerMethods, Func<string, bool>? filterName)
+	internal override void ReapplyCore(IDbCommand command, int startIndex, DbProviderMethods providerMethods, Func<string, bool>? filterName, Func<string, string>? transformName)
 	{
 		m_isReadOnly = true;
 		foreach (var parameters in m_parametersList)
 		{
-			parameters.ReapplyCore(command, startIndex, providerMethods, filterName);
+			parameters.ReapplyCore(command, startIndex, providerMethods, filterName, transformName);
 			startIndex += parameters.Count;
 		}
 	}

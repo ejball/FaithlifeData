@@ -57,14 +57,30 @@ internal sealed class DbParametersTests
 	public void CreateFromDto()
 	{
 		DbParameters.Create(DbParameters.FromDto(new { one = 1 }), DbParameters.FromDto(new HasTwo())).Enumerate().Should().Equal(("one", 1), ("Two", 2));
-		DbParameters.FromDto(x => $"it's {x}", new { one = 1, Two = 2 }).Enumerate().Should().Equal(("it's one", 1), ("it's Two", 2));
+	}
+
+	[Test]
+	public void CreateFromDtoNamed()
+	{
+		DbParameters.FromDto(new { one = 1, Two = 2 }).Named(x => $"it's {x}").Enumerate().Should().Equal(("it's one", 1), ("it's Two", 2));
 	}
 
 	[Test]
 	public void CreateFromDtoWhere()
 	{
 		DbParameters.FromDto(new { one = 1, two = 2, three = 3 }).Where(x => x[0] == 't').Enumerate().Should().Equal(("two", 2), ("three", 3));
-		DbParameters.FromDto(x => x.ToUpperInvariant(), new { one = 1, two = 2, three = 3 }).Where(x => x[0] == 't').Enumerate().Should().Equal(("TWO", 2), ("THREE", 3));
+	}
+
+	[Test]
+	public void CreateFromDtoWhereNamed()
+	{
+		DbParameters.FromDto(new { one = 1, two = 2, three = 3 }).Where(x => x[0] == 't').Named(x => x.ToUpperInvariant()).Enumerate().Should().Equal(("TWO", 2), ("THREE", 3));
+	}
+
+	[Test]
+	public void CreateFromDtoNamedWhere()
+	{
+		DbParameters.FromDto(new { one = 1, two = 2, three = 3 }).Named(x => x.ToUpperInvariant()).Where(x => x[0] == 'T').Enumerate().Should().Equal(("TWO", 2), ("THREE", 3));
 	}
 
 	[Test]

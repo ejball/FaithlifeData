@@ -60,39 +60,38 @@ public abstract class DbParameters
 	}
 
 	/// <summary>
-	/// Creates a list of parameters from the properties of a DTO.
+	/// Filters the parameters by name.
 	/// </summary>
-	/// <remarks>The name of each parameter is determined by calling the function with the name of the corresponding DTO property.</remarks>
-	public static DbParameters FromDto<T>(Func<string, string> name, T dto)
+	public DbParameters Where(Func<string, bool> nameMatches)
 	{
-		if (dto is null)
-			throw new ArgumentNullException(nameof(dto));
-		return Create(DbDtoInfo.GetInfo<T>().Properties.Select(x => x.CreateParameter(name(x.Name), dto)));
+		if (nameMatches is null)
+			throw new ArgumentNullException(nameof(nameMatches));
+		return new WhereDbParameters(this, nameMatches);
 	}
 
 	/// <summary>
-	/// Filters the parameters by name.
+	/// Transforms the parameter names using the specified function.
 	/// </summary>
-	public DbParameters Where(Func<string, bool> filter)
+	public DbParameters Named(Func<string, string> transform)
 	{
-		if (filter is null)
-			throw new ArgumentNullException(nameof(filter));
-		return new WhereDbParameters(this, filter);
+		if (transform is null)
+			throw new ArgumentNullException(nameof(transform));
+		return new NamedDbParameters(this, transform);
 	}
 
 	internal void Apply(IDbCommand command, DbProviderMethods providerMethods) =>
-		ApplyCore(command, providerMethods, null);
+		ApplyCore(command, providerMethods, null, null);
 
 	internal void Reapply(IDbCommand command, int startIndex, DbProviderMethods providerMethods) =>
-		ReapplyCore(command, startIndex, providerMethods, null);
+		ReapplyCore(command, startIndex, providerMethods, null, null);
 
 	internal abstract int CountCore(Func<string, bool>? filterName);
 
 	internal abstract IEnumerable<(string Name, object? Value)> EnumerateCore(Func<string, bool>? filterName);
 
-	internal abstract void ApplyCore(IDbCommand command, DbProviderMethods providerMethods, Func<string, bool>? filterName);
+	internal abstract void ApplyCore(IDbCommand command, DbProviderMethods providerMethods, Func<string, bool>? filterName, Func<string, string>? transformName);
 
-	internal abstract void ReapplyCore(IDbCommand command, int startIndex, DbProviderMethods providerMethods, Func<string, bool>? filterName);
+	internal abstract void ReapplyCore(IDbCommand command, int startIndex, DbProviderMethods providerMethods, Func<string, bool>? filterName, Func<string, string>? transformName);
 
 	private sealed class EmptyDbParameters : DbParameters
 	{
@@ -100,11 +99,11 @@ public abstract class DbParameters
 
 		internal override IEnumerable<(string Name, object? Value)> EnumerateCore(Func<string, bool>? filterName) => [];
 
-		internal override void ApplyCore(IDbCommand command, DbProviderMethods providerMethods, Func<string, bool>? filterName)
+		internal override void ApplyCore(IDbCommand command, DbProviderMethods providerMethods, Func<string, bool>? filterName, Func<string, string>? transformName)
 		{
 		}
 
-		internal override void ReapplyCore(IDbCommand command, int startIndex, DbProviderMethods providerMethods, Func<string, bool>? filterName)
+		internal override void ReapplyCore(IDbCommand command, int startIndex, DbProviderMethods providerMethods, Func<string, bool>? filterName, Func<string, string>? transformName)
 		{
 		}
 	}
@@ -117,12 +116,34 @@ public abstract class DbParameters
 		internal override IEnumerable<(string Name, object? Value)> EnumerateCore(Func<string, bool>? filterName) =>
 			source.EnumerateCore(FilterName(filterName));
 
-		internal override void ApplyCore(IDbCommand command, DbProviderMethods providerMethods, Func<string, bool>? filterName) =>
-			source.ApplyCore(command, providerMethods, FilterName(filterName));
+		internal override void ApplyCore(IDbCommand command, DbProviderMethods providerMethods, Func<string, bool>? filterName, Func<string, string>? transformName) =>
+			source.ApplyCore(command, providerMethods, FilterName(filterName), transformName);
 
-		internal override void ReapplyCore(IDbCommand command, int startIndex, DbProviderMethods providerMethods, Func<string, bool>? filterName) =>
-			source.ReapplyCore(command, startIndex, providerMethods, FilterName(filterName));
+		internal override void ReapplyCore(IDbCommand command, int startIndex, DbProviderMethods providerMethods, Func<string, bool>? filterName, Func<string, string>? transformName) =>
+			source.ReapplyCore(command, startIndex, providerMethods, FilterName(filterName), transformName);
 
 		private Func<string, bool> FilterName(Func<string, bool>? filterName) => x => where(x) && filterName?.Invoke(x) is not false;
+	}
+
+	private sealed class NamedDbParameters(DbParameters source, Func<string, string> named) : DbParameters
+	{
+		internal override int CountCore(Func<string, bool>? filterName) =>
+			source.CountCore(filterName is null ? null : x => filterName(named(x)));
+
+		internal override IEnumerable<(string Name, object? Value)> EnumerateCore(Func<string, bool>? filterName) =>
+			source.EnumerateCore(filterName is null ? null : x => filterName(named(x)))
+				.Select(x => (named(x.Name), x.Value));
+
+		internal override void ApplyCore(IDbCommand command, DbProviderMethods providerMethods, Func<string, bool>? filterName, Func<string, string>? transformName)
+		{
+			var finalTransform = transformName is null ? named : x => transformName(named(x));
+			source.ApplyCore(command, providerMethods, filterName is null ? null : x => filterName(named(x)), finalTransform);
+		}
+
+		internal override void ReapplyCore(IDbCommand command, int startIndex, DbProviderMethods providerMethods, Func<string, bool>? filterName, Func<string, string>? transformName)
+		{
+			var finalTransform = transformName is null ? named : x => transformName(named(x));
+			source.ReapplyCore(command, startIndex, providerMethods, filterName is null ? null : x => filterName(named(x)), finalTransform);
+		}
 	}
 }
