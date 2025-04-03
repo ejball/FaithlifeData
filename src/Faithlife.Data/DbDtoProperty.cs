@@ -20,7 +20,7 @@ internal sealed class DbDtoProperty<T>
 
 	public string? ColumnName { get; }
 
-	public DbParameters CreateParameter(T source, string name) => DbParameters.Create(name, GetValue(source));
+	public DbParameters CreateParameter(string name, T valueSource) => DbParameters.Create(name, GetValue(valueSource));
 
 	private object? GetValue(T source) => MemberInfo is PropertyInfo propertyInfo ? propertyInfo.GetValue(source) : ((FieldInfo) MemberInfo).GetValue(source);
 }

@@ -66,7 +66,7 @@ public abstract class DbParameters
 	{
 		if (dto is null)
 			throw new ArgumentNullException(nameof(dto));
-		return Create(DbDtoInfo.GetInfo<T>().Properties.Select(x => x.CreateParameter(dto, x.Name)));
+		return Create(DbDtoInfo.GetInfo<T>().Properties.Select(x => x.CreateParameter(x.Name, dto)));
 	}
 
 	/// <summary>
@@ -77,7 +77,7 @@ public abstract class DbParameters
 	{
 		if (dto is null)
 			throw new ArgumentNullException(nameof(dto));
-		return Create(DbDtoInfo.GetInfo<T>().Properties.Select(x => x.CreateParameter(dto, name(x.Name))));
+		return Create(DbDtoInfo.GetInfo<T>().Properties.Select(x => x.CreateParameter(name(x.Name), dto)));
 	}
 
 	/// <summary>
@@ -90,7 +90,7 @@ public abstract class DbParameters
 			throw new ArgumentNullException(nameof(dto));
 		if (filter is null)
 			throw new ArgumentNullException(nameof(filter));
-		return Create(DbDtoInfo.GetInfo<T>().Properties.Where(x => filter(x.Name)).Select(x => x.CreateParameter(dto, x.Name)));
+		return Create(DbDtoInfo.GetInfo<T>().Properties.Where(x => filter(x.Name)).Select(x => x.CreateParameter(x.Name, dto)));
 	}
 
 	/// <summary>
@@ -105,7 +105,7 @@ public abstract class DbParameters
 			throw new ArgumentNullException(nameof(dto));
 		if (filter is null)
 			throw new ArgumentNullException(nameof(filter));
-		return Create(DbDtoInfo.GetInfo<T>().Properties.Where(x => filter(x.Name)).Select(x => x.CreateParameter(dto, name(x.Name))));
+		return Create(DbDtoInfo.GetInfo<T>().Properties.Where(x => filter(x.Name)).Select(x => x.CreateParameter(name(x.Name), dto)));
 	}
 
 	private sealed class EmptyDbParameters : DbParameters

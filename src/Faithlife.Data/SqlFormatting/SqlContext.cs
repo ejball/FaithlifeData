@@ -34,14 +34,14 @@ internal sealed class SqlContext
 		return rendered;
 	}
 
-	public string RenderParameter<T>(object? key, T source, DbDtoProperty<T> property)
+	public string RenderParameter<T>(object? key, T valueSource, DbDtoProperty<T> valueProperty)
 	{
 		if (key is not null && m_renderedParams is not null && m_renderedParams.TryGetValue(key, out var rendered))
 			return rendered;
 
 		m_parametersList ??= new();
 		var name = Invariant($"{Syntax.UnnamedParameterPrefix}{m_parametersList.Count}");
-		m_parametersList.Add(property.CreateParameter(source, name));
+		m_parametersList.Add(valueProperty.CreateParameter(name, valueSource));
 		rendered = Syntax.ParameterStart + name;
 
 		if (key is not null)

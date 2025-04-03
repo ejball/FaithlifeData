@@ -289,9 +289,9 @@ internal sealed class SqlSyntaxTests
 	}
 
 	[Test]
-	public void LikePrefixParamSql()
+	public void LikeParamStartsWithSql()
 	{
-		var (text, parameters) = Render(Sql.LikePrefixParam("xy_zy"));
+		var (text, parameters) = Render(Sql.LikeParamStartsWith("xy_zy"));
 		text.Should().Be("@ado0");
 		parameters.Enumerate().Should().Equal(("ado0", "xy\\_zy%"));
 	}
@@ -382,7 +382,6 @@ internal sealed class SqlSyntaxTests
 		var syntax = SqlSyntax.MySql;
 
 		syntax.Render(Sql.DtoParamNames<ItemDto>()).Text.Should().Be("@Id, @DisplayName");
-		syntax.Render(Sql.DtoParamNames<ItemDto>("p")).Text.Should().Be("@p_Id, @p_DisplayName");
 		syntax.Render(Sql.DtoParamNames<ItemDto>(x => x + "_")).Text.Should().Be("@Id_, @DisplayName_");
 	}
 
@@ -392,7 +391,6 @@ internal sealed class SqlSyntaxTests
 		var syntax = SqlSyntax.MySql;
 
 		syntax.Render(Sql.DtoParamNamesWhere<ItemDto>(NotId)).Text.Should().Be("@DisplayName");
-		syntax.Render(Sql.DtoParamNamesWhere<ItemDto>("p", NotId)).Text.Should().Be("@p_DisplayName");
 		syntax.Render(Sql.DtoParamNamesWhere<ItemDto>(x => x + "_", NotId)).Text.Should().Be("@DisplayName_");
 
 		static bool NotId(string x) => x != nameof(ItemDto.Id);

@@ -79,12 +79,6 @@ public abstract class Sql
 	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO.
 	/// </summary>
 	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
-	public static Sql DtoParamNames<T>(string name) => new DtoParamNamesSql<T>(name: name);
-
-	/// <summary>
-	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO.
-	/// </summary>
-	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
 	public static Sql DtoParamNames<T>(Func<string, string> name) => new DtoParamNamesSql<T>(getName: name);
 
 	/// <summary>
@@ -93,13 +87,6 @@ public abstract class Sql
 	/// </summary>
 	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
 	public static Sql DtoParamNamesWhere<T>(Func<string, bool> filter) => new DtoParamNamesSql<T>(filter: filter);
-
-	/// <summary>
-	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO
-	/// whose names match the specified filter.
-	/// </summary>
-	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
-	public static Sql DtoParamNamesWhere<T>(string name, Func<string, bool> filter) => new DtoParamNamesSql<T>(name: name, filter: filter);
 
 	/// <summary>
 	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO
@@ -133,9 +120,9 @@ public abstract class Sql
 	/// <summary>
 	/// Creates SQL for an arbitrarily-named parameter with the specified fragment of a LIKE pattern followed by a trailing <c>%</c>.
 	/// </summary>
-	/// <remarks>The default implementation escapes <c>%</c> and <c>_</c> in the prefix with <c>\</c>. Depending on the database
+	/// <remarks>This SQL fragment escapes <c>%</c> and <c>_</c> in the prefix with <c>\</c>. Depending on the database
 	/// and its settings, <c>escape '\'</c> may be needed after the parameter.</remarks>
-	public static Sql LikePrefixParam(string prefix) => new LikePrefixParamSql(prefix ?? throw new ArgumentNullException(nameof(prefix)));
+	public static Sql LikeParamStartsWith(string prefix) => new LikeParamStartsWithSql(prefix ?? throw new ArgumentNullException(nameof(prefix)));
 
 	/// <summary>
 	/// Creates SQL for a comma-delimited list of SQL fragments.
@@ -165,7 +152,7 @@ public abstract class Sql
 	public static Sql Param<T>(T value)
 	{
 		if (value is Sql)
-			throw new ArgumentException("Param may not be used with Sql instances.", nameof(value));
+			throw new ArgumentException("Parameters should not be created from Sql instances.", nameof(value));
 		return new ParamSql<T>(value);
 	}
 
@@ -175,7 +162,7 @@ public abstract class Sql
 	public static Sql Param<T>(string name, T value)
 	{
 		if (value is Sql)
-			throw new ArgumentException("Param may not be used with Sql instances.", nameof(value));
+			throw new ArgumentException("Parameters should not be created from Sql instances.", nameof(value));
 		return new NamedParamSql<T>(name, value);
 	}
 
@@ -297,7 +284,7 @@ public abstract class Sql
 			if (filter is not null)
 				filteredProperties = filteredProperties.Where(x => filter(x.Name));
 
-			var text = string.Join(", ", filteredProperties.Select(x => context.RenderParameter(key: null, source: dto, property: x)));
+			var text = string.Join(", ", filteredProperties.Select(x => context.RenderParameter(key: null, valueSource: dto, valueProperty: x)));
 			if (text.Length == 0)
 				throw new InvalidOperationException($"The specified type has no remaining columns: {typeof(T).FullName}");
 			return text;
@@ -306,9 +293,8 @@ public abstract class Sql
 
 	private sealed class DtoParamNamesSql<T> : Sql
 	{
-		public DtoParamNamesSql(string? name = null, Func<string, string>? getName = null, Func<string, bool>? filter = null)
+		public DtoParamNamesSql(Func<string, string>? getName = null, Func<string, bool>? filter = null)
 		{
-			m_name = name;
 			m_getName = getName;
 			m_filter = filter;
 		}
@@ -329,10 +315,8 @@ public abstract class Sql
 			return text;
 		}
 
-		private string GetName(string name) =>
-			m_name is not null ? $"{m_name}_{name}" : m_getName is not null ? m_getName(name) : name;
+		private string GetName(string name) => m_getName is not null ? m_getName(name) : name;
 
-		private readonly string? m_name;
 		private readonly Func<string, string>? m_getName;
 		private readonly Func<string, bool>? m_filter;
 	}
@@ -353,7 +337,7 @@ public abstract class Sql
 		}
 	}
 
-	private sealed class LikePrefixParamSql(string prefix) : Sql
+	private sealed class LikeParamStartsWithSql(string prefix) : Sql
 	{
 		internal override string Render(SqlContext context) => context.RenderParameter(key: this, value: context.Syntax.EscapeLikeFragment(prefix) + "%");
 	}

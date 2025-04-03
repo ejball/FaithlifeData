@@ -15,7 +15,7 @@ public sealed class DbConnectorPool : IDisposable, IAsyncDisposable
 	public DbConnectorPool(DbConnectorPoolSettings settings)
 	{
 		_ = settings ?? throw new ArgumentNullException(nameof(settings));
-		m_create = settings.Create ?? throw new ArgumentException($"{nameof(settings.Create)} is required.");
+		m_create = settings.CreateConnector ?? throw new ArgumentException($"{nameof(settings.CreateConnector)} is required.");
 
 		m_lock = new Lock();
 		m_idleConnectors = new Stack<DbConnector>();

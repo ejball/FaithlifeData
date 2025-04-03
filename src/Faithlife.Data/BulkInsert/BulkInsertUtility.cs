@@ -22,7 +22,7 @@ public static class BulkInsertUtility
 	/// Efficiently inserts multiple rows, in batches as necessary.
 	/// </summary>
 	public static Task<int> BulkInsertAsync(this DbConnectorCommand command, IEnumerable<DbParameters> rows, CancellationToken cancellationToken) =>
-		command.BulkInsertAsync(rows, null, cancellationToken);
+		command.BulkInsertAsync(rows, settings: null, cancellationToken);
 
 	/// <summary>
 	/// Efficiently inserts multiple rows, in batches as necessary.
@@ -57,9 +57,9 @@ public static class BulkInsertUtility
 		for (var index = 1; index < tupleParts.Length; index += 2)
 		{
 			var name = tupleParts[index];
-			tupleParameters[name] = tupleParameters.TryGetValue(name, out var indices) ? indices.Append(index).ToArray() : new[] { index };
+			tupleParameters[name] = tupleParameters.TryGetValue(name, out var indices) ? indices.Append(index).ToArray() : [index];
 			name = name.Substring(1);
-			tupleParameters[name] = tupleParameters.TryGetValue(name, out indices) ? indices.Append(index).ToArray() : new[] { index };
+			tupleParameters[name] = tupleParameters.TryGetValue(name, out indices) ? indices.Append(index).ToArray() : [index];
 		}
 
 		var maxParametersPerBatch = settings?.MaxParametersPerBatch ?? (settings?.MaxRowsPerBatch is null ? c_defaultMaxParametersPerBatch : int.MaxValue);
@@ -122,8 +122,8 @@ public static class BulkInsertUtility
 
 	private const int c_defaultMaxParametersPerBatch = 999;
 
-	private static readonly Regex s_valuesClauseRegex = new Regex(
+	private static readonly Regex s_valuesClauseRegex = new(
 		@"\b[vV][aA][lL][uU][eE][sS]\s*(\(.*?\))\s*\.\.\.", RegexOptions.CultureInvariant | RegexOptions.Singleline | RegexOptions.RightToLeft);
 
-	private static readonly Regex s_parameterRegex = new Regex(@"([?@:]\w+)\b", RegexOptions.CultureInvariant);
+	private static readonly Regex s_parameterRegex = new(@"([?@:]\w+)\b", RegexOptions.CultureInvariant);
 }

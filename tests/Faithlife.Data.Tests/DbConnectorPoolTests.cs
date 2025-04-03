@@ -25,7 +25,7 @@ internal sealed class DbConnectorPoolTests
 	{
 		var createCount = 0;
 
-		using var pool = new DbConnectorPool(new DbConnectorPoolSettings { Create = CreateConnection });
+		using var pool = new DbConnectorPool(new DbConnectorPoolSettings { CreateConnector = CreateConnection });
 
 		using (var connector1 = pool.Get())
 		using (var connector2 = pool.Get())
@@ -50,7 +50,7 @@ internal sealed class DbConnectorPoolTests
 	{
 		var createCount = 0;
 
-		await using var pool = new DbConnectorPool(new DbConnectorPoolSettings { Create = CreateConnection });
+		await using var pool = new DbConnectorPool(new DbConnectorPoolSettings { CreateConnector = CreateConnection });
 
 		await using (var connector1 = pool.Get())
 		await using (var connector2 = pool.Get())

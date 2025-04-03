@@ -140,7 +140,7 @@ internal sealed class DbConnectorTests
 		connector.Command(Sql.Format(
 			$"insert into Items (Name) values ({item1}); insert into Items (Name) values ({item2});")).Execute().Should().Be(2);
 		connector.Command(Sql.Format(
-			$@"select Name from Items where Name like {Sql.LikePrefixParam("t_")} escape '\';")).QuerySingle<string>().Should().Be("t_o");
+			$@"select Name from Items where Name like {Sql.LikeParamStartsWith("t_")} escape '\';")).QuerySingle<string>().Should().Be("t_o");
 	}
 
 	[Test]
