@@ -115,22 +115,6 @@ internal sealed class DbDataMapperTests
 	}
 
 	[Test]
-	public void BadCast()
-	{
-		using var connection = GetOpenConnectionWithItems();
-		using var command = connection.CreateCommand();
-		command.CommandText = "select TheText, TheInteger, TheReal, TheBlob from items;";
-		using var reader = command.ExecuteReader();
-		var record = WrapRecord(reader);
-
-		reader.Read().Should().BeTrue();
-
-		////// TODO
-		////Invoking(() => record.Get<int>(1, 1)).Should().Throw<InvalidOperationException>();
-		////Invoking(() => record.Get<Answer>(0, 1)).Should().Throw<InvalidOperationException>();
-	}
-
-	[Test]
 	public void BadFieldCount()
 	{
 		using var connection = GetOpenConnectionWithItems();
@@ -338,7 +322,7 @@ internal sealed class DbDataMapperTests
 		tuple.Item2.Should().BeNull();
 	}
 
-	[Test, Ignore("TODO: support records")]
+	[Test]
 	public void RecordTests()
 	{
 		using var connection = GetOpenConnectionWithItems();

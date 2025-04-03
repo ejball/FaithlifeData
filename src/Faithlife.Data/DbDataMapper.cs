@@ -155,9 +155,9 @@ public class DbDataMapper
 		{
 			var properties = DbDtoInfo.GetInfo<T>().Properties;
 
-			var propertiesByNormalizedFieldName = new Dictionary<string, (MemberInfo Member, IDbTypeMapper Mapper)>(capacity: properties.Count, StringComparer.OrdinalIgnoreCase);
+			var propertiesByNormalizedFieldName = new Dictionary<string, (DbDtoProperty<T> Property, IDbTypeMapper Mapper)>(capacity: properties.Count, StringComparer.OrdinalIgnoreCase);
 			foreach (var property in properties)
-				propertiesByNormalizedFieldName.Add(NormalizeFieldName(property.ColumnName ?? property.Name), (property.MemberInfo, mapper.GetTypeMapper(property.ValueType)));
+				propertiesByNormalizedFieldName.Add(NormalizeFieldName(property.ColumnName ?? property.Name), (property, mapper.GetTypeMapper(property.ValueType)));
 			m_propertiesByNormalizedFieldName = propertiesByNormalizedFieldName;
 		}
 
@@ -192,33 +192,65 @@ public class DbDataMapper
 
 		private Func<IDataRecord, int, DbRecordState?, T> CreateFunc(FieldNameSet fieldNameSet)
 		{
-			var recordParam = Expression.Parameter(typeof(IDataRecord), "record");
-			var indexParam = Expression.Parameter(typeof(int), "index");
-			var stateParam = Expression.Parameter(typeof(DbRecordState), "state");
-
-			var count = fieldNameSet.Names.Count;
-			var memberBindings = new MemberBinding[count];
-
-			for (var index = 0; index < count; index++)
+			var type = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+			if (type.IsValueType || type.GetConstructor([]) is not null)
 			{
-				var fieldName = fieldNameSet.Names[index];
-				if (!m_propertiesByNormalizedFieldName!.TryGetValue(NormalizeFieldName(fieldName), out var property))
-					throw new InvalidOperationException($"Type does not have a property for '{fieldName}': {Type.FullName}");
+				var count = fieldNameSet.Names.Count;
+				var memberBindings = new MemberBinding[count];
 
-				memberBindings[index] =
-					Expression.Bind(
-						property.Member,
-						Expression.Call(
-							Expression.Constant(property.Mapper),
-							property.Mapper.GetType().GetMethod("Map", [typeof(IDataRecord), typeof(int), typeof(int), typeof(DbRecordState)])!,
-							recordParam,
-							Expression.Add(indexParam, Expression.Constant(index)),
-							Expression.Constant(1),
-							stateParam));
+				for (var index = 0; index < count; index++)
+				{
+					var fieldName = fieldNameSet.Names[index];
+					if (!m_propertiesByNormalizedFieldName!.TryGetValue(NormalizeFieldName(fieldName), out var property))
+						throw new InvalidOperationException($"Type does not have a property for '{fieldName}': {Type.FullName}");
+
+					memberBindings[index] =
+						Expression.Bind(
+							property.Property.MemberInfo,
+							Expression.Call(
+								Expression.Constant(property.Mapper),
+								property.Mapper.GetType().GetMethod("Map", [typeof(IDataRecord), typeof(int), typeof(int), typeof(DbRecordState)])!,
+								s_recordParam,
+								Expression.Add(s_indexParam, Expression.Constant(index)),
+								Expression.Constant(1),
+								s_stateParam));
+				}
+
+				var memberInit = Expression.MemberInit(Expression.New(typeof(T)), memberBindings);
+				return (Func<IDataRecord, int, DbRecordState?, T>) Expression.Lambda(memberInit, s_recordParam, s_indexParam, s_stateParam).Compile();
 			}
 
-			var memberInit = Expression.MemberInit(Expression.New(typeof(T)), memberBindings);
-			return (Func<IDataRecord, int, DbRecordState?, T>) Expression.Lambda(memberInit, recordParam, indexParam, stateParam).Compile();
+#if false
+			if (type.GetConstructors().MaxBy(x => x.GetParameters().Length) is { } constructor)
+			{
+				var count = fieldNameSet.Names.Count;
+				var constructorParameters = constructor.GetParameters();
+				var constructorExpressions = new Expression[constructorParameters.Length];
+
+				for (var index = 0; index < count; index++)
+				{
+					var fieldName = fieldNameSet.Names[index];
+					var constructorParameter = constructorParameters
+						.Select((x, i) => (Parameter: x, Index: i))
+						.FirstOrDefault(x => string.Equals(NormalizeFieldName(x.Parameter.Name ?? ""), NormalizeFieldName(fieldName), StringComparison.OrdinalIgnoreCase));
+					if (constructorParameter.Parameter is null)
+						throw new InvalidOperationException($"Type does not have a property for '{fieldName}': {Type.FullName}");
+
+					constructorExpressions[constructorParameter.Index] = Expression.Call(
+						Expression.Constant(property.Mapper),
+						property.Mapper.GetType().GetMethod("Map", [typeof(IDataRecord), typeof(int), typeof(int), typeof(DbRecordState)])!,
+						s_recordParam,
+						Expression.Add(s_indexParam, Expression.Constant(index)),
+						Expression.Constant(1),
+						s_stateParam);
+				}
+
+				var newExpression = Expression.New(constructor, constructorExpressions);
+				return (Func<IDataRecord, int, DbRecordState?, T>) Expression.Lambda(newExpression, s_recordParam, s_indexParam, s_stateParam).Compile();
+			}
+#endif
+
+			throw new InvalidOperationException($"DTO not supported: {type.FullName}");
 		}
 
 #if !NETSTANDARD2_0
@@ -227,7 +259,7 @@ public class DbDataMapper
 		private static string NormalizeFieldName(string text) => text.Replace("_", "");
 #endif
 
-		private readonly IReadOnlyDictionary<string, (MemberInfo Member, IDbTypeMapper Mapper)>? m_propertiesByNormalizedFieldName;
+		private readonly IReadOnlyDictionary<string, (DbDtoProperty<T> Property, IDbTypeMapper Mapper)>? m_propertiesByNormalizedFieldName;
 
 		private sealed class FieldNameSet(IReadOnlyList<string> names) : IEquatable<FieldNameSet>
 		{
@@ -662,6 +694,10 @@ public class DbDataMapper
 			return new MemoryStream(buffer: bytes, index: 0, count: byteCount, writable: false);
 		}
 	}
+
+	private static readonly ParameterExpression s_recordParam = Expression.Parameter(typeof(IDataRecord), "record");
+	private static readonly ParameterExpression s_indexParam = Expression.Parameter(typeof(int), "index");
+	private static readonly ParameterExpression s_stateParam = Expression.Parameter(typeof(DbRecordState), "state");
 
 	private static readonly ConcurrentDictionary<Type, IDbTypeMapper> s_typeMappers = new();
 	private static readonly MethodInfo s_createTypeMapper = typeof(DbDataMapper).GetMethod(nameof(CreateTypeMapper), BindingFlags.NonPublic | BindingFlags.Instance, null, [], null)!;
