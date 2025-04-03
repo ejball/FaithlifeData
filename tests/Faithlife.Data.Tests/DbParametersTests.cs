@@ -63,8 +63,8 @@ internal sealed class DbParametersTests
 	[Test]
 	public void CreateFromDtoWhere()
 	{
-		DbParameters.FromDtoWhere(new { one = 1, two = 2, three = 3 }, x => x[0] == 't').Enumerate().Should().Equal(("two", 2), ("three", 3));
-		DbParameters.FromDtoWhere(x => x.ToUpperInvariant(), new { one = 1, two = 2, three = 3 }, x => x[0] == 't').Enumerate().Should().Equal(("TWO", 2), ("THREE", 3));
+		DbParameters.FromDto(new { one = 1, two = 2, three = 3 }).Where(x => x[0] == 't').Enumerate().Should().Equal(("two", 2), ("three", 3));
+		DbParameters.FromDto(x => x.ToUpperInvariant(), new { one = 1, two = 2, three = 3 }).Where(x => x[0] == 't').Enumerate().Should().Equal(("TWO", 2), ("THREE", 3));
 	}
 
 	[Test]

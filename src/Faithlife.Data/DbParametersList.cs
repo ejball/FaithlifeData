@@ -17,9 +17,6 @@ public sealed class DbParametersList : DbParameters
 	/// </summary>
 	public DbParametersList(params IEnumerable<DbParameters> items) => m_parametersList = [.. items];
 
-	/// <inheritdoc />
-	public override int Count => m_parametersList.Sum(x => x.Count);
-
 	public bool IsReadOnly
 	{
 		get => m_isReadOnly;
@@ -36,25 +33,28 @@ public sealed class DbParametersList : DbParameters
 		m_parametersList.Add(item);
 	}
 
-	internal override void Apply(IDbCommand command, DbProviderMethods providerMethods)
+	internal override int CountCore(Func<string, bool>? filterName) =>
+		m_parametersList.Sum(x => x.CountCore(filterName));
+
+	internal override IEnumerable<(string Name, object? Value)> EnumerateCore(Func<string, bool>? filterName) =>
+		m_parametersList.SelectMany(x => x.EnumerateCore(filterName));
+
+	internal override void ApplyCore(IDbCommand command, Func<string, bool>? filterName, DbProviderMethods providerMethods)
 	{
 		m_isReadOnly = true;
 		foreach (var parameters in m_parametersList)
-			parameters.Apply(command, providerMethods);
+			parameters.ApplyCore(command, filterName, providerMethods);
 	}
 
-	internal override void Reapply(IDbCommand command, int startIndex, DbProviderMethods providerMethods)
+	internal override void ReapplyCore(IDbCommand command, int startIndex, Func<string, bool>? filterName, DbProviderMethods providerMethods)
 	{
 		m_isReadOnly = true;
 		foreach (var parameters in m_parametersList)
 		{
-			parameters.Reapply(command, startIndex, providerMethods);
+			parameters.ReapplyCore(command, startIndex, filterName, providerMethods);
 			startIndex += parameters.Count;
 		}
 	}
-
-	public override IEnumerable<(string Name, object? Value)> Enumerate() =>
-		m_parametersList.SelectMany(x => x.Enumerate());
 
 	private void VerifyNotReadOnly()
 	{

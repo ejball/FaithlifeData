@@ -4,40 +4,47 @@ namespace Faithlife.Data;
 
 internal sealed class SingleDbParameter<T>(string name, T value) : DbParameters
 {
-	public override int Count => 1;
+	internal override int CountCore(Func<string, bool>? filterName) => filterName is null || filterName(name) ? 1 : 0;
 
-	internal override void Apply(IDbCommand command, DbProviderMethods providerMethods)
+	internal override IEnumerable<(string Name, object? Value)> EnumerateCore(Func<string, bool>? filterName)
 	{
-		if (value is IDataParameter dbParameter)
-			dbParameter.ParameterName = name;
-		else
-			dbParameter = providerMethods.CreateParameter(command, name, value);
-
-		command.Parameters.Add(dbParameter);
+		if (filterName is null || filterName(name))
+			yield return (name, value);
 	}
 
-	internal override void Reapply(IDbCommand command, int startIndex, DbProviderMethods providerMethods)
+	internal override void ApplyCore(IDbCommand command, Func<string, bool>? filterName, DbProviderMethods providerMethods)
 	{
-		var dbParameter = command.Parameters[startIndex] as IDataParameter;
-		if (dbParameter is null || dbParameter.ParameterName != name)
+		if (filterName is null || filterName(name))
 		{
-			try
-			{
-				dbParameter = command.Parameters[name] as IDataParameter;
-			}
-			catch (Exception exception)
-			{
-				throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{name}').", exception);
-			}
-			if (dbParameter is null)
-				throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{name}').");
-		}
+			if (value is IDataParameter dbParameter)
+				dbParameter.ParameterName = name;
+			else
+				dbParameter = providerMethods.CreateParameter(command, name, value);
 
-		providerMethods.SetParameterValue(dbParameter, value);
+			command.Parameters.Add(dbParameter);
+		}
 	}
 
-	public override IEnumerable<(string Name, object? Value)> Enumerate()
+	internal override void ReapplyCore(IDbCommand command, int startIndex, Func<string, bool>? filterName, DbProviderMethods providerMethods)
 	{
-		yield return (name, value);
+		if (filterName is null || filterName(name))
+		{
+			var dbParameter = command.Parameters[startIndex] as IDataParameter;
+			if (dbParameter is null || dbParameter.ParameterName != name)
+			{
+				try
+				{
+					dbParameter = command.Parameters[name] as IDataParameter;
+				}
+				catch (Exception exception)
+				{
+					throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{name}').", exception);
+				}
+				if (dbParameter is null)
+					throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{name}').");
+			}
+
+			providerMethods.SetParameterValue(dbParameter, value);
+		}
 	}
 }
