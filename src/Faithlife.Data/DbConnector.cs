@@ -20,7 +20,6 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		m_isConnectionOpen = m_connection.State == ConnectionState.Open;
 		m_noCloseConnection = m_isConnectionOpen;
 		m_noDisposeConnection = settings.NoDispose;
-		m_whenDisposed = settings.WhenDisposed;
 		ProviderMethods = settings.ProviderMethods ?? DbProviderMethods.Default;
 		m_defaultIsolationLevel = settings.DefaultIsolationLevel;
 		SqlSyntax = settings.SqlSyntax ?? SqlSyntax.Default;
@@ -297,6 +296,17 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
+	/// Attaches a disposable to the connector, which is disposed when the connector is disposed.
+	/// </summary>
+	public void AttachDisposable(object disposable)
+	{
+		if (!m_disposable.IsDefault)
+			throw new InvalidOperationException("A disposable is already attached.");
+
+		m_disposable = new AsyncScope(disposable);
+	}
+
+	/// <summary>
 	/// Disposes the connector.
 	/// </summary>
 	/// <seealso cref="DisposeAsync" />
@@ -316,7 +326,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		DisposeCachedCommands();
 		if (!m_noDisposeConnection)
 			m_connection.Dispose();
-		m_whenDisposed?.Invoke();
+		m_disposable.Dispose();
 		m_isDisposed = true;
 	}
 
@@ -341,7 +351,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			await DisposeCachedCommandsAsync().ConfigureAwait(false);
 			if (!m_noDisposeConnection)
 				await ProviderMethods.DisposeConnectionAsync(m_connection).ConfigureAwait(false);
-			m_whenDisposed?.Invoke();
+			await m_disposable.DisposeAsync().ConfigureAwait(false);
 			m_isDisposed = true;
 		}
 	}
@@ -431,10 +441,10 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	private readonly bool m_noDisposeConnection;
 	private readonly bool m_noCloseConnection;
 	private readonly IsolationLevel? m_defaultIsolationLevel;
-	private readonly Action? m_whenDisposed;
 	private readonly IDbConnection m_connection;
 	private IDbTransaction? m_transaction;
 	private DbCommandCache? m_commandCache;
+	private AsyncScope m_disposable;
 	private bool m_isConnectionOpen;
 	private bool m_isDisposed;
 	private bool m_noDisposeTransaction;

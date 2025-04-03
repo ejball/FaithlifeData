@@ -14,11 +14,6 @@ public class DbConnectorSettings
 	public bool NoDispose { get; set; }
 
 	/// <summary>
-	/// Called when the connector is disposed.
-	/// </summary>
-	public Action? WhenDisposed { get; set; }
-
-	/// <summary>
 	/// Provider-specific database methods.
 	/// </summary>
 	public DbProviderMethods? ProviderMethods { get; set; }
