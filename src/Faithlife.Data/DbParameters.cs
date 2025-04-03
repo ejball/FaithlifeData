@@ -81,18 +81,18 @@ public abstract class DbParameters
 	}
 
 	internal void Apply(IDbCommand command, DbProviderMethods providerMethods) =>
-		ApplyCore(command, null, providerMethods);
+		ApplyCore(command, providerMethods, null);
 
 	internal void Reapply(IDbCommand command, int startIndex, DbProviderMethods providerMethods) =>
-		ReapplyCore(command, startIndex, null, providerMethods);
+		ReapplyCore(command, startIndex, providerMethods, null);
 
 	internal abstract int CountCore(Func<string, bool>? filterName);
 
 	internal abstract IEnumerable<(string Name, object? Value)> EnumerateCore(Func<string, bool>? filterName);
 
-	internal abstract void ApplyCore(IDbCommand command, Func<string, bool>? filterName, DbProviderMethods providerMethods);
+	internal abstract void ApplyCore(IDbCommand command, DbProviderMethods providerMethods, Func<string, bool>? filterName);
 
-	internal abstract void ReapplyCore(IDbCommand command, int startIndex, Func<string, bool>? filterName, DbProviderMethods providerMethods);
+	internal abstract void ReapplyCore(IDbCommand command, int startIndex, DbProviderMethods providerMethods, Func<string, bool>? filterName);
 
 	private sealed class EmptyDbParameters : DbParameters
 	{
@@ -100,11 +100,11 @@ public abstract class DbParameters
 
 		internal override IEnumerable<(string Name, object? Value)> EnumerateCore(Func<string, bool>? filterName) => [];
 
-		internal override void ApplyCore(IDbCommand command, Func<string, bool>? filterName, DbProviderMethods providerMethods)
+		internal override void ApplyCore(IDbCommand command, DbProviderMethods providerMethods, Func<string, bool>? filterName)
 		{
 		}
 
-		internal override void ReapplyCore(IDbCommand command, int startIndex, Func<string, bool>? filterName, DbProviderMethods providerMethods)
+		internal override void ReapplyCore(IDbCommand command, int startIndex, DbProviderMethods providerMethods, Func<string, bool>? filterName)
 		{
 		}
 	}
@@ -117,11 +117,11 @@ public abstract class DbParameters
 		internal override IEnumerable<(string Name, object? Value)> EnumerateCore(Func<string, bool>? filterName) =>
 			source.EnumerateCore(FilterName(filterName));
 
-		internal override void ApplyCore(IDbCommand command, Func<string, bool>? filterName, DbProviderMethods providerMethods) =>
-			source.ApplyCore(command, FilterName(filterName), providerMethods);
+		internal override void ApplyCore(IDbCommand command, DbProviderMethods providerMethods, Func<string, bool>? filterName) =>
+			source.ApplyCore(command, providerMethods, FilterName(filterName));
 
-		internal override void ReapplyCore(IDbCommand command, int startIndex, Func<string, bool>? filterName, DbProviderMethods providerMethods) =>
-			source.ReapplyCore(command, startIndex, FilterName(filterName), providerMethods);
+		internal override void ReapplyCore(IDbCommand command, int startIndex, DbProviderMethods providerMethods, Func<string, bool>? filterName) =>
+			source.ReapplyCore(command, startIndex, providerMethods, FilterName(filterName));
 
 		private Func<string, bool> FilterName(Func<string, bool>? filterName) => x => where(x) && filterName?.Invoke(x) is not false;
 	}

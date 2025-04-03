@@ -12,7 +12,7 @@ internal sealed class SingleDbParameter<T>(string name, T value) : DbParameters
 			yield return (name, value);
 	}
 
-	internal override void ApplyCore(IDbCommand command, Func<string, bool>? filterName, DbProviderMethods providerMethods)
+	internal override void ApplyCore(IDbCommand command, DbProviderMethods providerMethods, Func<string, bool>? filterName)
 	{
 		if (filterName is null || filterName(name))
 		{
@@ -25,7 +25,7 @@ internal sealed class SingleDbParameter<T>(string name, T value) : DbParameters
 		}
 	}
 
-	internal override void ReapplyCore(IDbCommand command, int startIndex, Func<string, bool>? filterName, DbProviderMethods providerMethods)
+	internal override void ReapplyCore(IDbCommand command, int startIndex, DbProviderMethods providerMethods, Func<string, bool>? filterName)
 	{
 		if (filterName is null || filterName(name))
 		{
