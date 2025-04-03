@@ -6,7 +6,7 @@ namespace Faithlife.Data;
 /// <summary>
 /// Encapsulates a database connection and any current transaction.
 /// </summary>
-public sealed class DbConnector : IDisposable, IAsyncDisposable
+public class DbConnector : IDisposable, IAsyncDisposable
 {
 	/// <summary>
 	/// Creates a new DbConnector.
@@ -14,25 +14,12 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	/// <param name="connection">The database connection.</param>
 	/// <param name="settings">The settings.</param>
 	public DbConnector(IDbConnection connection, DbConnectorSettings? settings = null)
-		: this(connection, transaction: null, settings)
-	{
-	}
-
-	/// <summary>
-	/// Creates a new DbConnector.
-	/// </summary>
-	/// <param name="connection">The database connection.</param>
-	/// <param name="transaction">The current transaction.</param>
-	/// <param name="settings">The settings.</param>
-	public DbConnector(IDbConnection connection, IDbTransaction? transaction, DbConnectorSettings? settings = null)
 	{
 		settings ??= s_defaultSettings;
 		m_connection = connection ?? throw new ArgumentNullException(nameof(connection));
 		m_isConnectionOpen = m_connection.State == ConnectionState.Open;
 		m_noCloseConnection = m_isConnectionOpen;
-		m_transaction = transaction;
-		m_noDisposeTransaction = m_transaction is not null;
-		m_noDisposeConnection = m_noDisposeTransaction || settings.NoDispose;
+		m_noDisposeConnection = settings.NoDispose;
 		m_whenDisposed = settings.WhenDisposed;
 		ProviderMethods = settings.ProviderMethods ?? DbProviderMethods.Default;
 		m_defaultIsolationLevel = settings.DefaultIsolationLevel;
@@ -195,10 +182,11 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	/// Attaches a transaction.
 	/// </summary>
 	/// <returns>An <see cref="IDisposable" /> that should be disposed when the transaction has been committed or should be rolled back.</returns>
-	public DbTransactionDisposer AttachTransaction(IDbTransaction transaction)
+	public DbTransactionDisposer AttachTransaction(IDbTransaction transaction, bool noDispose = false)
 	{
 		VerifyCanBeginTransaction();
 		m_transaction = transaction;
+		m_noDisposeTransaction = noDispose;
 		return new DbTransactionDisposer(this);
 	}
 
@@ -441,7 +429,6 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	private static readonly DbConnectorSettings s_defaultSettings = new();
 
 	private readonly bool m_noDisposeConnection;
-	private readonly bool m_noDisposeTransaction;
 	private readonly bool m_noCloseConnection;
 	private readonly IsolationLevel? m_defaultIsolationLevel;
 	private readonly Action? m_whenDisposed;
@@ -450,4 +437,5 @@ public sealed class DbConnector : IDisposable, IAsyncDisposable
 	private DbCommandCache? m_commandCache;
 	private bool m_isConnectionOpen;
 	private bool m_isDisposed;
+	private bool m_noDisposeTransaction;
 }
