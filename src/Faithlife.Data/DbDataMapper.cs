@@ -23,7 +23,7 @@ public class DbDataMapper
 	/// </summary>
 	public DbTypeMapper<T> GetTypeMapper<T>()
 	{
-		IDbTypeMapper? mapper;
+		DbTypeMapper? mapper;
 		while (!s_typeMappers.TryGetValue(typeof(T), out mapper))
 			s_typeMappers.TryAdd(typeof(T), CreateTypeMapper<T>());
 		return (DbTypeMapper<T>) mapper;
@@ -32,11 +32,11 @@ public class DbDataMapper
 	/// <summary>
 	/// Gets a type mapper for the specified type.
 	/// </summary>
-	public IDbTypeMapper GetTypeMapper(Type type)
+	public DbTypeMapper GetTypeMapper(Type type)
 	{
-		IDbTypeMapper? mapper;
+		DbTypeMapper? mapper;
 		while (!s_typeMappers.TryGetValue(type, out mapper))
-			s_typeMappers.TryAdd(type, (IDbTypeMapper) s_createTypeMapper.MakeGenericMethod(type).Invoke(this, [])!);
+			s_typeMappers.TryAdd(type, (DbTypeMapper) s_createTypeMapper.MakeGenericMethod(type).Invoke(this, [])!);
 		return mapper;
 	}
 
@@ -155,7 +155,7 @@ public class DbDataMapper
 		{
 			var properties = DbDtoInfo.GetInfo<T>().Properties;
 
-			var propertiesByNormalizedFieldName = new Dictionary<string, (DbDtoProperty<T> Property, IDbTypeMapper Mapper)>(capacity: properties.Count, StringComparer.OrdinalIgnoreCase);
+			var propertiesByNormalizedFieldName = new Dictionary<string, (DbDtoProperty<T> Property, DbTypeMapper Mapper)>(capacity: properties.Count, StringComparer.OrdinalIgnoreCase);
 			foreach (var property in properties)
 				propertiesByNormalizedFieldName.Add(NormalizeFieldName(property.ColumnName ?? property.Name), (property, mapper.GetTypeMapper(property.ValueType)));
 			m_propertiesByNormalizedFieldName = propertiesByNormalizedFieldName;
@@ -259,7 +259,7 @@ public class DbDataMapper
 		private static string NormalizeFieldName(string text) => text.Replace("_", "");
 #endif
 
-		private readonly IReadOnlyDictionary<string, (DbDtoProperty<T> Property, IDbTypeMapper Mapper)>? m_propertiesByNormalizedFieldName;
+		private readonly IReadOnlyDictionary<string, (DbDtoProperty<T> Property, DbTypeMapper Mapper)>? m_propertiesByNormalizedFieldName;
 
 		private sealed class FieldNameSet(IReadOnlyList<string> names) : IEquatable<FieldNameSet>
 		{
@@ -333,7 +333,7 @@ public class DbDataMapper
 		}
 	}
 
-	private abstract class ValueTupleMapperBase<T>(IDbTypeMapper[] mappers) : TypeMapper<T>
+	private abstract class ValueTupleMapperBase<T>(DbTypeMapper[] mappers) : TypeMapper<T>
 	{
 		public override int? FieldCount
 		{
@@ -699,6 +699,6 @@ public class DbDataMapper
 	private static readonly ParameterExpression s_indexParam = Expression.Parameter(typeof(int), "index");
 	private static readonly ParameterExpression s_stateParam = Expression.Parameter(typeof(DbRecordState), "state");
 
-	private static readonly ConcurrentDictionary<Type, IDbTypeMapper> s_typeMappers = new();
+	private static readonly ConcurrentDictionary<Type, DbTypeMapper> s_typeMappers = new();
 	private static readonly MethodInfo s_createTypeMapper = typeof(DbDataMapper).GetMethod(nameof(CreateTypeMapper), BindingFlags.NonPublic | BindingFlags.Instance, null, [], null)!;
 }

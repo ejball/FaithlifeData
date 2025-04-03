@@ -14,16 +14,6 @@ public abstract class DbParameters
 	public abstract int Count { get; }
 
 	/// <summary>
-	/// Applies the parameters to the specified command.
-	/// </summary>
-	public abstract void Apply(IDbCommand command, DbProviderMethods providerMethods);
-
-	/// <summary>
-	/// Reapplies the parameters to the specified command.
-	/// </summary>
-	public abstract void Reapply(IDbCommand command, int startIndex, DbProviderMethods providerMethods);
-
-	/// <summary>
 	/// Enumerates the names and values of the parameters.
 	/// </summary>
 	public abstract IEnumerable<(string Name, object? Value)> Enumerate();
@@ -108,13 +98,17 @@ public abstract class DbParameters
 		return Create(DbDtoInfo.GetInfo<T>().Properties.Where(x => filter(x.Name)).Select(x => x.CreateParameter(name(x.Name), dto)));
 	}
 
+	internal abstract void Apply(IDbCommand command, DbProviderMethods providerMethods);
+
+	internal abstract void Reapply(IDbCommand command, int startIndex, DbProviderMethods providerMethods);
+
 	private sealed class EmptyDbParameters : DbParameters
 	{
-		public override void Apply(IDbCommand command, DbProviderMethods providerMethods)
+		internal override void Apply(IDbCommand command, DbProviderMethods providerMethods)
 		{
 		}
 
-		public override void Reapply(IDbCommand command, int startIndex, DbProviderMethods providerMethods)
+		internal override void Reapply(IDbCommand command, int startIndex, DbProviderMethods providerMethods)
 		{
 		}
 

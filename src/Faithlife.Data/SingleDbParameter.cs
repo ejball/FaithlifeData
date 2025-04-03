@@ -6,7 +6,7 @@ internal sealed class SingleDbParameter<T>(string name, T value) : DbParameters
 {
 	public override int Count => 1;
 
-	public override void Apply(IDbCommand command, DbProviderMethods providerMethods)
+	internal override void Apply(IDbCommand command, DbProviderMethods providerMethods)
 	{
 		if (value is IDataParameter dbParameter)
 			dbParameter.ParameterName = name;
@@ -16,7 +16,7 @@ internal sealed class SingleDbParameter<T>(string name, T value) : DbParameters
 		command.Parameters.Add(dbParameter);
 	}
 
-	public override void Reapply(IDbCommand command, int startIndex, DbProviderMethods providerMethods)
+	internal override void Reapply(IDbCommand command, int startIndex, DbProviderMethods providerMethods)
 	{
 		var dbParameter = command.Parameters[startIndex] as IDataParameter;
 		if (dbParameter is null || dbParameter.ParameterName != name)

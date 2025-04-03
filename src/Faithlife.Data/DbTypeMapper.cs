@@ -1,17 +1,32 @@
 using System.Data;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Faithlife.Data;
 
 /// <summary>
+/// Maps from data record values to an instance of the specified type.
+/// </summary>
+public abstract class DbTypeMapper
+{
+	/// <summary>
+	/// The type to which the data record values are mapped.
+	/// </summary>
+	public abstract Type Type { get; }
+
+	/// <summary>
+	/// The number of fields used by the mapper, or null if the mapper can handle any number of fields.
+	/// </summary>
+	public abstract int? FieldCount { get; }
+}
+
+/// <summary>
 /// Maps data record values to an instance of the specified type.
 /// </summary>
-public abstract class DbTypeMapper<T> : IDbTypeMapper
+[SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1402:File may only contain a single type", Justification = "Same name.")]
+public abstract class DbTypeMapper<T> : DbTypeMapper
 {
 	/// <inheritdoc />
-	public Type Type => typeof(T);
-
-	/// <inheritdoc />
-	public abstract int? FieldCount { get; }
+	public override Type Type => typeof(T);
 
 	/// <summary>
 	/// Maps the data record values to an instance of the specified type.
@@ -45,7 +60,4 @@ public abstract class DbTypeMapper<T> : IDbTypeMapper
 	/// Maps the data record values to an instance of the specified type.
 	/// </summary>
 	protected abstract T MapCore(IDataRecord record, int index, int count, DbRecordState? state);
-
-	/// <inheritdoc />
-	object? IDbTypeMapper.Map(IDataRecord record, int index, int count, DbRecordState? state) => Map(record, index, count, state);
 }
