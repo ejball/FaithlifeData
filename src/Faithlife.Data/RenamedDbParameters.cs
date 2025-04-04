@@ -2,7 +2,7 @@ using System.Data;
 
 namespace Faithlife.Data;
 
-internal sealed class NamedDbParameters(DbParameters source, Func<string, string> named) : DbParameters
+internal sealed class RenamedDbParameters(DbParameters source, Func<string, string> named) : DbParameters
 {
 	internal override int CountCore(Func<string, bool>? filterName, Func<string, string>? transformName) =>
 		source.CountCore(FilterName(filterName), TransformName(transformName));
