@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Data.Sqlite;
 using NUnit.Framework;
 using static FluentAssertions.FluentActions;
 
@@ -56,31 +57,51 @@ internal sealed class DbParametersTests
 	[Test]
 	public void CreateFromDto()
 	{
-		DbParameters.Create(DbParameters.FromDto(new { one = 1 }), DbParameters.FromDto(new HasTwo())).Enumerate().Should().Equal(("one", 1), ("Two", 2));
+		var parameters = DbParameters.Create(DbParameters.FromDto(new { one = 1 }), DbParameters.FromDto(new HasTwo()));
+		parameters.Count.Should().Be(2);
+		parameters.Enumerate().Should().Equal(("one", 1), ("Two", 2));
 	}
 
 	[Test]
 	public void CreateFromDtoNamed()
 	{
-		DbParameters.FromDto(new { one = 1, Two = 2 }).Named(x => $"it's {x}").Enumerate().Should().Equal(("it's one", 1), ("it's Two", 2));
+		var parameters = DbParameters.FromDto(new { one = 1, Two = 2 }).Named(x => $"it's {x}");
+		parameters.Count.Should().Be(2);
+		parameters.Enumerate().Should().Equal(("it's one", 1), ("it's Two", 2));
 	}
 
 	[Test]
 	public void CreateFromDtoWhere()
 	{
-		DbParameters.FromDto(new { one = 1, two = 2, three = 3 }).Where(x => x[0] == 't').Enumerate().Should().Equal(("two", 2), ("three", 3));
+		var parameters = DbParameters.FromDto(new { one = 1, two = 2, three = 3 }).Where(x => x[0] == 't');
+		parameters.Count.Should().Be(2);
+		parameters.Enumerate().Should().Equal(("two", 2), ("three", 3));
 	}
 
 	[Test]
-	public void CreateFromDtoWhereNamed()
+	public void CreateFromDtoWhereNamedWhereNamed()
 	{
-		DbParameters.FromDto(new { one = 1, two = 2, three = 3 }).Where(x => x[0] == 't').Named(x => x.ToUpperInvariant()).Enumerate().Should().Equal(("TWO", 2), ("THREE", 3));
+		var parameters = DbParameters.FromDto(new { one = 1, Two = 2, three = 3 }).Where(x => x[0] == 't').Named(x => x.ToUpperInvariant()).Where(x => x[0] == 'T').Named(x => x.ToLowerInvariant());
+		parameters.Count.Should().Be(1);
+		parameters.Enumerate().Should().Equal(("three", 3));
+
+		using var connection = new SqliteConnection("Data Source=:memory:");
+		using var command = connection.CreateCommand();
+		parameters.Apply(command, DbProviderMethods.Default);
+		command.Parameters.Count.Should().Be(1);
+		command.Parameters[0].ParameterName.Should().Be("three");
+		command.Parameters[0].Value.Should().Be(3);
+		parameters.Reapply(command, 0, DbProviderMethods.Default);
+		command.Parameters[0].ParameterName.Should().Be("three");
+		command.Parameters[0].Value.Should().Be(3);
 	}
 
 	[Test]
-	public void CreateFromDtoNamedWhere()
+	public void CreateFromDtoNamedWhereNamedWhere()
 	{
-		DbParameters.FromDto(new { one = 1, two = 2, three = 3 }).Named(x => x.ToUpperInvariant()).Where(x => x[0] == 'T').Enumerate().Should().Equal(("TWO", 2), ("THREE", 3));
+		var parameters = DbParameters.FromDto(new { one = 1, Two = 2, three = 3 }).Named(x => x.ToUpperInvariant()).Where(x => x[0] == 'T').Named(x => x.ToLowerInvariant()).Where(x => x[0] == 't');
+		parameters.Count.Should().Be(2);
+		parameters.Enumerate().Should().Equal(("two", 2), ("three", 3));
 	}
 
 	[Test]

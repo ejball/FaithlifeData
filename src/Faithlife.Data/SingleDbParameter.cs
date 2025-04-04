@@ -4,49 +4,55 @@ namespace Faithlife.Data;
 
 internal sealed class SingleDbParameter<T>(string name, T value) : DbParameters
 {
-	internal override int CountCore(Func<string, bool>? filterName) => filterName is null || filterName(name) ? 1 : 0;
+	internal override int CountCore(Func<string, bool>? filterName, Func<string, string>? transformName) => filterName is null || filterName(name) ? 1 : 0;
 
-	internal override IEnumerable<(string Name, object? Value)> EnumerateCore(Func<string, bool>? filterName)
+	internal override IEnumerable<(string Name, object? Value)> EnumerateCore(Func<string, bool>? filterName, Func<string, string>? transformName)
 	{
 		if (filterName is null || filterName(name))
-			yield return (name, value);
+		{
+			var transformedName = transformName is null ? name : transformName(name);
+			yield return (transformedName, value);
+		}
 	}
 
 	internal override void ApplyCore(IDbCommand command, DbProviderMethods providerMethods, Func<string, bool>? filterName, Func<string, string>? transformName)
 	{
 		if (filterName is null || filterName(name))
 		{
-			var parameterName = transformName is null ? name : transformName(name);
+			var transformedName = transformName is null ? name : transformName(name);
 			if (value is IDataParameter dbParameter)
-				dbParameter.ParameterName = parameterName;
+				dbParameter.ParameterName = transformedName;
 			else
-				dbParameter = providerMethods.CreateParameter(command, parameterName, value);
+				dbParameter = providerMethods.CreateParameter(command, transformedName, value);
 
 			command.Parameters.Add(dbParameter);
 		}
 	}
 
-	internal override void ReapplyCore(IDbCommand command, int startIndex, DbProviderMethods providerMethods, Func<string, bool>? filterName, Func<string, string>? transformName)
+	internal override int ReapplyCore(IDbCommand command, int startIndex, DbProviderMethods providerMethods, Func<string, bool>? filterName, Func<string, string>? transformName)
 	{
 		if (filterName is null || filterName(name))
 		{
-			var parameterName = transformName is null ? name : transformName(name);
+			var transformedName = transformName is null ? name : transformName(name);
 			var dbParameter = command.Parameters[startIndex] as IDataParameter;
-			if (dbParameter is null || dbParameter.ParameterName != parameterName)
+			if (dbParameter is null || dbParameter.ParameterName != transformedName)
 			{
 				try
 				{
-					dbParameter = command.Parameters[parameterName] as IDataParameter;
+					dbParameter = command.Parameters[transformedName] as IDataParameter;
 				}
 				catch (Exception exception)
 				{
-					throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{parameterName}').", exception);
+					throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{transformedName}').", exception);
 				}
 				if (dbParameter is null)
-					throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{parameterName}').");
+					throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{transformedName}').");
 			}
 
 			providerMethods.SetParameterValue(dbParameter, value);
+			return 1;
 		}
+
+		return 0;
 	}
 }

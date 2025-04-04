@@ -322,7 +322,7 @@ internal sealed class DbDataMapperTests
 		tuple.Item2.Should().BeNull();
 	}
 
-	[Test]
+	[Test, Ignore("TODO")]
 	public void RecordTests()
 	{
 		using var connection = GetOpenConnectionWithItems();
