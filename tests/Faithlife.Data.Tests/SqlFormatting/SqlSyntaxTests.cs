@@ -22,18 +22,22 @@ internal sealed class SqlSyntaxTests
 	[Test]
 	public void EmptySql()
 	{
-		var (text, parameters) = Render(Sql.Empty);
+		var sql = Sql.Empty;
+		var (text, parameters) = Render(sql);
 		text.Should().Be("");
 		parameters.Count.Should().Be(0);
+		sql.ToString().Should().Be("");
 	}
 
 	[TestCase("")]
 	[TestCase("select * from widgets")]
 	public void RawSql(string raw)
 	{
-		var (text, parameters) = Render(Sql.Raw(raw));
+		var sql = Sql.Raw(raw);
+		var (text, parameters) = Render(sql);
 		text.Should().Be(raw);
 		parameters.Count.Should().Be(0);
+		sql.ToString().Should().Be(raw);
 	}
 
 	[Test]
@@ -184,9 +188,11 @@ internal sealed class SqlSyntaxTests
 	[Test]
 	public void FormatImplicitParam()
 	{
-		var (text, parameters) = Render(Sql.Format($"select * from widgets where id in ({42}, {-42})"));
+		var sql = Sql.Format($"select * from widgets where id in ({42}, {-42})");
+		var (text, parameters) = Render(sql);
 		text.Should().Be("select * from widgets where id in (@ado0, @ado1)");
 		parameters.Enumerate().Should().Equal(("ado0", 42), ("ado1", -42));
+		sql.ToString().Should().Be("select * from widgets where id in (@ado0, @ado1)");
 	}
 
 	[TestCase(null)]
@@ -300,10 +306,12 @@ internal sealed class SqlSyntaxTests
 	public void NameSql()
 	{
 		Invoking(() => SqlSyntax.Default.Render(Sql.Name("xyzzy"))).Should().Throw<InvalidOperationException>();
-		SqlSyntax.MySql.Render(Sql.Name("x`y[z]z\"y")).Text.Should().Be("`x``y[z]z\"y`");
-		SqlSyntax.Postgres.Render(Sql.Name("x`y[z]z\"y")).Text.Should().Be("\"x`y[z]z\"\"y\"");
-		SqlSyntax.SqlServer.Render(Sql.Name("x`y[z]z\"y")).Text.Should().Be("[x`y[z]]z\"y]");
-		SqlSyntax.Sqlite.Render(Sql.Name("x`y[z]z\"y")).Text.Should().Be("\"x`y[z]z\"\"y\"");
+		var sql = Sql.Name("x`y[z]z\"y");
+		SqlSyntax.MySql.Render(sql).Text.Should().Be("`x``y[z]z\"y`");
+		SqlSyntax.Postgres.Render(sql).Text.Should().Be("\"x`y[z]z\"\"y\"");
+		SqlSyntax.SqlServer.Render(sql).Text.Should().Be("[x`y[z]]z\"y]");
+		SqlSyntax.Sqlite.Render(sql).Text.Should().Be("\"x`y[z]z\"\"y\"");
+		sql.ToString().Should().Be("\"x`y[z]z\"\"y\"");
 	}
 
 	[Test]
@@ -353,22 +361,20 @@ internal sealed class SqlSyntaxTests
 	}
 
 	[Test]
-	public void TableColumnNamesAndValuesWhereSql()
+	public void ColumnNamesAndDtoParamNamesWhereSql()
 	{
 		var syntax = SqlSyntax.MySql;
 
-		syntax.Render(Sql.ColumnNames<ItemDto>().Where(x => x is nameof(ItemDto.DisplayName)).From("t")).Text.Should().Be("`t`.`DisplayName`");
-
 		var item = new ItemDto { Id = 3, DisplayName = "three" };
 		var (text, parameters) = syntax.Render(Sql.Format($"""
-			insert into Items ({Sql.ColumnNames(item).From("t").Where(x => x is nameof(ItemDto.DisplayName))})
-			values ({Sql.ColumnParams(item).Where(x => x is nameof(ItemDto.DisplayName))});
+			insert into Items ({Sql.ColumnNames(item).Where(x => x is nameof(ItemDto.DisplayName))})
+			values ({Sql.DtoParamNames(item).Where(x => x is nameof(ItemDto.DisplayName))});
 			"""));
 		text.Should().Be("""
-			insert into Items (`t`.`DisplayName`)
-			values (@ado0);
+			insert into Items (`DisplayName`)
+			values (@DisplayName);
 			""");
-		parameters.Enumerate().Should().Equal(("ado0", item.DisplayName));
+		parameters.Enumerate().Should().BeEmpty();
 	}
 
 	[Test]
@@ -479,6 +485,13 @@ internal sealed class SqlSyntaxTests
 		var (text, parameters) = syntax.Render(Sql.Having(Sql.Raw(condition)));
 		text.Should().Be(sql);
 		parameters.Count.Should().Be(0);
+	}
+
+	[Test]
+	public void Clauses()
+	{
+		var sql = Sql.Clauses(Sql.Raw("select *"), Sql.Raw("from Widgets"));
+		sql.ToString().Should().Be("select *\nfrom Widgets");
 	}
 
 	private static (string Text, DbParameters Parameters) Render(Sql sql) => SqlSyntax.Default.Render(sql);

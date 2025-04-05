@@ -51,6 +51,12 @@ public abstract class Sql
 	public static DtoParamNamesSql<T> DtoParamNames<T>() => new();
 
 	/// <summary>
+	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO.
+	/// </summary>
+	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
+	public static DtoParamNamesSql<T> DtoParamNames<T>(T dto) => new();
+
+	/// <summary>
 	/// Creates SQL from a formatted string.
 	/// </summary>
 	public static Sql Format(SqlFormatStringHandler stringHandler) => stringHandler.ToSql();

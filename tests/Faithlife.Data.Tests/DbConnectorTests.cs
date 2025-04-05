@@ -544,7 +544,7 @@ internal sealed class DbConnectorTests
 		throw new InvalidOperationException();
 	}
 
-	private static DbConnector CreateConnector() => new DbConnector(new SqliteConnection("Data Source=:memory:"));
+	private static DbConnector CreateConnector() => new(new SqliteConnection("Data Source=:memory:"));
 
 	private static string ToUpper(DbRecord x) => x.Get<string>().ToUpperInvariant();
 }
