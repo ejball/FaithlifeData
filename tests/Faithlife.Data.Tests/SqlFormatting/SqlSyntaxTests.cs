@@ -386,7 +386,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = SqlSyntax.MySql;
 
 		syntax.Render(Sql.DtoParamNames<ItemDto>()).Text.Should().Be("@Id, @DisplayName");
-		syntax.Render(Sql.DtoParamNames<ItemDto>(x => x + "_")).Text.Should().Be("@Id_, @DisplayName_");
+		syntax.Render(Sql.DtoParamNames<ItemDto>().Renamed(x => x + "_")).Text.Should().Be("@Id_, @DisplayName_");
 	}
 
 	[Test]
@@ -394,8 +394,9 @@ internal sealed class SqlSyntaxTests
 	{
 		var syntax = SqlSyntax.MySql;
 
-		syntax.Render(Sql.DtoParamNamesWhere<ItemDto>(NotId)).Text.Should().Be("@DisplayName");
-		syntax.Render(Sql.DtoParamNamesWhere<ItemDto>(x => x + "_", NotId)).Text.Should().Be("@DisplayName_");
+		syntax.Render(Sql.DtoParamNames<ItemDto>().Where(NotId)).Text.Should().Be("@DisplayName");
+		syntax.Render(Sql.DtoParamNames<ItemDto>().Where(NotId).Renamed(x => x + "_")).Text.Should().Be("@DisplayName_");
+		syntax.Render(Sql.DtoParamNames<ItemDto>().Renamed(x => x + "_").Where(NotId)).Text.Should().Be("@Id_, @DisplayName_");
 
 		static bool NotId(string x) => x != nameof(ItemDto.Id);
 	}

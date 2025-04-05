@@ -6,15 +6,15 @@ namespace Faithlife.Data.SqlFormatting;
 public sealed class ColumnNamesSql<T> : Sql
 {
 	public ColumnNamesSql<T> From(string tableName) =>
-		new(tableName, m_filter);
+		new(tableName, m_filterName);
 
-	public ColumnNamesSql<T> Where(Func<string, bool> filter) =>
-		new(m_tableName, m_filter is null ? filter : x => m_filter(x) && filter(x));
+	public ColumnNamesSql<T> Where(Func<string, bool> nameMatches) =>
+		new(m_tableName, m_filterName is null ? nameMatches : x => m_filterName(x) && nameMatches(x));
 
-	internal ColumnNamesSql(string tableName = "", Func<string, bool>? filter = null)
+	internal ColumnNamesSql(string tableName = "", Func<string, bool>? filterName = null)
 	{
 		m_tableName = tableName;
-		m_filter = filter;
+		m_filterName = filterName;
 	}
 
 	internal override string Render(SqlContext context)
@@ -28,8 +28,8 @@ public sealed class ColumnNamesSql<T> : Sql
 		var useSnakeCase = syntax.SnakeCaseColumnNames;
 
 		var filteredProperties = properties.AsEnumerable();
-		if (m_filter is not null)
-			filteredProperties = filteredProperties.Where(x => m_filter(x.Name));
+		if (m_filterName is not null)
+			filteredProperties = filteredProperties.Where(x => m_filterName(x.Name));
 
 		var text = string.Join(", ",
 			filteredProperties.Select(x => tablePrefix + syntax.QuoteName(
@@ -47,5 +47,5 @@ public sealed class ColumnNamesSql<T> : Sql
 	private static readonly ConcurrentDictionary<string, string> s_snakeCaseCache = new();
 
 	private readonly string m_tableName;
-	private readonly Func<string, bool>? m_filter;
+	private readonly Func<string, bool>? m_filterName;
 }

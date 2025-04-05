@@ -48,27 +48,7 @@ public abstract class Sql
 	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO.
 	/// </summary>
 	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
-	public static Sql DtoParamNames<T>() => new DtoParamNamesSql<T>();
-
-	/// <summary>
-	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO.
-	/// </summary>
-	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
-	public static Sql DtoParamNames<T>(Func<string, string> name) => new DtoParamNamesSql<T>(getName: name);
-
-	/// <summary>
-	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO
-	/// whose names match the specified filter.
-	/// </summary>
-	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
-	public static Sql DtoParamNamesWhere<T>(Func<string, bool> filter) => new DtoParamNamesSql<T>(filter: filter);
-
-	/// <summary>
-	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO
-	/// whose names match the specified filter.
-	/// </summary>
-	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
-	public static Sql DtoParamNamesWhere<T>(Func<string, string> name, Func<string, bool> filter) => new DtoParamNamesSql<T>(getName: name, filter: filter);
+	public static DtoParamNamesSql<T> DtoParamNames<T>() => new();
 
 	/// <summary>
 	/// Creates SQL from a formatted string.
@@ -206,36 +186,6 @@ public abstract class Sql
 				.ToList();
 			return string.Join(context.Syntax.LowerCaseKeywords ? lowercase : uppercase, rawSqls);
 		}
-	}
-
-	private sealed class DtoParamNamesSql<T> : Sql
-	{
-		public DtoParamNamesSql(Func<string, string>? getName = null, Func<string, bool>? filter = null)
-		{
-			m_getName = getName;
-			m_filter = filter;
-		}
-
-		internal override string Render(SqlContext context)
-		{
-			var properties = DbDtoInfo.GetInfo<T>().Properties;
-			if (properties.Count == 0)
-				throw new InvalidOperationException($"The specified type has no columns: {typeof(T).FullName}");
-
-			var filteredProperties = properties.AsEnumerable();
-			if (m_filter is not null)
-				filteredProperties = filteredProperties.Where(x => m_filter(x.Name));
-
-			var text = string.Join(", ", filteredProperties.Select(x => context.Syntax.ParameterStart + GetName(x.Name)));
-			if (text.Length == 0)
-				throw new InvalidOperationException($"The specified type has no remaining columns: {typeof(T).FullName}");
-			return text;
-		}
-
-		private string GetName(string name) => m_getName is not null ? m_getName(name) : name;
-
-		private readonly Func<string, string>? m_getName;
-		private readonly Func<string, bool>? m_filter;
 	}
 
 	private sealed class ConcatSql(IReadOnlyList<Sql> sqls) : Sql
