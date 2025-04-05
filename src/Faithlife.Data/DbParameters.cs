@@ -72,17 +72,17 @@ public abstract class DbParameters
 	/// <summary>
 	/// Transforms the parameter names using the specified function.
 	/// </summary>
-	public DbParameters Named(Func<string, string> transform)
+	public DbParameters Renamed(Func<string, string> transform)
 	{
 		if (transform is null)
 			throw new ArgumentNullException(nameof(transform));
-		return new NamedDbParameters(this, transform);
+		return new RenamedDbParameters(this, transform);
 	}
 
 	internal void Apply(IDbCommand command, DbProviderMethods providerMethods) =>
 		ApplyCore(command, providerMethods, filterName: null, transformName: null);
 
-	internal void Reapply(IDbCommand command, int startIndex, DbProviderMethods providerMethods) =>
+	internal int Reapply(IDbCommand command, int startIndex, DbProviderMethods providerMethods) =>
 		ReapplyCore(command, startIndex, providerMethods, filterName: null, transformName: null);
 
 	internal abstract int CountCore(Func<string, bool>? filterName, Func<string, string>? transformName);

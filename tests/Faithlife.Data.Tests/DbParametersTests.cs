@@ -63,9 +63,9 @@ internal sealed class DbParametersTests
 	}
 
 	[Test]
-	public void CreateFromDtoNamed()
+	public void CreateFromDtoRenamed()
 	{
-		var parameters = DbParameters.FromDto(new { one = 1, Two = 2 }).Named(x => $"it's {x}");
+		var parameters = DbParameters.FromDto(new { one = 1, Two = 2 }).Renamed(x => $"it's {x}");
 		parameters.Count.Should().Be(2);
 		parameters.Enumerate().Should().Equal(("it's one", 1), ("it's Two", 2));
 	}
@@ -79,9 +79,9 @@ internal sealed class DbParametersTests
 	}
 
 	[Test]
-	public void CreateFromDtoWhereNamedWhereNamed()
+	public void CreateFromDtoWhereRenamedWhereRenamed()
 	{
-		var parameters = DbParameters.FromDto(new { one = 1, Two = 2, three = 3 }).Where(x => x[0] == 't').Named(x => x.ToUpperInvariant()).Where(x => x[0] == 'T').Named(x => x.ToLowerInvariant());
+		var parameters = DbParameters.FromDto(new { one = 1, Two = 2, three = 3 }).Where(x => x[0] == 't').Renamed(x => x.ToUpperInvariant()).Where(x => x[0] == 'T').Renamed(x => x.ToLowerInvariant());
 		parameters.Count.Should().Be(1);
 		parameters.Enumerate().Should().Equal(("three", 3));
 
@@ -91,15 +91,20 @@ internal sealed class DbParametersTests
 		command.Parameters.Count.Should().Be(1);
 		command.Parameters[0].ParameterName.Should().Be("three");
 		command.Parameters[0].Value.Should().Be(3);
+
+		parameters = DbParameters.FromDto(new { one = 10, Two = 20, three = 30 }).Where(x => x[0] == 't').Renamed(x => x.ToUpperInvariant()).Where(x => x[0] == 'T').Renamed(x => x.ToLowerInvariant());
+		parameters.Count.Should().Be(1);
+		parameters.Enumerate().Should().Equal(("three", 30));
+
 		parameters.Reapply(command, 0, DbProviderMethods.Default);
 		command.Parameters[0].ParameterName.Should().Be("three");
-		command.Parameters[0].Value.Should().Be(3);
+		command.Parameters[0].Value.Should().Be(30);
 	}
 
 	[Test]
 	public void CreateFromDtoNamedWhereNamedWhere()
 	{
-		var parameters = DbParameters.FromDto(new { one = 1, Two = 2, three = 3 }).Named(x => x.ToUpperInvariant()).Where(x => x[0] == 'T').Named(x => x.ToLowerInvariant()).Where(x => x[0] == 't');
+		var parameters = DbParameters.FromDto(new { one = 1, Two = 2, three = 3 }).Renamed(x => x.ToUpperInvariant()).Where(x => x[0] == 'T').Renamed(x => x.ToLowerInvariant()).Where(x => x[0] == 't');
 		parameters.Count.Should().Be(2);
 		parameters.Enumerate().Should().Equal(("two", 2), ("three", 3));
 	}
