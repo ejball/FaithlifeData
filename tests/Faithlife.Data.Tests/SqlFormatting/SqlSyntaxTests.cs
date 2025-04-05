@@ -323,14 +323,14 @@ internal sealed class SqlSyntaxTests
 	public void TableColumnNamesAndValuesSql()
 	{
 		var syntax = SqlSyntax.MySql;
-		syntax.Render(Sql.ColumnNames<ItemDto>("t")).Text.Should().Be("`t`.`ItemId`, `t`.`DisplayName`");
+		syntax.Render(Sql.ColumnNames<ItemDto>().From("t")).Text.Should().Be("`t`.`ItemId`, `t`.`DisplayName`");
 	}
 
 	[Test]
 	public void SnakeCaseNamesAndValuesSql()
 	{
 		var syntax = SqlSyntax.MySql.WithSnakeCaseColumnNames();
-		syntax.Render(Sql.ColumnNames<ItemDto>("t")).Text.Should().Be("`t`.`ItemId`, `t`.`display_name`");
+		syntax.Render(Sql.ColumnNames<ItemDto>().From("t")).Text.Should().Be("`t`.`ItemId`, `t`.`display_name`");
 	}
 
 	[Test]
@@ -338,11 +338,11 @@ internal sealed class SqlSyntaxTests
 	{
 		var syntax = SqlSyntax.MySql;
 
-		syntax.Render(Sql.ColumnNamesWhere<ItemDto>(x => x != nameof(ItemDto.Id))).Text.Should().Be("`DisplayName`");
+		syntax.Render(Sql.ColumnNames<ItemDto>().Where(x => x != nameof(ItemDto.Id))).Text.Should().Be("`DisplayName`");
 
 		var item = new ItemDto { Id = 3, DisplayName = "three" };
 		var (text, parameters) = syntax.Render(Sql.Format($@"
-				insert into Items ({Sql.ColumnNamesWhere<ItemDto>(x => x is not nameof(ItemDto.Id))})
+				insert into Items ({Sql.ColumnNames<ItemDto>().Where(x => x is not nameof(ItemDto.Id))})
 				values ({Sql.ColumnParamsWhere(item, x => x is not nameof(ItemDto.Id))});"));
 		text.Should().Be(@"
 				insert into Items (`DisplayName`)
@@ -355,11 +355,11 @@ internal sealed class SqlSyntaxTests
 	{
 		var syntax = SqlSyntax.MySql;
 
-		syntax.Render(Sql.ColumnNamesWhere<ItemDto>(x => x != nameof(ItemDto.Id), "t")).Text.Should().Be("`t`.`DisplayName`");
+		syntax.Render(Sql.ColumnNames<ItemDto>().Where(x => x != nameof(ItemDto.Id)).From("t")).Text.Should().Be("`t`.`DisplayName`");
 
 		var item = new ItemDto { Id = 3, DisplayName = "three" };
 		var (text, parameters) = syntax.Render(Sql.Format($@"
-				insert into Items ({Sql.ColumnNamesWhere<ItemDto>(x => x is not nameof(ItemDto.Id), "t")})
+				insert into Items ({Sql.ColumnNames<ItemDto>().From("t").Where(x => x is not nameof(ItemDto.Id))})
 				values ({Sql.ColumnParamsWhere(item, x => x is not nameof(ItemDto.Id))});"));
 		text.Should().Be(@"
 				insert into Items (`t`.`DisplayName`)
@@ -372,7 +372,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var syntax = SqlSyntax.MySql;
 
-		Invoking(() => syntax.Render(Sql.ColumnNamesWhere<ItemDto>(_ => false))).Should().Throw<InvalidOperationException>();
+		Invoking(() => syntax.Render(Sql.ColumnNames<ItemDto>().Where(_ => false))).Should().Throw<InvalidOperationException>();
 		Invoking(() => syntax.Render(Sql.ColumnParamsWhere(new ItemDto(), _ => false))).Should().Throw<InvalidOperationException>();
 	}
 

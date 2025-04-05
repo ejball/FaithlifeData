@@ -1,6 +1,4 @@
-using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Text.RegularExpressions;
 
 namespace Faithlife.Data.SqlFormatting;
 
@@ -28,28 +26,7 @@ public abstract class Sql
 	/// <summary>
 	/// Returns a comma-delimited list of column names for a DTO of the specified type.
 	/// </summary>
-	public static Sql ColumnNames<T>() => new ColumnNamesSql<T>();
-
-	/// <summary>
-	/// Returns a comma-delimited list of column names for a DTO of the specified type.
-	/// </summary>
-	/// <remarks>This overload is used with SELECT statements when the table name (or alias)
-	/// needs to be specified with each column name.</remarks>
-	public static Sql ColumnNames<T>(string tableName) => new ColumnNamesSql<T>(tableName);
-
-	/// <summary>
-	/// Returns a comma-delimited list of column names for a DTO of the specified type
-	/// for the properties whose names match the specified filter.
-	/// </summary>
-	public static Sql ColumnNamesWhere<T>(Func<string, bool> filter) => new ColumnNamesSql<T>(filter: filter);
-
-	/// <summary>
-	/// Returns a comma-delimited list of column names for a DTO of the specified type
-	/// for the properties whose names match the specified filter.
-	/// </summary>
-	/// <remarks>This overload is used with SELECT statements when the table name (or alias)
-	/// needs to be specified with each column name.</remarks>
-	public static Sql ColumnNamesWhere<T>(Func<string, bool> filter, string tableName) => new ColumnNamesSql<T>(tableName, filter);
+	public static ColumnNamesSql<T> ColumnNames<T>() => new ColumnNamesSql<T>();
 
 	/// <summary>
 	/// Returns a comma-delimited list of arbitrarily-named parameters for the column values of the specified DTO.
@@ -233,45 +210,6 @@ public abstract class Sql
 		}
 	}
 
-	private sealed class ColumnNamesSql<T> : Sql
-	{
-		public ColumnNamesSql(string tableName = "", Func<string, bool>? filter = null)
-		{
-			m_tableName = tableName;
-			m_filter = filter;
-		}
-
-		internal override string Render(SqlContext context)
-		{
-			var properties = DbDtoInfo.GetInfo<T>().Properties;
-			if (properties.Count == 0)
-				throw new InvalidOperationException($"The specified type has no columns: {typeof(T).FullName}");
-
-			var syntax = context.Syntax;
-			var tablePrefix = m_tableName.Length == 0 ? "" : syntax.QuoteName(m_tableName) + ".";
-			var useSnakeCase = syntax.SnakeCaseColumnNames;
-
-			var filteredProperties = properties.AsEnumerable();
-			if (m_filter is not null)
-				filteredProperties = filteredProperties.Where(x => m_filter(x.Name));
-
-			var text = string.Join(", ",
-				filteredProperties.Select(x => tablePrefix + syntax.QuoteName(
-					x.ColumnName ??
-					(useSnakeCase ? s_snakeCaseCache.GetOrAdd(x.Name, ToSnakeCase) : x.Name))));
-			if (text.Length == 0)
-				throw new InvalidOperationException($"The specified type has no remaining columns: {typeof(T).FullName}");
-			return text;
-		}
-
-		private static string ToSnakeCase(string value) => string.Join("_", s_word.Matches(value).Cast<Match>().Select(x => x.Value.ToLowerInvariant()));
-
-		private static readonly Regex s_word = new Regex("[A-Z]([A-Z]*(?![a-z])|[a-z]*)|[a-z]+|[0-9]+", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture);
-
-		private readonly string m_tableName;
-		private readonly Func<string, bool>? m_filter;
-	}
-
 	private sealed class ColumnParamsSql<T>(T dto, Func<string, bool>? filter = null) : Sql
 	{
 		internal override string Render(SqlContext context)
@@ -374,6 +312,4 @@ public abstract class Sql
 	{
 		internal override string Render(SqlContext context) => text;
 	}
-
-	private static readonly ConcurrentDictionary<string, string> s_snakeCaseCache = new();
 }

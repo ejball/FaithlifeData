@@ -45,9 +45,9 @@ internal sealed class SqliteTests
 
 		connector.Command(Sql.Format($"select {Sql.ColumnNames<NameValue>()} from {tableName} t order by ItemId;"))
 			.Query<NameValue>().Should().Equal(items);
-		connector.Command(Sql.Format($"select {Sql.ColumnNames<NameValue>(nameof(InsertAndSelectNameValue))} from {tableName} order by ItemId;"))
+		connector.Command(Sql.Format($"select {Sql.ColumnNames<NameValue>().From(nameof(InsertAndSelectNameValue))} from {tableName} order by ItemId;"))
 			.Query<NameValue>().Should().Equal(items);
-		connector.Command(Sql.Format($"select {Sql.ColumnNames<NameValue>("t")} from {tableName} t order by ItemId;"))
+		connector.Command(Sql.Format($"select {Sql.ColumnNames<NameValue>().From("t")} from {tableName} t order by ItemId;"))
 			.Query<NameValue>().Should().Equal(items);
 	}
 
