@@ -21,7 +21,7 @@ public class DbDataMapper
 	/// <summary>
 	/// Gets a type mapper for the specified type.
 	/// </summary>
-	public DbTypeMapper<T> GetTypeMapper<T>()
+	internal DbTypeMapper<T> GetTypeMapper<T>()
 	{
 		DbTypeMapper? mapper;
 		while (!s_typeMappers.TryGetValue(typeof(T), out mapper))
@@ -32,28 +32,13 @@ public class DbDataMapper
 	/// <summary>
 	/// Gets a type mapper for the specified type.
 	/// </summary>
-	public DbTypeMapper GetTypeMapper(Type type)
+	internal DbTypeMapper GetTypeMapper(Type type)
 	{
 		DbTypeMapper? mapper;
 		while (!s_typeMappers.TryGetValue(type, out mapper))
 			s_typeMappers.TryAdd(type, (DbTypeMapper) s_createTypeMapper.MakeGenericMethod(type).Invoke(this, [])!);
 		return mapper;
 	}
-
-	/// <summary>
-	/// Maps the data record values to an instance of the specified type.
-	/// </summary>
-	public T Map<T>(IDataRecord record, DbRecordState? state) => GetTypeMapper<T>().Map(record, state);
-
-	/// <summary>
-	/// Maps the data record value to an instance of the specified type.
-	/// </summary>
-	public T Map<T>(IDataRecord record, int index, DbRecordState? state) => GetTypeMapper<T>().Map(record, index, state);
-
-	/// <summary>
-	/// Maps the data record values to an instance of the specified type.
-	/// </summary>
-	public T Map<T>(IDataRecord record, int index, int count, DbRecordState? state) => GetTypeMapper<T>().Map(record, index, count, state);
 
 	protected virtual DbTypeMapper<T>? TryCreateTypeMapper<T>()
 	{

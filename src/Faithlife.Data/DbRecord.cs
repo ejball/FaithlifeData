@@ -10,27 +10,27 @@ public sealed class DbRecord
 	/// <summary>
 	/// Converts the record to the specified type.
 	/// </summary>
-	public T Get<T>() => m_mapper.Map<T>(m_record, m_state);
+	public T Get<T>() => m_mapper.GetTypeMapper<T>().Map(m_record, m_state);
 
 	/// <summary>
 	/// Converts the specified record field to the specified type.
 	/// </summary>
-	public T Get<T>(int index) => m_mapper.Map<T>(m_record, index, m_state);
+	public T Get<T>(int index) => m_mapper.GetTypeMapper<T>().Map(m_record, index, m_state);
 
 	/// <summary>
 	/// Converts the specified record fields to the specified type.
 	/// </summary>
-	public T Get<T>(int index, int count) => m_mapper.Map<T>(m_record, index, count, m_state);
+	public T Get<T>(int index, int count) => m_mapper.GetTypeMapper<T>().Map(m_record, index, count, m_state);
 
 	/// <summary>
 	/// Converts the specified record field to the specified type.
 	/// </summary>
-	public T Get<T>(string name) => m_mapper.Map<T>(m_record, m_record.GetOrdinal(name), 1, m_state);
+	public T Get<T>(string name) => m_mapper.GetTypeMapper<T>().Map(m_record, m_record.GetOrdinal(name), 1, m_state);
 
 	/// <summary>
 	/// Converts the specified record fields to the specified type.
 	/// </summary>
-	public T Get<T>(string name, int count) => m_mapper.Map<T>(m_record, m_record.GetOrdinal(name), count, m_state);
+	public T Get<T>(string name, int count) => m_mapper.GetTypeMapper<T>().Map(m_record, m_record.GetOrdinal(name), count, m_state);
 
 	/// <summary>
 	/// Converts the specified record fields to the specified type.
@@ -39,13 +39,13 @@ public sealed class DbRecord
 	{
 		var fromIndex = m_record.GetOrdinal(fromName);
 		var toIndex = m_record.GetOrdinal(toName);
-		return m_mapper.Map<T>(m_record, fromIndex, toIndex - fromIndex + 1, m_state);
+		return m_mapper.GetTypeMapper<T>().Map(m_record, fromIndex, toIndex - fromIndex + 1, m_state);
 	}
 
 	/// <summary>
 	/// Converts the specified record field to the specified type.
 	/// </summary>
-	public T Get<T>(Index index) => m_mapper.Map<T>(m_record, index.GetOffset(m_record.FieldCount), 1, m_state);
+	public T Get<T>(Index index) => m_mapper.GetTypeMapper<T>().Map(m_record, index.GetOffset(m_record.FieldCount), 1, m_state);
 
 	/// <summary>
 	/// Converts the specified record fields to the specified type.
@@ -53,7 +53,7 @@ public sealed class DbRecord
 	public T Get<T>(Range range)
 	{
 		var (index, count) = range.GetOffsetAndLength(m_record.FieldCount);
-		return m_mapper.Map<T>(m_record, index, count, m_state);
+		return m_mapper.GetTypeMapper<T>().Map(m_record, index, count, m_state);
 	}
 
 	internal DbRecord(IDataRecord record, DbDataMapper mapper, DbRecordState? state)
