@@ -342,7 +342,7 @@ internal sealed class SqlSyntaxTests
 
 		var item = new ItemDto { Id = 3, DisplayName = "three" };
 		var (text, parameters) = syntax.Render(Sql.Format($"""
-			insert into Items ({Sql.ColumnNames<ItemDto>().Where(x => x is not nameof(ItemDto.Id))})
+			insert into Items ({Sql.ColumnNames(item).Where(x => x is not nameof(ItemDto.Id))})
 			values ({Sql.ColumnParams(item).Where(x => x is not nameof(ItemDto.Id))});
 			"""));
 		text.Should().Be("""
@@ -361,7 +361,7 @@ internal sealed class SqlSyntaxTests
 
 		var item = new ItemDto { Id = 3, DisplayName = "three" };
 		var (text, parameters) = syntax.Render(Sql.Format($"""
-			insert into Items ({Sql.ColumnNames<ItemDto>().From("t").Where(x => x is not nameof(ItemDto.Id))})
+			insert into Items ({Sql.ColumnNames(item).From("t").Where(x => x is not nameof(ItemDto.Id))})
 			values ({Sql.ColumnParams(item).Where(x => x is not nameof(ItemDto.Id))});
 			"""));
 		text.Should().Be("""

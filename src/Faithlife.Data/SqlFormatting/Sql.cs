@@ -29,6 +29,11 @@ public abstract class Sql
 	public static ColumnNamesSql<T> ColumnNames<T>() => new();
 
 	/// <summary>
+	/// Returns a comma-delimited list of column names for a DTO of the specified type.
+	/// </summary>
+	public static ColumnNamesSql<T> ColumnNames<T>(T dto) => new();
+
+	/// <summary>
 	/// Returns a comma-delimited list of arbitrarily-named parameters for the column values of the specified DTO.
 	/// </summary>
 	public static ColumnParamsSql<T> ColumnParams<T>(T dto) => new(dto ?? throw new ArgumentNullException(nameof(dto)));
