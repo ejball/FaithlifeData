@@ -2,12 +2,27 @@ namespace Faithlife.Data.SqlFormatting;
 
 public sealed class DtoParamNamesSql<T> : Sql
 {
-	public DtoParamNamesSql<T> Where(Func<string, bool> nameMatches) =>
-		new(m_filterName is null ? nameMatches : x => m_filterName(x) && nameMatches(x), m_transformName);
+	public DtoParamNamesSql<T> Where(Func<string, bool> nameMatches)
+	{
+		if (m_filterName is not null && m_transformName is not null)
+			return new(filterName: x => m_filterName(x) && nameMatches(m_transformName(x)), transformName: m_transformName);
+		if (m_filterName is not null)
+			return new(filterName: x => m_filterName(x) && nameMatches(x));
+		if (m_transformName is not null)
+			return new(filterName: x => nameMatches(m_transformName(x)), transformName: m_transformName);
+		return new(filterName: nameMatches);
+	}
 
-	public DtoParamNamesSql<T> Renamed(Func<string, string> transform) =>
-		new(m_filterName is null ? null : x => m_filterName(transform(x)),
-			m_transformName is null ? transform : throw new NotImplementedException());
+	public DtoParamNamesSql<T> Renamed(Func<string, string> transform)
+	{
+		if (m_filterName is not null && m_transformName is not null)
+			return new(filterName: m_filterName, transformName: x => transform(m_transformName(x)));
+		if (m_filterName is not null)
+			return new(filterName: m_filterName, transformName: transform);
+		if (m_transformName is not null)
+			return new(transformName: x => transform(m_transformName(x)));
+		return new(transformName: transform);
+	}
 
 	internal DtoParamNamesSql(Func<string, bool>? filterName = null, Func<string, string>? transformName = null)
 	{

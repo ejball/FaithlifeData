@@ -311,26 +311,26 @@ internal sealed class SqlSyntaxTests
 	{
 		var syntax = SqlSyntax.MySql;
 
-		syntax.Render(Sql.ColumnNames<ItemDto>()).Text.Should().Be("`ItemId`, `DisplayName`");
+		syntax.Render(Sql.ColumnNames<ItemDto>()).Text.Should().Be("`ItemId`, `DisplayName`, `IsActive`");
 
 		var item = new ItemDto { Id = 3, DisplayName = "three" };
 		var (text, parameters) = syntax.Render(Sql.Format($"insert into Items ({Sql.ColumnNames<ItemDto>()}) values ({Sql.ColumnParams(item)});"));
-		text.Should().Be("insert into Items (`ItemId`, `DisplayName`) values (@ado0, @ado1);");
-		parameters.Enumerate().Should().Equal(("ado0", item.Id), ("ado1", item.DisplayName));
+		text.Should().Be("insert into Items (`ItemId`, `DisplayName`, `IsActive`) values (@ado0, @ado1, @ado2);");
+		parameters.Enumerate().Should().Equal(("ado0", item.Id), ("ado1", item.DisplayName), ("ado2", item.IsActive));
 	}
 
 	[Test]
 	public void TableColumnNamesAndValuesSql()
 	{
 		var syntax = SqlSyntax.MySql;
-		syntax.Render(Sql.ColumnNames<ItemDto>().From("t")).Text.Should().Be("`t`.`ItemId`, `t`.`DisplayName`");
+		syntax.Render(Sql.ColumnNames<ItemDto>().From("t")).Text.Should().Be("`t`.`ItemId`, `t`.`DisplayName`, `t`.`IsActive`");
 	}
 
 	[Test]
 	public void SnakeCaseNamesAndValuesSql()
 	{
 		var syntax = SqlSyntax.MySql.WithSnakeCaseColumnNames();
-		syntax.Render(Sql.ColumnNames<ItemDto>().From("t")).Text.Should().Be("`t`.`ItemId`, `t`.`display_name`");
+		syntax.Render(Sql.ColumnNames<ItemDto>().From("t")).Text.Should().Be("`t`.`ItemId`, `t`.`display_name`, `t`.`is_active`");
 	}
 
 	[Test]
@@ -338,12 +338,12 @@ internal sealed class SqlSyntaxTests
 	{
 		var syntax = SqlSyntax.MySql;
 
-		syntax.Render(Sql.ColumnNames<ItemDto>().Where(x => x != nameof(ItemDto.Id))).Text.Should().Be("`DisplayName`");
+		syntax.Render(Sql.ColumnNames<ItemDto>().Where(x => x is nameof(ItemDto.DisplayName))).Text.Should().Be("`DisplayName`");
 
 		var item = new ItemDto { Id = 3, DisplayName = "three" };
 		var (text, parameters) = syntax.Render(Sql.Format($"""
-			insert into Items ({Sql.ColumnNames(item).Where(x => x is not nameof(ItemDto.Id))})
-			values ({Sql.ColumnParams(item).Where(x => x is not nameof(ItemDto.Id))});
+			insert into Items ({Sql.ColumnNames(item).Where(x => x is nameof(ItemDto.DisplayName))})
+			values ({Sql.ColumnParams(item).Where(x => x is nameof(ItemDto.DisplayName))});
 			"""));
 		text.Should().Be("""
 			insert into Items (`DisplayName`)
@@ -357,12 +357,12 @@ internal sealed class SqlSyntaxTests
 	{
 		var syntax = SqlSyntax.MySql;
 
-		syntax.Render(Sql.ColumnNames<ItemDto>().Where(x => x != nameof(ItemDto.Id)).From("t")).Text.Should().Be("`t`.`DisplayName`");
+		syntax.Render(Sql.ColumnNames<ItemDto>().Where(x => x is nameof(ItemDto.DisplayName)).From("t")).Text.Should().Be("`t`.`DisplayName`");
 
 		var item = new ItemDto { Id = 3, DisplayName = "three" };
 		var (text, parameters) = syntax.Render(Sql.Format($"""
-			insert into Items ({Sql.ColumnNames(item).From("t").Where(x => x is not nameof(ItemDto.Id))})
-			values ({Sql.ColumnParams(item).Where(x => x is not nameof(ItemDto.Id))});
+			insert into Items ({Sql.ColumnNames(item).From("t").Where(x => x is nameof(ItemDto.DisplayName))})
+			values ({Sql.ColumnParams(item).Where(x => x is nameof(ItemDto.DisplayName))});
 			"""));
 		text.Should().Be("""
 			insert into Items (`t`.`DisplayName`)
@@ -385,8 +385,9 @@ internal sealed class SqlSyntaxTests
 	{
 		var syntax = SqlSyntax.MySql;
 
-		syntax.Render(Sql.DtoParamNames<ItemDto>()).Text.Should().Be("@Id, @DisplayName");
-		syntax.Render(Sql.DtoParamNames<ItemDto>().Renamed(x => x + "_")).Text.Should().Be("@Id_, @DisplayName_");
+		syntax.Render(Sql.DtoParamNames<ItemDto>()).Text.Should().Be("@Id, @DisplayName, @IsActive");
+		syntax.Render(Sql.DtoParamNames<ItemDto>().Renamed(x => x + "_")).Text.Should().Be("@Id_, @DisplayName_, @IsActive_");
+		syntax.Render(Sql.DtoParamNames<ItemDto>().Renamed(x => x + "_").Renamed(x => x + "!")).Text.Should().Be("@Id_!, @DisplayName_!, @IsActive_!");
 	}
 
 	[Test]
@@ -394,9 +395,12 @@ internal sealed class SqlSyntaxTests
 	{
 		var syntax = SqlSyntax.MySql;
 
-		syntax.Render(Sql.DtoParamNames<ItemDto>().Where(NotId)).Text.Should().Be("@DisplayName");
-		syntax.Render(Sql.DtoParamNames<ItemDto>().Where(NotId).Renamed(x => x + "_")).Text.Should().Be("@DisplayName_");
-		syntax.Render(Sql.DtoParamNames<ItemDto>().Renamed(x => x + "_").Where(NotId)).Text.Should().Be("@Id_, @DisplayName_");
+		syntax.Render(Sql.DtoParamNames<ItemDto>().Where(NotId)).Text.Should().Be("@DisplayName, @IsActive");
+		syntax.Render(Sql.DtoParamNames<ItemDto>().Where(NotId).Where(x => x is not "DisplayName")).Text.Should().Be("@IsActive");
+		syntax.Render(Sql.DtoParamNames<ItemDto>().Where(NotId).Renamed(x => x + "_")).Text.Should().Be("@DisplayName_, @IsActive_");
+		syntax.Render(Sql.DtoParamNames<ItemDto>().Renamed(x => x + "_").Where(NotId)).Text.Should().Be("@Id_, @DisplayName_, @IsActive_");
+		syntax.Render(Sql.DtoParamNames<ItemDto>().Where(NotId).Renamed(x => x + "_").Where(x => x is not "DisplayName_")).Text.Should().Be("@IsActive_");
+		syntax.Render(Sql.DtoParamNames<ItemDto>().Renamed(x => x + "_").Where(x => x is not "DisplayName_").Renamed(x => x + "!")).Text.Should().Be("@Id_!, @IsActive_!");
 
 		static bool NotId(string x) => x != nameof(ItemDto.Id);
 	}
@@ -485,5 +489,7 @@ internal sealed class SqlSyntaxTests
 		public int Id { get; set; }
 
 		public string? DisplayName { get; set; }
+
+		public bool IsActive { get; set; }
 	}
 }
