@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace Faithlife.Data;
@@ -13,11 +14,21 @@ internal sealed class DbDtoProperty<T>
 
 		m_lazyCreateParameter = new(() =>
 		{
-			return (string name, T valueSource) =>
-			{
-				var value = MemberInfo is PropertyInfo propertyInfo ? propertyInfo.GetValue(valueSource) : ((FieldInfo) MemberInfo).GetValue(valueSource);
-				return DbParameters.Create<object?>(name, value);
-			};
+			// Create the expression tree:
+			// (string name, T source) => DbParameters.Create(name, memberInfo.GetValue(source))
+			var nameParam = Expression.Parameter(typeof(string), "name");
+			var sourceParam = Expression.Parameter(typeof(T), "source");
+
+			var getValue = Expression.Convert(
+				memberInfo is PropertyInfo propertyInfo
+					? Expression.Property(sourceParam, propertyInfo)
+					: Expression.Field(sourceParam, (FieldInfo) memberInfo),
+				typeof(object));
+
+			var createMethod = typeof(DbParameters).GetMethod(nameof(DbParameters.Create), [typeof(string), typeof(T)]);
+			var createCall = Expression.Call(createMethod!, nameParam, getValue);
+
+			return Expression.Lambda<Func<string, T, DbParameters>>(createCall, nameParam, sourceParam).Compile();
 		});
 	}
 
