@@ -56,7 +56,7 @@ public abstract class DbParameters
 	{
 		if (dto is null)
 			throw new ArgumentNullException(nameof(dto));
-		return Create(DbDtoInfo.GetInfo<T>().Properties.Select(x => x.CreateParameter(x.Name, dto)));
+		return new DtoDbParameters<T>(dto);
 	}
 
 	/// <summary>
