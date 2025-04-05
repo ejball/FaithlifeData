@@ -9,27 +9,30 @@ internal sealed class DbDtoProperty<T>
 	{
 		MemberInfo = memberInfo;
 		Name = memberInfo.Name;
-		ValueType = memberInfo is PropertyInfo propertyInfo ? propertyInfo.PropertyType : ((FieldInfo) memberInfo).FieldType;
+		ValueType = (memberInfo as PropertyInfo)?.PropertyType ?? ((FieldInfo) memberInfo).FieldType;
 		ColumnName = columnName;
+		m_lazyCreateParameter = new(CreateParameterCreator);
+	}
 
-		m_lazyCreateParameter = new(() =>
-		{
-			// Create the expression tree:
-			// (string name, T source) => DbParameters.Create(name, memberInfo.GetValue(source))
-			var nameParam = Expression.Parameter(typeof(string), "name");
-			var sourceParam = Expression.Parameter(typeof(T), "source");
+	private Func<string, T, DbParameters> CreateParameterCreator()
+	{
+		var nameParam = Expression.Parameter(typeof(string), "name");
+		var sourceParam = Expression.Parameter(typeof(T), "source");
 
-			var getValue = Expression.Convert(
-				memberInfo is PropertyInfo propertyInfo
-					? Expression.Property(sourceParam, propertyInfo)
-					: Expression.Field(sourceParam, (FieldInfo) memberInfo),
-				typeof(object));
+		var getValue = MemberInfo is PropertyInfo propertyInfo
+			? Expression.Property(sourceParam, propertyInfo)
+			: Expression.Field(sourceParam, (FieldInfo) MemberInfo);
 
-			var createMethod = typeof(DbParameters).GetMethod(nameof(DbParameters.Create), [typeof(string), typeof(T)]);
-			var createCall = Expression.Call(createMethod!, nameParam, getValue);
+		var createMethod = typeof(DbParameters)
+			.GetMethods(BindingFlags.Public | BindingFlags.Static)
+			.Single(x => x is { Name: "Create", IsGenericMethod: true } &&
+				x.GetGenericArguments().Length == 1 &&
+				x.GetParameters() is [var p0, var p1] &&
+				p0.ParameterType == typeof(string) &&
+				p1.ParameterType.IsGenericParameter).MakeGenericMethod(ValueType);
 
-			return Expression.Lambda<Func<string, T, DbParameters>>(createCall, nameParam, sourceParam).Compile();
-		});
+		return Expression.Lambda<Func<string, T, DbParameters>>(
+			Expression.Call(createMethod, nameParam, getValue), nameParam, sourceParam).Compile();
 	}
 
 	public MemberInfo MemberInfo { get; }
