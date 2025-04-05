@@ -26,19 +26,12 @@ public abstract class Sql
 	/// <summary>
 	/// Returns a comma-delimited list of column names for a DTO of the specified type.
 	/// </summary>
-	public static ColumnNamesSql<T> ColumnNames<T>() => new ColumnNamesSql<T>();
+	public static ColumnNamesSql<T> ColumnNames<T>() => new();
 
 	/// <summary>
 	/// Returns a comma-delimited list of arbitrarily-named parameters for the column values of the specified DTO.
 	/// </summary>
-	public static Sql ColumnParams<T>(T dto) => new ColumnParamsSql<T>(dto ?? throw new ArgumentNullException(nameof(dto)));
-
-	/// <summary>
-	/// Returns a comma-delimited list of arbitrarily-named parameters for the column values of the specified DTO
-	/// for the properties whose names match the specified filter.
-	/// </summary>
-	public static Sql ColumnParamsWhere<T>(T dto, Func<string, bool> filter) =>
-		new ColumnParamsSql<T>(dto ?? throw new ArgumentNullException(nameof(dto)), filter ?? throw new ArgumentNullException(nameof(filter)));
+	public static ColumnParamsSql<T> ColumnParams<T>(T dto) => new(dto ?? throw new ArgumentNullException(nameof(dto)));
 
 	/// <summary>
 	/// Concatenates SQL fragments.
@@ -207,25 +200,6 @@ public abstract class Sql
 				.Select(x => x.NeedsParens ? $"({x.RawSql})" : x.RawSql)
 				.ToList();
 			return string.Join(context.Syntax.LowerCaseKeywords ? lowercase : uppercase, rawSqls);
-		}
-	}
-
-	private sealed class ColumnParamsSql<T>(T dto, Func<string, bool>? filter = null) : Sql
-	{
-		internal override string Render(SqlContext context)
-		{
-			var properties = DbDtoInfo.GetInfo<T>().Properties;
-			if (properties.Count == 0)
-				throw new InvalidOperationException($"The specified type has no columns: {typeof(T).FullName}");
-
-			var filteredProperties = properties.AsEnumerable();
-			if (filter is not null)
-				filteredProperties = filteredProperties.Where(x => filter(x.Name));
-
-			var text = string.Join(", ", filteredProperties.Select(x => context.RenderParameter(key: null, valueSource: dto, valueProperty: x)));
-			if (text.Length == 0)
-				throw new InvalidOperationException($"The specified type has no remaining columns: {typeof(T).FullName}");
-			return text;
 		}
 	}
 
