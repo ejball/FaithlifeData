@@ -341,12 +341,14 @@ internal sealed class SqlSyntaxTests
 		syntax.Render(Sql.ColumnNames<ItemDto>().Where(x => x != nameof(ItemDto.Id))).Text.Should().Be("`DisplayName`");
 
 		var item = new ItemDto { Id = 3, DisplayName = "three" };
-		var (text, parameters) = syntax.Render(Sql.Format($@"
-				insert into Items ({Sql.ColumnNames<ItemDto>().Where(x => x is not nameof(ItemDto.Id))})
-				values ({Sql.ColumnParamsWhere(item, x => x is not nameof(ItemDto.Id))});"));
-		text.Should().Be(@"
-				insert into Items (`DisplayName`)
-				values (@ado0);");
+		var (text, parameters) = syntax.Render(Sql.Format($"""
+			insert into Items ({Sql.ColumnNames<ItemDto>().Where(x => x is not nameof(ItemDto.Id))})
+			values ({Sql.ColumnParamsWhere(item, x => x is not nameof(ItemDto.Id))});
+			"""));
+		text.Should().Be("""
+			insert into Items (`DisplayName`)
+			values (@ado0);
+			""");
 		parameters.Enumerate().Should().Equal(("ado0", item.DisplayName));
 	}
 
@@ -358,12 +360,14 @@ internal sealed class SqlSyntaxTests
 		syntax.Render(Sql.ColumnNames<ItemDto>().Where(x => x != nameof(ItemDto.Id)).From("t")).Text.Should().Be("`t`.`DisplayName`");
 
 		var item = new ItemDto { Id = 3, DisplayName = "three" };
-		var (text, parameters) = syntax.Render(Sql.Format($@"
-				insert into Items ({Sql.ColumnNames<ItemDto>().From("t").Where(x => x is not nameof(ItemDto.Id))})
-				values ({Sql.ColumnParamsWhere(item, x => x is not nameof(ItemDto.Id))});"));
-		text.Should().Be(@"
-				insert into Items (`t`.`DisplayName`)
-				values (@ado0);");
+		var (text, parameters) = syntax.Render(Sql.Format($"""
+			insert into Items ({Sql.ColumnNames<ItemDto>().From("t").Where(x => x is not nameof(ItemDto.Id))})
+			values ({Sql.ColumnParamsWhere(item, x => x is not nameof(ItemDto.Id))});
+			"""));
+		text.Should().Be("""
+			insert into Items (`t`.`DisplayName`)
+			values (@ado0);
+			""");
 		parameters.Enumerate().Should().Equal(("ado0", item.DisplayName));
 	}
 
