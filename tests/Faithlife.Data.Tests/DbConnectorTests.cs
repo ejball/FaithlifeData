@@ -106,8 +106,8 @@ internal sealed class DbConnectorTests
 	{
 		using var connector = CreateConnector();
 		connector.Command("create table Items (ItemId integer primary key, Name text not null);").Execute().Should().Be(0);
-		connector.Command("insert into Items (Name) values (@item1); insert into Items (Name) values (@item2);").WithParameter("item1", "one").WithParameter("item2", "two").Execute().Should().Be(2);
-		connector.Command("select Name from Items where Name like @like;").WithParameters(DbParameters.Create("like", "t%")).QueryFirst<string>().Should().Be("two");
+		connector.Command("insert into Items (Name) values (@item1); insert into Items (Name) values (@item2);").WithParameters(("item1", "one"), ("item2", "two")).Execute().Should().Be(2);
+		connector.Command("select Name from Items where Name like @like;").WithParameter("like", "t%").QueryFirst<string>().Should().Be("two");
 	}
 
 	[Test]
@@ -115,8 +115,8 @@ internal sealed class DbConnectorTests
 	{
 		await using var connector = CreateConnector();
 		(await connector.Command("create table Items (ItemId integer primary key, Name text not null);").ExecuteAsync()).Should().Be(0);
-		(await connector.Command("insert into Items (Name) values (@item1); insert into Items (Name) values (@item2);").WithParameter("item1", "one").WithParameter("item2", "two").ExecuteAsync()).Should().Be(2);
-		(await connector.Command("select Name from Items where Name like @like;").WithParameters(DbParameters.Create("like", "t%")).QueryFirstAsync<string>()).Should().Be("two");
+		(await connector.Command("insert into Items (Name) values (@item1); insert into Items (Name) values (@item2);").WithParameters(("item1", "one"), ("item2", "two")).ExecuteAsync()).Should().Be(2);
+		(await connector.Command("select Name from Items where Name like @like;").WithParameter("like", "t%").QueryFirstAsync<string>()).Should().Be("two");
 	}
 
 	[Test]

@@ -291,22 +291,32 @@ public sealed class DbConnectorCommand
 		return this;
 	}
 
-	/// <summary>
-	/// Sets the timeout of the command.
-	/// </summary>
-	/// <remarks>Use <see cref="System.Threading.Timeout.InfiniteTimeSpan" /> (not <see cref="TimeSpan.Zero" />) for infinite timeout.</remarks>
-	/// <exception cref="ArgumentOutOfRangeException"><c>timeSpan</c> is not positive or <see cref="System.Threading.Timeout.InfiniteTimeSpan" />.</exception>
-	public DbConnectorCommand WithParameter<T>(string key, T value) => WithParameters(DbParameters.Create(key, value));
+	public DbConnectorCommand WithParameter<T>(string key, T value) =>
+		WithParameters(DbParameters.Create(key, value));
 
-	/// <summary>
-	/// Sets the timeout of the command.
-	/// </summary>
-	/// <remarks>Use <see cref="System.Threading.Timeout.InfiniteTimeSpan" /> (not <see cref="TimeSpan.Zero" />) for infinite timeout.</remarks>
-	/// <exception cref="ArgumentOutOfRangeException"><c>timeSpan</c> is not positive or <see cref="System.Threading.Timeout.InfiniteTimeSpan" />.</exception>
 	public DbConnectorCommand WithParameters(DbParameters parameters)
 	{
 		m_parameters.Add(parameters);
 		return this;
+	}
+
+	public DbConnectorCommand WithParameters(params IEnumerable<DbParameters> parameters) =>
+		WithParameters(DbParameters.Create(parameters));
+
+	public DbConnectorCommand WithParameters<T>(params IEnumerable<(string Name, T Value)> parameters) =>
+		WithParameters(DbParameters.Create(parameters));
+
+	public DbConnectorCommand WithParameters<T>(IEnumerable<KeyValuePair<string, T>> parameters) =>
+		WithParameters(DbParameters.Create(parameters));
+
+	public DbConnectorCommand WithParametersFromDto<T>(T dto, Func<string, bool>? where = null, Func<string, string>? renamed = null)
+	{
+		var parameters = DbParameters.FromDto(dto);
+		if (where is not null)
+			parameters = parameters.Where(where);
+		if (renamed is not null)
+			parameters = parameters.Renamed(renamed);
+		return WithParameters(parameters);
 	}
 
 	/// <summary>
