@@ -10,6 +10,15 @@ internal sealed class DbDtoProperty<T>
 		Name = memberInfo.Name;
 		ValueType = memberInfo is PropertyInfo propertyInfo ? propertyInfo.PropertyType : ((FieldInfo) memberInfo).FieldType;
 		ColumnName = columnName;
+
+		m_lazyCreateParameter = new(() =>
+		{
+			return (string name, T valueSource) =>
+			{
+				var value = MemberInfo is PropertyInfo propertyInfo ? propertyInfo.GetValue(valueSource) : ((FieldInfo) MemberInfo).GetValue(valueSource);
+				return DbParameters.Create<object?>(name, value);
+			};
+		});
 	}
 
 	public MemberInfo MemberInfo { get; }
@@ -20,7 +29,7 @@ internal sealed class DbDtoProperty<T>
 
 	public string? ColumnName { get; }
 
-	public DbParameters CreateParameter(string name, T valueSource) => DbParameters.Create(name, GetValue(valueSource));
+	public DbParameters CreateParameter(string name, T valueSource) => m_lazyCreateParameter.Value(name, valueSource);
 
-	private object? GetValue(T source) => MemberInfo is PropertyInfo propertyInfo ? propertyInfo.GetValue(source) : ((FieldInfo) MemberInfo).GetValue(source);
+	private readonly Lazy<Func<string, T, DbParameters>> m_lazyCreateParameter;
 }
