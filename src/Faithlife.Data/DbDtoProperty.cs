@@ -5,14 +5,37 @@ namespace Faithlife.Data;
 
 internal sealed class DbDtoProperty<T>
 {
-	public DbDtoProperty(MemberInfo memberInfo, string? columnName)
+	public DbDtoProperty(PropertyInfo propertyInfo, string? columnName)
 	{
-		MemberInfo = memberInfo;
-		Name = memberInfo.Name;
-		ValueType = (memberInfo as PropertyInfo)?.PropertyType ?? ((FieldInfo) memberInfo).FieldType;
+		MemberInfo = propertyInfo;
+		Name = propertyInfo.Name;
+		ValueType = propertyInfo.PropertyType;
+		IsReadOnly = propertyInfo.SetMethod?.IsPublic is not true;
 		ColumnName = columnName;
 		m_lazyCreateParameter = new(CreateParameterCreator);
 	}
+
+	public DbDtoProperty(FieldInfo fieldInfo, string? columnName)
+	{
+		MemberInfo = fieldInfo;
+		Name = fieldInfo.Name;
+		ValueType = fieldInfo.FieldType;
+		IsReadOnly = fieldInfo.IsInitOnly;
+		ColumnName = columnName;
+		m_lazyCreateParameter = new(CreateParameterCreator);
+	}
+
+	public MemberInfo MemberInfo { get; }
+
+	public string Name { get; }
+
+	public Type ValueType { get; }
+
+	public bool IsReadOnly { get; }
+
+	public string? ColumnName { get; }
+
+	public DbParameters CreateParameter(string name, T valueSource) => m_lazyCreateParameter.Value(name, valueSource);
 
 	private Func<string, T, DbParameters> CreateParameterCreator()
 	{
@@ -34,16 +57,6 @@ internal sealed class DbDtoProperty<T>
 		return Expression.Lambda<Func<string, T, DbParameters>>(
 			Expression.Call(createMethod, nameParam, getValue), nameParam, sourceParam).Compile();
 	}
-
-	public MemberInfo MemberInfo { get; }
-
-	public string Name { get; }
-
-	public Type ValueType { get; }
-
-	public string? ColumnName { get; }
-
-	public DbParameters CreateParameter(string name, T valueSource) => m_lazyCreateParameter.Value(name, valueSource);
 
 	private readonly Lazy<Func<string, T, DbParameters>> m_lazyCreateParameter;
 }

@@ -322,7 +322,7 @@ internal sealed class DbDataMapperTests
 		tuple.Item2.Should().BeNull();
 	}
 
-	[Test, Ignore("TODO")]
+	[Test]
 	public void RecordTests()
 	{
 		using var connection = GetOpenConnectionWithItems();
@@ -601,25 +601,6 @@ internal sealed class DbDataMapperTests
 #pragma warning disable CA1801, SA1313
 	private sealed record ItemRecord(string? TheText, long TheInteger, double TheReal, byte[]? TheBlob, long TheOptionalInteger = 42);
 #pragma warning restore CA1801, SA1313
-
-	private sealed record NonPositionalRecord
-	{
-		public string? TheText { get; set; }
-	}
-
-	private sealed class DtoWithConstructors
-	{
-		public DtoWithConstructors()
-		{
-		}
-
-		public DtoWithConstructors(string theString)
-		{
-			TheText = theString;
-		}
-
-		public string? TheText { get; set; }
-	}
 
 	private enum Answer
 	{

@@ -177,32 +177,82 @@ public class DbDataMapper
 
 		private Func<IDataRecord, int, DbRecordState?, T> CreateFunc(FieldNameSet fieldNameSet)
 		{
-			var type = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
-			if (type.IsValueType || type.GetConstructor([]) is not null)
+			foreach (var creator in DbDtoInfo.GetInfo<T>().Creators)
 			{
-				var count = fieldNameSet.Names.Count;
-				var memberBindings = new MemberBinding[count];
-
-				for (var index = 0; index < count; index++)
+				if (creator is null)
 				{
-					var fieldName = fieldNameSet.Names[index];
-					if (!m_propertiesByNormalizedFieldName!.TryGetValue(NormalizeFieldName(fieldName), out var property))
-						throw new InvalidOperationException($"Type does not have a property for '{fieldName}': {Type.FullName}");
+					var count = fieldNameSet.Names.Count;
+					var memberBindings = new List<MemberBinding>(capacity: count);
 
-					memberBindings[index] =
-						Expression.Bind(
-							property.Property.MemberInfo,
-							Expression.Call(
-								Expression.Constant(property.Mapper),
-								property.Mapper.GetType().GetMethod("Map", [typeof(IDataRecord), typeof(int), typeof(int), typeof(DbRecordState)])!,
-								s_recordParam,
-								Expression.Add(s_indexParam, Expression.Constant(index)),
-								Expression.Constant(1),
-								s_stateParam));
+					for (var index = 0; index < count; index++)
+					{
+						var fieldName = fieldNameSet.Names[index];
+						if (!m_propertiesByNormalizedFieldName!.TryGetValue(NormalizeFieldName(fieldName), out var property))
+							throw new InvalidOperationException($"Type does not have a property for '{fieldName}': {Type.FullName}");
+
+						memberBindings.Add(
+							Expression.Bind(
+								property.Property.MemberInfo,
+								Expression.Call(
+									Expression.Constant(property.Mapper),
+									property.Mapper.GetType().GetMethod("Map", [typeof(IDataRecord), typeof(int), typeof(int), typeof(DbRecordState)])!,
+									s_recordParam,
+									Expression.Add(s_indexParam, Expression.Constant(index)),
+									Expression.Constant(1),
+									s_stateParam)));
+					}
+
+					var memberInit = Expression.MemberInit(Expression.New(typeof(T)), memberBindings);
+					return (Func<IDataRecord, int, DbRecordState?, T>) Expression.Lambda(memberInit, s_recordParam, s_indexParam, s_stateParam).Compile();
 				}
+				else
+				{
+					var count = fieldNameSet.Names.Count;
+					var constructorParameters = new Expression?[creator.Parameters.Length];
+					var memberBindings = new List<MemberBinding>(capacity: count);
 
-				var memberInit = Expression.MemberInit(Expression.New(typeof(T)), memberBindings);
-				return (Func<IDataRecord, int, DbRecordState?, T>) Expression.Lambda(memberInit, s_recordParam, s_indexParam, s_stateParam).Compile();
+					for (var index = 0; index < count; index++)
+					{
+						var fieldName = fieldNameSet.Names[index];
+						if (!m_propertiesByNormalizedFieldName!.TryGetValue(NormalizeFieldName(fieldName), out var property))
+							throw new InvalidOperationException($"Type does not have a property for '{fieldName}': {Type.FullName}");
+
+						if (creator.GetPropertyParameterIndex(property.Property) is { } parameterIndex)
+						{
+							constructorParameters[parameterIndex] =
+								Expression.Call(
+									Expression.Constant(property.Mapper),
+									property.Mapper.GetType().GetMethod("Map", [typeof(IDataRecord), typeof(int), typeof(int), typeof(DbRecordState)])!,
+									s_recordParam,
+									Expression.Add(s_indexParam, Expression.Constant(index)),
+									Expression.Constant(1),
+									s_stateParam);
+						}
+						else
+						{
+							memberBindings.Add(
+								Expression.Bind(
+									property.Property.MemberInfo,
+									Expression.Call(
+										Expression.Constant(property.Mapper),
+										property.Mapper.GetType().GetMethod("Map", [typeof(IDataRecord), typeof(int), typeof(int), typeof(DbRecordState)])!,
+										s_recordParam,
+										Expression.Add(s_indexParam, Expression.Constant(index)),
+										Expression.Constant(1),
+										s_stateParam)));
+						}
+					}
+
+					for (var index = 0; index < constructorParameters.Length; index++)
+					{
+						constructorParameters[index] ??= creator.DefaultValues?[index] is { } defaultValue
+							? Expression.Constant(defaultValue)
+							: Expression.Default(creator.Parameters[index].ValueType);
+					}
+
+					var memberInit = Expression.MemberInit(Expression.New(creator.Constructor, constructorParameters!), memberBindings);
+					return (Func<IDataRecord, int, DbRecordState?, T>) Expression.Lambda(memberInit, s_recordParam, s_indexParam, s_stateParam).Compile();
+				}
 			}
 
 #if false
@@ -235,7 +285,7 @@ public class DbDataMapper
 			}
 #endif
 
-			throw new InvalidOperationException($"DTO not supported: {type.FullName}");
+			throw new InvalidOperationException($"DTO not supported: {typeof(T).FullName}");
 		}
 
 #if !NETSTANDARD2_0
