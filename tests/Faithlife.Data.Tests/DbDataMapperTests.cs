@@ -250,7 +250,7 @@ internal sealed class DbDataMapperTests
 
 		// DTO
 		record.Get<ItemDto>(0, 4).Should().BeEquivalentTo(s_dto);
-		record.Get<ItemDto>(0, 1).Should().BeEquivalentTo(new ItemDto { TheText = s_dto.TheText });
+		record.Get<ItemDto>(0, 1).Should().BeEquivalentTo(new ItemDto(s_dto.TheText));
 		record.Get<ItemDto>(0, 0).Should().BeNull();
 		record.Get<ItemDto>(4, 0).Should().BeNull();
 
@@ -284,7 +284,7 @@ internal sealed class DbDataMapperTests
 
 		// two DTOs
 		var tuple = record.Get<(ItemDto, ItemDto)>(0, 5);
-		tuple.Item1.Should().BeEquivalentTo(new ItemDto { TheText = s_dto.TheText, TheInteger = s_dto.TheInteger });
+		tuple.Item1.Should().BeEquivalentTo(new ItemDto(s_dto.TheText) { TheInteger = s_dto.TheInteger });
 		tuple.Item2.Should().BeEquivalentTo(new ItemDto { TheReal = s_dto.TheReal, TheBlob = s_dto.TheBlob });
 
 		// get nulls
@@ -310,7 +310,7 @@ internal sealed class DbDataMapperTests
 
 		// two DTOs
 		var tuple = record.Get<(ItemDto, ItemDto)>(0, 2);
-		tuple.Item1.Should().BeEquivalentTo(new ItemDto { TheText = s_dto.TheText });
+		tuple.Item1.Should().BeEquivalentTo(new ItemDto(s_dto.TheText));
 		tuple.Item2.Should().BeEquivalentTo(new ItemDto { TheInteger = s_dto.TheInteger });
 
 		// get nulls
@@ -367,7 +367,7 @@ internal sealed class DbDataMapperTests
 
 		reader.Read().Should().BeTrue();
 		record.Get<ItemDto>(0, 2)
-			.Should().BeEquivalentTo(new ItemDto { TheText = s_dto.TheText, TheInteger = s_dto.TheInteger });
+			.Should().BeEquivalentTo(new ItemDto(s_dto.TheText) { TheInteger = s_dto.TheInteger });
 	}
 
 	[Test]
@@ -381,7 +381,7 @@ internal sealed class DbDataMapperTests
 
 		reader.Read().Should().BeTrue();
 		record.Get<ItemDto>(0, 2)
-			.Should().BeEquivalentTo(new ItemDto { TheText = s_dto.TheText, TheInteger = s_dto.TheInteger });
+			.Should().BeEquivalentTo(new ItemDto(s_dto.TheText) { TheInteger = s_dto.TheInteger });
 	}
 
 	[Test]
@@ -586,10 +586,13 @@ internal sealed class DbDataMapperTests
 
 	private sealed class ItemDto
 	{
-		public string? TheText { get; set; }
-		public long TheInteger { get; set; }
-		public double TheReal { get; set; }
-		public byte[]? TheBlob { get; set; }
+		public ItemDto() => TheText = null;
+		public ItemDto(string? theText) => TheText = theText;
+
+		public string? TheText { get; }
+		public long TheInteger { get; init; }
+		public double TheReal { get; init; }
+		public byte[]? TheBlob { get; init; }
 	}
 
 	private sealed class CustomColumnDto
@@ -607,9 +610,8 @@ internal sealed class DbDataMapperTests
 		FortyTwo = 42,
 	}
 
-	private static readonly ItemDto s_dto = new()
+	private static readonly ItemDto s_dto = new("hey")
 	{
-		TheText = "hey",
 		TheInteger = 42L,
 		TheReal = 3.1415,
 		TheBlob = new byte[] { 0x01, 0xFE },

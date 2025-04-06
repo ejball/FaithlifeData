@@ -184,11 +184,18 @@ public class DbDataMapper
 					var count = fieldNameSet.Names.Count;
 					var memberBindings = new List<MemberBinding>(capacity: count);
 
+					var canCreate = true;
 					for (var index = 0; index < count; index++)
 					{
 						var fieldName = fieldNameSet.Names[index];
 						if (!m_propertiesByNormalizedFieldName!.TryGetValue(NormalizeFieldName(fieldName), out var property))
 							throw new InvalidOperationException($"Type does not have a property for '{fieldName}': {Type.FullName}");
+
+						if (property.Property.IsReadOnly)
+						{
+							canCreate = false;
+							break;
+						}
 
 						memberBindings.Add(
 							Expression.Bind(
@@ -201,6 +208,8 @@ public class DbDataMapper
 									Expression.Constant(1),
 									s_stateParam)));
 					}
+					if (!canCreate)
+						continue;
 
 					var memberInit = Expression.MemberInit(Expression.New(typeof(T)), memberBindings);
 					return (Func<IDataRecord, int, DbRecordState?, T>) Expression.Lambda(memberInit, s_recordParam, s_indexParam, s_stateParam).Compile();
@@ -211,6 +220,7 @@ public class DbDataMapper
 					var constructorParameters = new Expression?[creator.Parameters.Length];
 					var memberBindings = new List<MemberBinding>(capacity: count);
 
+					var canCreate = true;
 					for (var index = 0; index < count; index++)
 					{
 						var fieldName = fieldNameSet.Names[index];
@@ -230,6 +240,12 @@ public class DbDataMapper
 						}
 						else
 						{
+							if (property.Property.IsReadOnly)
+							{
+								canCreate = false;
+								break;
+							}
+
 							memberBindings.Add(
 								Expression.Bind(
 									property.Property.MemberInfo,
@@ -242,6 +258,8 @@ public class DbDataMapper
 										s_stateParam)));
 						}
 					}
+					if (!canCreate)
+						continue;
 
 					for (var index = 0; index < constructorParameters.Length; index++)
 					{
@@ -255,37 +273,7 @@ public class DbDataMapper
 				}
 			}
 
-#if false
-			if (type.GetConstructors().MaxBy(x => x.GetParameters().Length) is { } constructor)
-			{
-				var count = fieldNameSet.Names.Count;
-				var constructorParameters = constructor.GetParameters();
-				var constructorExpressions = new Expression[constructorParameters.Length];
-
-				for (var index = 0; index < count; index++)
-				{
-					var fieldName = fieldNameSet.Names[index];
-					var constructorParameter = constructorParameters
-						.Select((x, i) => (Parameter: x, Index: i))
-						.FirstOrDefault(x => string.Equals(NormalizeFieldName(x.Parameter.Name ?? ""), NormalizeFieldName(fieldName), StringComparison.OrdinalIgnoreCase));
-					if (constructorParameter.Parameter is null)
-						throw new InvalidOperationException($"Type does not have a property for '{fieldName}': {Type.FullName}");
-
-					constructorExpressions[constructorParameter.Index] = Expression.Call(
-						Expression.Constant(property.Mapper),
-						property.Mapper.GetType().GetMethod("Map", [typeof(IDataRecord), typeof(int), typeof(int), typeof(DbRecordState)])!,
-						s_recordParam,
-						Expression.Add(s_indexParam, Expression.Constant(index)),
-						Expression.Constant(1),
-						s_stateParam);
-				}
-
-				var newExpression = Expression.New(constructor, constructorExpressions);
-				return (Func<IDataRecord, int, DbRecordState?, T>) Expression.Lambda(newExpression, s_recordParam, s_indexParam, s_stateParam).Compile();
-			}
-#endif
-
-			throw new InvalidOperationException($"DTO not supported: {typeof(T).FullName}");
+			throw new InvalidOperationException($"DTO {typeof(T).FullName} could not be created from fields: {string.Join(", ", fieldNameSet.Names)}");
 		}
 
 #if !NETSTANDARD2_0
